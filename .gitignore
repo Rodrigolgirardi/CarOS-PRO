@@ -1,0 +1,13 @@
+# dependências
+/node_modules
+
+# build
+/.next
+*.tsbuildinfo
+next-env.d.ts
+
+# dados locais (banco + uploads)
+/data
+
+# sistema
+.DS_Store

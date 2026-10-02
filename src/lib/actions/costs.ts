@@ -1,0 +1,91 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { get, run, tx } from "../db";
+import { brl, todayISO } from "../format";
+import { COST_CATEGORY } from "../labels";
+import type { ActionState, Cost } from "../types";
+import { err, fields, logEvent, ok } from "./util";
+
+export async function addCost(vehicleId: number, prev: ActionState, formData: FormData): Promise<ActionState> {
+  const f = fields(formData);
+  const category = f.s("category");
+  const amount = f.cents("amount");
+  const date = f.s("date") ?? todayISO();
+  if (!category || !(category in COST_CATEGORY)) return err("Escolha a categoria do custo.");
+  if (amount == null || amount <= 0) return err("Informe o valor do custo.");
+
+  const description = f.s("description");
+  run(
+    "INSERT INTO costs (vehicle_id, category, description, amount, date) VALUES (?,?,?,?,?)",
+    vehicleId,
+    category,
+    description,
+    amount,
+    date
+  );
+  logEvent({
+    type: "custo",
+    description: `Custo adicionado — ${COST_CATEGORY[category as keyof typeof COST_CATEGORY]}${description ? `: ${description}` : ""}`,
+    vehicle: vehicleId,
+    amount,
+    date,
+  });
+  revalidatePath("/", "layout");
+  return ok("Custo adicionado.");
+}
+
+export async function updateCost(costId: number, prev: ActionState, formData: FormData): Promise<ActionState> {
+  const cost = get<Cost>("SELECT * FROM costs WHERE id = ?", costId);
+  if (!cost) return err("Custo não encontrado.");
+
+  const f = fields(formData);
+  const category = f.s("category");
+  const amount = f.cents("amount");
+  const date = f.s("date") ?? cost.date;
+  if (!category || !(category in COST_CATEGORY)) return err("Escolha a categoria do custo.");
+  if (amount == null || amount <= 0) return err("Informe o valor do custo.");
+  const description = f.s("description");
+
+  tx(() => {
+    run(
+      "UPDATE costs SET category = ?, description = ?, amount = ?, date = ? WHERE id = ?",
+      category,
+      description,
+      amount,
+      date,
+      costId
+    );
+    // mantém em sincronia a tarefa/comissão que geraram este custo
+    run("UPDATE tasks SET cost = ? WHERE cost_id = ?", amount, costId);
+    run("UPDATE deals SET commission = ? WHERE commission_cost_id = ?", amount, costId);
+    if (amount !== cost.amount || category !== cost.category) {
+      logEvent({
+        type: "custo",
+        description: `Custo atualizado — ${COST_CATEGORY[category as keyof typeof COST_CATEGORY]}${description ? `: ${description}` : ""}${
+          amount !== cost.amount ? ` (${brl(cost.amount)} → ${brl(amount)})` : ""
+        }`,
+        vehicle: cost.vehicle_id,
+        amount,
+        date,
+      });
+    }
+  });
+  revalidatePath("/", "layout");
+  return ok("Custo atualizado.");
+}
+
+export async function deleteCost(costId: number): Promise<{ ok: boolean; error?: string }> {
+  const cost = get<Cost>("SELECT * FROM costs WHERE id = ?", costId);
+  if (!cost) return err("Custo não encontrado.");
+  run("UPDATE tasks SET cost_id = NULL WHERE cost_id = ?", costId);
+  run("UPDATE deals SET commission_cost_id = NULL WHERE commission_cost_id = ?", costId);
+  run("DELETE FROM costs WHERE id = ?", costId);
+  logEvent({
+    type: "custo",
+    description: `Custo removido — ${COST_CATEGORY[cost.category]} (${brl(cost.amount)})`,
+    vehicle: cost.vehicle_id,
+  });
+  revalidatePath("/", "layout");
+  return ok();
+}

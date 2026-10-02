@@ -1,0 +1,250 @@
+// Entidades do CarOS. Valores monetários em centavos (integer); datas em ISO (YYYY-MM-DD).
+
+export type VehicleStatus = "preparacao" | "disponivel" | "anunciado" | "reservado" | "vendido";
+export type DealStage = "interessado" | "proposta" | "reservado" | "vendido" | "entregue" | "perdido";
+export type CustomerStatus = "novo" | "contato" | "interessado" | "negociacao" | "vendido" | "perdido";
+export type CostCategory =
+  | "frete"
+  | "transferencia"
+  | "despachante"
+  | "manutencao"
+  | "pecas"
+  | "estetica"
+  | "lavagem"
+  | "combustivel"
+  | "anuncios"
+  | "comissao"
+  | "outros";
+export type TaskType =
+  | "revisao"
+  | "manutencao"
+  | "higienizacao"
+  | "estetica"
+  | "fotos"
+  | "anuncio"
+  | "documentacao"
+  | "transferencia"
+  | "outro";
+export type TaskStatus = "pendente" | "concluida";
+export type TaskGroup = "preparacao" | "manutencao" | "documentacao" | "fotos" | "anuncio" | "outros";
+export type DocumentType = "crlv" | "atpve" | "contrato" | "nota_fiscal" | "laudo" | "comprovante" | "outro";
+export type EventType =
+  | "compra"
+  | "custo"
+  | "preco"
+  | "status"
+  | "tarefa"
+  | "proposta"
+  | "reserva"
+  | "venda"
+  | "entrega"
+  | "recebimento"
+  | "pagamento"
+  | "contato"
+  | "documento"
+  | "outro";
+
+export interface Vehicle {
+  id: number;
+  brand: string;
+  model: string;
+  version: string | null;
+  year_fab: number | null;
+  year_model: number | null;
+  plate: string | null;
+  km: number | null;
+  color: string | null;
+  fuel: string | null;
+  transmission: string | null;
+  renavam: string | null;
+  status: VehicleStatus;
+  sale_price: number | null; // preço de venda anunciado/planejado
+  photo: string | null;
+  notes: string | null;
+  is_demo: number;
+  created_at: string;
+}
+
+export interface Purchase {
+  id: number;
+  vehicle_id: number;
+  seller: string | null;
+  date: string;
+  price: number;
+  payment_method: string | null;
+  notes: string | null;
+  is_demo: number;
+  created_at: string;
+}
+
+export interface Cost {
+  id: number;
+  vehicle_id: number;
+  category: CostCategory;
+  description: string | null;
+  amount: number;
+  date: string;
+  is_demo: number;
+  created_at: string;
+}
+
+export interface Customer {
+  id: number;
+  name: string;
+  cpf_cnpj: string | null;
+  phone: string | null;
+  email: string | null;
+  city: string | null;
+  notes: string | null;
+  status: CustomerStatus;
+  is_demo: number;
+  created_at: string;
+}
+
+export interface Deal {
+  id: number;
+  vehicle_id: number;
+  customer_id: number;
+  stage: DealStage;
+  proposed_price: number | null;
+  sale_price: number | null;
+  down_payment: number | null;
+  payment_method: string | null;
+  financed_amount: number | null;
+  trade_in_desc: string | null;
+  trade_in_value: number | null;
+  commission: number | null;
+  commission_cost_id: number | null;
+  notes: string | null;
+  sold_date: string | null;
+  delivered_date: string | null;
+  is_demo: number;
+  created_at: string;
+}
+
+export interface Task {
+  id: number;
+  vehicle_id: number;
+  type: TaskType;
+  description: string | null;
+  assignee: string | null;
+  due_date: string | null;
+  status: TaskStatus;
+  cost: number | null;
+  cost_id: number | null;
+  done_date: string | null;
+  is_demo: number;
+  created_at: string;
+}
+
+export interface Doc {
+  id: number;
+  name: string;
+  type: DocumentType;
+  vehicle_id: number | null;
+  customer_id: number | null;
+  deal_id: number | null;
+  purchase_id: number | null;
+  file_name: string;
+  mime: string | null;
+  size: number | null;
+  is_demo: number;
+  created_at: string;
+}
+
+export interface Payable {
+  id: number;
+  description: string;
+  category: string | null;
+  amount: number;
+  due_date: string;
+  status: "pendente" | "pago";
+  paid_date: string | null;
+  vehicle_id: number | null;
+  is_demo: number;
+  created_at: string;
+}
+
+export interface Receivable {
+  id: number;
+  description: string;
+  customer_id: number | null;
+  deal_id: number | null;
+  amount: number;
+  due_date: string;
+  status: "pendente" | "recebido";
+  received_date: string | null;
+  is_demo: number;
+  created_at: string;
+}
+
+export interface Event {
+  id: number;
+  vehicle_id: number | null;
+  customer_id: number | null;
+  deal_id: number | null;
+  type: EventType;
+  description: string;
+  amount: number | null;
+  date: string;
+  is_demo: number;
+  created_at: string;
+}
+
+// ------------------------------------------------- linhas compostas (queries)
+
+/** Veículo + compra + custos agregados + venda (quando houver). */
+export interface VehicleRow extends Vehicle {
+  purchase_price: number | null;
+  purchase_date: string | null;
+  purchase_seller: string | null;
+  purchase_payment: string | null;
+  purchase_notes: string | null;
+  purchase_id: number | null;
+  costs_total: number;
+  total_cost: number;
+  sold_price: number | null;
+  sold_date: string | null;
+  buyer_id: number | null;
+  buyer_name: string | null;
+}
+
+export interface DealRow extends Deal {
+  customer_name: string;
+  vehicle_label: string; // "Honda HR-V EXL"
+  vehicle_status: VehicleStatus;
+  vehicle_photo: string | null;
+  vehicle_plate: string | null;
+  vehicle_sale_price: number | null; // preço anunciado
+  vehicle_total_cost: number;
+  received: number; // soma de recebíveis recebidos da venda
+  pending: number; // soma de recebíveis pendentes
+}
+
+export interface TaskRow extends Task {
+  vehicle_label: string;
+  vehicle_photo: string | null;
+  vehicle_status: VehicleStatus;
+}
+
+export interface DocRow extends Doc {
+  vehicle_label: string | null;
+  customer_name: string | null;
+}
+
+export interface PayableRow extends Payable {
+  vehicle_label: string | null;
+}
+
+export interface ReceivableRow extends Receivable {
+  customer_name: string | null;
+  vehicle_label: string | null;
+}
+
+export interface EventRow extends Event {
+  vehicle_label: string | null;
+  customer_name: string | null;
+}
+
+/** Resultado padrão das server actions usadas em formulários. */
+export type ActionState = { ok: boolean; message?: string; error?: string } | null;

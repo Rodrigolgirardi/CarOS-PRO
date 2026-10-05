@@ -1,6 +1,6 @@
 // Entidades do CarOS. Valores monetários em centavos (integer); datas em ISO (YYYY-MM-DD).
 
-export type VehicleStatus = "preparacao" | "disponivel" | "anunciado" | "reservado" | "vendido";
+export type VehicleStatus = "para_cadastrar" | "para_arrumar" | "cadastrado" | "vendido";
 export type VehicleLaudo = "aprovado_sem" | "aprovado_com";
 export type VehicleLeilao = "nao" | "pequena_monta" | "media_monta" | "financeira" | "outros";
 export type DealStage = "interessado" | "proposta" | "reservado" | "vendido" | "entregue" | "perdido";
@@ -29,7 +29,15 @@ export type TaskType =
   | "outro";
 export type TaskStatus = "pendente" | "concluida";
 export type TaskGroup = "preparacao" | "manutencao" | "documentacao" | "fotos" | "anuncio" | "outros";
-export type DocumentType = "crlv" | "atpve" | "contrato" | "nota_fiscal" | "laudo" | "comprovante" | "outro";
+export type DocumentType =
+  | "crlv"
+  | "atpve"
+  | "contrato"
+  | "termo_consignacao"
+  | "nota_fiscal"
+  | "laudo"
+  | "comprovante"
+  | "outro";
 export type EventType =
   | "compra"
   | "custo"

@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
   consignado   INTEGER NOT NULL DEFAULT 0,
   consignor    TEXT,
   consignor_value INTEGER,
-  status       TEXT NOT NULL DEFAULT 'preparacao',
+  status       TEXT NOT NULL DEFAULT 'para_arrumar',
   sale_price   INTEGER,
   photo        TEXT,
   notes        TEXT,
@@ -230,6 +230,13 @@ export function getDb(): DatabaseSync {
   seedRule.run("outros", "Outros", null, 6);
   const sellerCols = (db.prepare("PRAGMA table_info(sellers)").all() as { name: string }[]).map((c) => c.name);
   if (!sellerCols.includes("commission_fixed")) db.exec("ALTER TABLE sellers ADD COLUMN commission_fixed INTEGER");
+
+  // status antigos → novos (idempotente; roda em toda subida)
+  db.exec(`
+    UPDATE vehicles SET status = 'para_arrumar'  WHERE status = 'preparacao';
+    UPDATE vehicles SET status = 'para_cadastrar' WHERE status = 'disponivel';
+    UPDATE vehicles SET status = 'cadastrado'     WHERE status IN ('anunciado', 'reservado');
+  `);
 
   // Dados de demonstração: apenas na primeira execução, nunca de novo após limpeza.
   const seeded = db.prepare("SELECT value FROM meta WHERE key = 'demo_seeded'").get();

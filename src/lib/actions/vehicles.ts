@@ -41,7 +41,7 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
   const vehicleId = tx(() => {
     const v = run(
       `INSERT INTO vehicles (brand, model, version, year_fab, year_model, plate, km, color, fuel, transmission, renavam, chassis, laudo, blindado, leilao, fipe_price, consignado, consignor, consignor_value, status, sale_price, photo, notes)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'preparacao',?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'para_arrumar',?,?,?)`,
       brand,
       model,
       f.s("version"),
@@ -217,7 +217,7 @@ export async function duplicateVehicle(id: number): Promise<{ ok: boolean; error
   const newId = tx(() => {
     const r = run(
       `INSERT INTO vehicles (brand, model, version, year_fab, year_model, plate, km, color, fuel, transmission, status, sale_price, notes)
-       VALUES (?,?,?,?,?,?,?,?,?,?,'preparacao',?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,'para_arrumar',?,?)`,
       v.brand,
       v.model,
       v.version,

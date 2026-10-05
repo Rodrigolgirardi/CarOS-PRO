@@ -86,7 +86,7 @@ export function dreData(): DreVehicle[] {
       costs,
       costsTotal: v.costs_total + pendingRepasse,
       sale: m.priceRef,
-      profit: m.profit != null ? m.profit - pendingRepasse : null,
+      profit: m.profit, // métricas já descontam o repasse pendente do consignado
     };
   });
 }

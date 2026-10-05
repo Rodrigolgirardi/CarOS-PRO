@@ -25,25 +25,20 @@ LEFT JOIN customers bc ON bc.id = sd.customer_id
 
 export type VehicleFilter =
   | "todos"
-  | "disponivel"
-  | "preparacao"
-  | "anunciado"
-  | "reservado"
+  | "para_cadastrar"
+  | "para_arrumar"
+  | "cadastrado"
   | "vendido"
   | "estoque"
   | "parados"
-  | "anunciados" // no ar: anunciado + reservado
-  | "nao_anunciados" // ainda fora do ar: preparação + disponível
   | "consignados"; // carros de terceiros ainda na loja
 
-const STATUS_FILTERS: VehicleStatus[] = ["disponivel", "preparacao", "anunciado", "reservado", "vendido"];
+const STATUS_FILTERS: VehicleStatus[] = ["para_cadastrar", "para_arrumar", "cadastrado", "vendido"];
 
 // Consignados ficam junto do estoque em todas as listas; a aba Consignados é só um recorte.
 export function listVehicles(filter: VehicleFilter = "todos"): VehicleRow[] {
   let where = "";
   if (filter === "estoque") where = "WHERE v.status != 'vendido'";
-  else if (filter === "anunciados") where = "WHERE v.status IN ('anunciado', 'reservado')";
-  else if (filter === "nao_anunciados") where = "WHERE v.status IN ('preparacao', 'disponivel')";
   else if (filter === "consignados") where = "WHERE v.consignado = 1 AND v.status != 'vendido'";
   else if (filter === "parados")
     where =
@@ -82,8 +77,12 @@ export interface VehicleOption {
   sale_price: number | null;
 }
 
-export function vehicleOptions(opts?: { includeSold?: boolean }): VehicleOption[] {
-  const where = opts?.includeSold ? "" : "WHERE status != 'vendido'";
+export function vehicleOptions(opts?: { includeSold?: boolean; consignedOnly?: boolean }): VehicleOption[] {
+  const conds = [
+    ...(opts?.includeSold ? [] : ["status != 'vendido'"]),
+    ...(opts?.consignedOnly ? ["consignado = 1"] : []),
+  ];
+  const where = conds.length > 0 ? `WHERE ${conds.join(" AND ")}` : "";
   return all<VehicleOption>(
     `SELECT id, TRIM(brand || ' ' || model || ' ' || COALESCE(version, '')) AS label, plate, status, sale_price
      FROM vehicles ${where} ORDER BY brand, model`

@@ -79,7 +79,7 @@ export function dashboardData(): DashboardData {
       invested: v.total_cost,
       purchase: v.purchase_price ?? 0,
       sale: v.sale_price,
-      profit: v.sale_price != null ? (m.profit ?? v.sale_price - v.total_cost) : null,
+      profit: v.sale_price != null ? (m.profit ?? v.sale_price - m.totalCost) : null,
       consigned: v.consignado === 1,
     });
     if (v.sale_price != null) {
@@ -151,7 +151,7 @@ export function dashboardData(): DashboardData {
   return {
     stock: {
       count: stockRows.length,
-      preparing: stockRows.filter((v) => v.status === "preparacao").length,
+      preparing: stockRows.filter((v) => v.status === "para_arrumar").length,
       invested,
       saleValue,
       pricedCount,
@@ -170,7 +170,7 @@ export function dashboardData(): DashboardData {
     attention: {
       stale,
       docsPendingVehicles: docsPending.n,
-      preparing: stockRows.filter((v) => v.status === "preparacao").length,
+      preparing: stockRows.filter((v) => v.status === "para_arrumar").length,
       payablesOpen: payables.total,
       payablesOverdue: payables.overdue,
       receivablesPending: receivables.n,

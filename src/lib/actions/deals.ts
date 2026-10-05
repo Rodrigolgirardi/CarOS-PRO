@@ -147,7 +147,6 @@ export async function reserveDeal(dealId: number): Promise<{ ok: boolean; error?
 
   tx(() => {
     run("UPDATE deals SET stage = 'reservado' WHERE id = ?", dealId);
-    run("UPDATE vehicles SET status = 'reservado' WHERE id = ?", deal.vehicle_id);
     logEvent({
       type: "reserva",
       description: `Veículo reservado para ${deal.customer_name}`,
@@ -509,10 +508,6 @@ export async function markLost(dealId: number, prev: ActionState, formData: Form
       reason ? `Motivo da perda: ${reason}` : null,
       dealId
     );
-    if (deal.stage === "reservado" && deal.vehicle_status === "reservado") {
-      const back = deal.vehicle_sale_price != null ? "anunciado" : "disponivel";
-      run("UPDATE vehicles SET status = ? WHERE id = ?", back, deal.vehicle_id);
-    }
     logEvent({
       type: "status",
       description: `Negociação perdida — ${deal.customer_name}${reason ? ` (${reason})` : ""}`,
@@ -547,7 +542,7 @@ export async function undoSale(dealId: number): Promise<{ ok: boolean; error?: s
       run("UPDATE deals SET commission_cost_id = NULL WHERE id = ?", dealId);
     }
     run("UPDATE deals SET stage = 'reservado', sold_date = NULL, delivered_date = NULL WHERE id = ?", dealId);
-    run("UPDATE vehicles SET status = 'reservado' WHERE id = ?", deal.vehicle_id);
+    run("UPDATE vehicles SET status = 'cadastrado' WHERE id = ?", deal.vehicle_id);
     logEvent({
       type: "status",
       description: `Venda desfeita — ${deal.customer_name}`,

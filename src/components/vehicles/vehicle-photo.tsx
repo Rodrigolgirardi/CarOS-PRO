@@ -2,12 +2,13 @@ import { Car } from "lucide-react";
 import { brandLogoUrl, brandSlug } from "@/lib/brands";
 import { cn } from "@/lib/cn";
 
+// Blocos quadrados; a foto aparece inteira dentro (object-contain), sem corte.
 const SIZES = {
   xs: { box: "size-9 rounded-md", icon: 14 },
-  sm: { box: "h-10 w-14 rounded-md", icon: 16 },
-  md: { box: "h-12 w-16 rounded-lg", icon: 18 },
-  xl: { box: "h-20 w-28 rounded-xl", icon: 26 },
-  lg: { box: "aspect-[4/3] w-full rounded-xl", icon: 32 },
+  sm: { box: "size-10 rounded-md", icon: 16 },
+  md: { box: "size-12 rounded-lg", icon: 18 },
+  xl: { box: "size-24 rounded-xl", icon: 26 },
+  lg: { box: "aspect-square w-full rounded-xl", icon: 32 },
 } as const;
 
 interface VehiclePhotoProps {
@@ -32,8 +33,9 @@ export function VehiclePhoto({ photo, brand, alt = "", size = "sm", className }:
       )}
     >
       {photo ? (
+        // object-contain: a foto aparece inteira, sem corte (sobra vira moldura cinza)
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={`/api/uploads/${encodeURIComponent(photo)}`} alt={alt} className="h-full w-full object-cover" />
+        <img src={`/api/uploads/${encodeURIComponent(photo)}`} alt={alt} className="h-full w-full object-contain" />
       ) : slug ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={brandLogoUrl(slug)} alt={alt} className="h-full w-full object-contain p-[12%]" />

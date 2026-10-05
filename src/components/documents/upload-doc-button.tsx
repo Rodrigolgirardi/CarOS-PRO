@@ -18,9 +18,19 @@ interface UploadDocButtonProps {
   vehicleId?: number;
   customerId?: number;
   dealId?: number;
+  defaultType?: DocumentType;
+  label?: string;
 }
 
-export function UploadDocButton({ vehicles, customers, vehicleId, customerId, dealId }: UploadDocButtonProps) {
+export function UploadDocButton({
+  vehicles,
+  customers,
+  vehicleId,
+  customerId,
+  dealId,
+  defaultType = "outro",
+  label = "Enviar documento",
+}: UploadDocButtonProps) {
   const [open, setOpen] = useState(false);
   const { state, formAction } = useAction(uploadDocument, { onSuccess: () => setOpen(false) });
 
@@ -28,7 +38,7 @@ export function UploadDocButton({ vehicles, customers, vehicleId, customerId, de
     <>
       <Button variant="primary" size="sm" onClick={() => setOpen(true)}>
         <Upload size={13} />
-        Enviar documento
+        {label}
       </Button>
       <Modal
         open={open}
@@ -47,7 +57,7 @@ export function UploadDocButton({ vehicles, customers, vehicleId, customerId, de
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Tipo" required>
-              <Select name="type" defaultValue="outro" required>
+              <Select name="type" defaultValue={defaultType} required>
                 {(Object.keys(DOC_TYPE) as DocumentType[]).map((t) => (
                   <option key={t} value={t}>
                     {DOC_TYPE[t]}

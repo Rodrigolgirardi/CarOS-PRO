@@ -174,7 +174,15 @@ export default async function VehiclePage({
 
       {/* ------------------------------------------------ números grandes */}
       <StatGrid className="grid-cols-2 md:grid-cols-4">
-        <Stat label="Custo total" value={brl(vehicle.total_cost)} sub={`Compra ${brl(vehicle.purchase_price)} + ${costs.length} custo(s)`} />
+        <Stat
+          label="Custo total"
+          value={brl(m.totalCost)}
+          sub={
+            vehicle.consignado === 1 && !sold
+              ? `Repasse ${brl(vehicle.consignor_value ?? 0)} + ${costs.length} custo(s)`
+              : `Compra ${brl(vehicle.purchase_price)} + ${costs.length} custo(s)`
+          }
+        />
         <Stat
           label={sold ? "Vendido por" : "Preço de venda"}
           value={

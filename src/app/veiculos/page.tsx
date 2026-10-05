@@ -23,8 +23,9 @@ export const metadata = { title: "Veículos" };
 
 const TABS: { key: VehicleFilter; label: string }[] = [
   { key: "todos", label: "Todos" },
-  { key: "anunciados", label: "Anunciados" }, // inclui reservados (estão no ar)
-  { key: "nao_anunciados", label: "Não anunciados" },
+  { key: "para_cadastrar", label: "Para cadastrar" },
+  { key: "para_arrumar", label: "Para arrumar" },
+  { key: "cadastrado", label: "Cadastrados" },
   { key: "vendido", label: "Vendidos" },
 ];
 
@@ -35,15 +36,16 @@ export default async function VehiclesPage({
 }) {
   const { filtro } = await searchParams;
   // filtros sem aba, mas acessíveis por link (ex.: dashboard)
-  const LINK_ONLY = ["parados", "preparacao", "reservado", "disponivel", "anunciado"];
+  const LINK_ONLY = ["parados"];
   const valid = TABS.some((t) => t.key === filtro) || LINK_ONLY.includes(filtro ?? "");
   const filter = (valid ? filtro : "todos") as VehicleFilter;
   const rows = listVehicles(filter);
   const counts = vehicleCounts();
   const tabCount: Record<string, number> = {
     todos: counts.todos,
-    anunciados: (counts.anunciado ?? 0) + (counts.reservado ?? 0),
-    nao_anunciados: (counts.preparacao ?? 0) + (counts.disponivel ?? 0),
+    para_cadastrar: counts.para_cadastrar ?? 0,
+    para_arrumar: counts.para_arrumar ?? 0,
+    cadastrado: counts.cadastrado ?? 0,
     vendido: counts.vendido ?? 0,
   };
 
@@ -81,13 +83,9 @@ export default async function VehiclesPage({
         }))}
       />
 
-      {(filter === "parados" || filter === "preparacao" || filter === "reservado") && (
+      {filter === "parados" && (
         <p className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-          {filter === "parados"
-            ? "Mostrando veículos parados há mais de 60 dias."
-            : filter === "preparacao"
-              ? "Mostrando veículos em preparação."
-              : "Mostrando veículos reservados."}
+          Mostrando veículos parados há mais de 60 dias.
           <Link href="/veiculos" className="underline underline-offset-2 hover:text-amber-900">
             Ver todos
           </Link>
@@ -143,11 +141,13 @@ export default async function VehiclesPage({
                           <span className="truncate font-medium text-zinc-900 group-hover:underline group-hover:underline-offset-2">
                             {v.brand} {v.model}
                           </span>
-                          {v.consignado === 1 && (
-                            <span className="shrink-0 rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-700">
-                              Consignado
-                            </span>
-                          )}
+                          <span
+                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                              v.consignado === 1 ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700"
+                            }`}
+                          >
+                            {v.consignado === 1 ? "Consignado" : "Próprio"}
+                          </span>
                         </span>
                         <span className="block truncate text-xs text-zinc-400">{v.version ?? "—"}</span>
                       </span>
@@ -177,7 +177,7 @@ export default async function VehiclesPage({
                     {v.fipe_price != null ? brl(v.fipe_price) : <span className="text-zinc-300">—</span>}
                   </Td>
                   <Td right className="font-medium text-zinc-900">
-                    {brl(v.total_cost)}
+                    {brl(m.totalCost)}
                   </Td>
                   <Td right className="text-zinc-900">
                     {brl(m.priceRef)}

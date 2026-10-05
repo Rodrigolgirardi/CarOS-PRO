@@ -25,6 +25,14 @@ export function documentCounts(): Record<string, number> {
   return counts;
 }
 
+/** Papelada da consignação: termos + qualquer documento de veículo consignado. */
+export function listConsignmentDocs(): DocRow[] {
+  return all<DocRow>(
+    `${BASE} WHERE doc.type = 'termo_consignacao' OR v.consignado = 1
+     ORDER BY doc.created_at DESC, doc.id DESC`
+  );
+}
+
 export function docsForVehicle(vehicleId: number): DocRow[] {
   return all<DocRow>(`${BASE} WHERE doc.vehicle_id = ? ORDER BY doc.created_at DESC`, vehicleId);
 }

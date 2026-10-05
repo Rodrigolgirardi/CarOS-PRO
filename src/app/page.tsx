@@ -28,6 +28,11 @@ interface AttentionItem {
   urgent?: boolean;
 }
 
+// Rampa azul tom sobre tom para o gráfico de estoque: os carros já vêm
+// ordenados por valor (desc), então o maior fica com o tom mais escuro.
+const STOCK_SHADES = ["bg-blue-900", "bg-blue-800", "bg-blue-700", "bg-blue-600", "bg-blue-500", "bg-blue-400", "bg-blue-300"];
+const stockShade = (i: number) => STOCK_SHADES[Math.min(i, STOCK_SHADES.length - 1)];
+
 export default function DashboardPage() {
   const data = dashboardData();
   const { stock, month, attention, recent } = data;
@@ -52,9 +57,9 @@ export default function DashboardPage() {
     items.push({
       icon: Wrench,
       text: `${attention.preparing} ${
-        attention.preparing === 1 ? "veículo aguardando preparação" : "veículos aguardando preparação"
+        attention.preparing === 1 ? "veículo para arrumar" : "veículos para arrumar"
       }`,
-      href: "/veiculos?filtro=preparacao",
+      href: "/veiculos?filtro=para_arrumar",
     });
   if (attention.payablesOpen > 0)
     items.push({
@@ -107,35 +112,68 @@ export default function DashboardPage() {
         <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
           <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3">
             <p className="text-[13px] font-semibold text-zinc-900">
-              {stock.count} {stock.count === 1 ? "veículo" : "veículos"} em estoque
+              {stock.count} {stock.count === 1 ? "veículo" : "veículos"} em estoque ·{" "}
+              <span className="tabular-nums">{brl(stock.invested)}</span>
             </p>
             <p className="text-xs text-zinc-400">
-              {stock.preparing > 0 ? `${stock.preparing} em preparação` : ""}
+              {stock.preparing > 0 ? `${stock.preparing} para arrumar` : ""}
             </p>
           </div>
           {stock.vehicles.length === 0 ? (
             <p className="px-4 py-6 text-[13px] text-zinc-400">Nenhum veículo em estoque.</p>
           ) : (
             <>
+              {/* distribuição do valor do estoque: uma fatia por carro, tom sobre tom (mais escuro = maior valor) */}
+              {stock.invested > 0 && (
+                <div className="border-b border-zinc-100 px-4 py-3">
+                  <div className="flex h-2.5 items-stretch gap-[2px]">
+                    {stock.vehicles.map((v, i) => (
+                      <div
+                        key={v.id}
+                        className={`min-w-[3px] rounded-[2px] first:rounded-l-full last:rounded-r-full ${stockShade(i)}`}
+                        style={{ width: `${(v.invested / stock.invested) * 100}%` }}
+                        title={`${v.label} — ${brl(v.invested)} (${pct(v.invested / stock.invested, 0)} do estoque)`}
+                      />
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-zinc-400">
+                    Cada fatia é um carro, na ordem da lista — tom mais escuro, maior valor.
+                  </p>
+                </div>
+              )}
               <div className="divide-y divide-zinc-100">
-                {stock.vehicles.map((v) => (
-                  <Link
-                    key={v.id}
-                    href={`/veiculos/${v.id}`}
-                    className="flex items-center justify-between gap-3 px-4 py-2.5 transition-colors hover:bg-zinc-50"
-                  >
-                    <span className="flex min-w-0 items-center gap-2.5">
-                      <BrandLogo brand={v.label} size={18} />
-                      <span className="truncate text-[13px] font-medium text-zinc-800">{v.label}</span>
-                      {v.consigned && (
-                        <span className="shrink-0 rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-700">
-                          Consignado
+                {stock.vehicles.map((v, i) => {
+                  const share = stock.invested > 0 ? v.invested / stock.invested : 0;
+                  return (
+                    <Link
+                      key={v.id}
+                      href={`/veiculos/${v.id}`}
+                      className="flex items-center justify-between gap-3 px-4 py-2.5 transition-colors hover:bg-zinc-50"
+                    >
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        <BrandLogo brand={v.label} size={18} />
+                        <span className="truncate text-[13px] font-medium text-zinc-800">{v.label}</span>
+                        <span
+                          className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                            v.consigned ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700"
+                          }`}
+                        >
+                          {v.consigned ? "Consignado" : "Próprio"}
                         </span>
-                      )}
-                    </span>
-                    <span className="shrink-0 text-[13px] tabular-nums text-zinc-600">{brl(v.invested)}</span>
-                  </Link>
-                ))}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2.5">
+                        <span className="hidden h-1.5 w-20 overflow-hidden rounded-full bg-zinc-100 sm:block">
+                          <span
+                            className={`block h-full rounded-full ${stockShade(i)}`}
+                            style={{ width: `${share * 100}%` }}
+                          />
+                        </span>
+                        <span className="w-10 text-right text-xs tabular-nums text-zinc-400">{pct(share, 0)}</span>
+                        <span className="w-24 text-right text-[13px] tabular-nums text-zinc-600">{brl(v.invested)}</span>
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
               <div className="flex items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50/60 px-4 py-2.5">
                 <span className="text-[13px] font-semibold text-zinc-900">Custo total (compra + custos)</span>

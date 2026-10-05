@@ -26,10 +26,9 @@ export const DOT_CLASS: Record<Tone, string> = {
 };
 
 export const VEHICLE_STATUS: Record<VehicleStatus, { label: string; tone: Tone }> = {
-  preparacao: { label: "Em preparação", tone: "amber" },
-  disponivel: { label: "Disponível", tone: "emerald" },
-  anunciado: { label: "Anunciado", tone: "blue" },
-  reservado: { label: "Reservado", tone: "violet" },
+  para_cadastrar: { label: "Para cadastrar", tone: "blue" },
+  para_arrumar: { label: "Para arrumar", tone: "amber" },
+  cadastrado: { label: "Cadastrado", tone: "emerald" },
   vendido: { label: "Vendido", tone: "zinc" },
 };
 
@@ -128,6 +127,7 @@ export const DOC_TYPE: Record<DocumentType, string> = {
   crlv: "CRLV",
   atpve: "ATPV-e",
   contrato: "Contrato",
+  termo_consignacao: "Termo de consignação",
   nota_fiscal: "Nota fiscal",
   laudo: "Laudo",
   comprovante: "Comprovante",

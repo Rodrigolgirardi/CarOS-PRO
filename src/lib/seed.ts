@@ -185,7 +185,7 @@ export function seedDemo(db: DatabaseSync): void {
     ev("entrega", "Veículo entregue a Rafael Almeida", d(67), { vehicle: tcross, customer: rafael, deal: tcrossDeal });
 
     // ------------------------------------------------- 4. Compass — reservado
-    const compass = id(q.vehicle.run("Jeep", "Compass", "Longitude T270", 2021, 2022, "RKV9A02", 41700, "Preto", "Flex", "Automático", "reservado", R(139900), null));
+    const compass = id(q.vehicle.run("Jeep", "Compass", "Longitude T270", 2021, 2022, "RKV9A02", 41700, "Preto", "Flex", "Automático", "cadastrado", R(139900), null));
     q.purchase.run(compass, "Particular — Eduardo Tanaka", d(28), R(125000), "PIX", null);
     ev("compra", "Compra registrada — Particular (Eduardo Tanaka)", d(28), { vehicle: compass, amount: R(125000) });
     addCost(compass, "despachante", "Transferência + vistoria", R(450), d(24));
@@ -202,7 +202,7 @@ export function seedDemo(db: DatabaseSync): void {
     ev("reserva", "Veículo reservado para Carlos Lima", d(2), { vehicle: compass, customer: carlos, deal: compassDeal });
 
     // ------------------------------------------------- 5. HB20 — anunciado, com proposta
-    const hb20 = id(q.vehicle.run("Hyundai", "HB20", "Vision 1.0", 2023, 2023, "SRF5J19", 18900, "Branco", "Flex", "Manual", "anunciado", R(79900), null));
+    const hb20 = id(q.vehicle.run("Hyundai", "HB20", "Vision 1.0", 2023, 2023, "SRF5J19", 18900, "Branco", "Flex", "Manual", "cadastrado", R(79900), null));
     q.purchase.run(hb20, "Repasse — Garage 21", d(18), R(72500), "PIX", null);
     ev("compra", "Compra registrada — Garage 21 (repasse)", d(18), { vehicle: hb20, amount: R(72500) });
     addCost(hb20, "despachante", "Transferência + vistoria", R(450), d(15));
@@ -215,7 +215,7 @@ export function seedDemo(db: DatabaseSync): void {
     ev("proposta", "Proposta de Ana Oliveira: R$ 77.500", d(2), { vehicle: hb20, customer: ana, deal: hb20Deal, amount: R(77500) });
 
     // ------------------------------------------------- 6. Argo — disponível, parado há 72 dias
-    const argo = id(q.vehicle.run("Fiat", "Argo", "Drive 1.3", 2022, 2022, "QXC3M77", 33500, "Vermelho", "Flex", "Manual", "disponivel", R(64900), null));
+    const argo = id(q.vehicle.run("Fiat", "Argo", "Drive 1.3", 2022, 2022, "QXC3M77", 33500, "Vermelho", "Flex", "Manual", "para_cadastrar", R(64900), null));
     q.purchase.run(argo, "Particular — Cláudia Nunes", d(72), R(58000), "PIX", null);
     ev("compra", "Compra registrada — Particular (Cláudia Nunes)", d(72), { vehicle: argo, amount: R(58000) });
     addCost(argo, "despachante", "Transferência + vistoria", R(450), d(68));
@@ -226,7 +226,7 @@ export function seedDemo(db: DatabaseSync): void {
     ev("contato", "Pedro Souza visitou a loja e fez test drive no Argo", d(8), { vehicle: argo, customer: pedro });
 
     // ------------------------------------------------- 7. Onix — anunciado, parado há 95 dias, proposta perdida
-    const onix = id(q.vehicle.run("Chevrolet", "Onix", "LT 1.0 Turbo", 2021, 2021, "RLP8B45", 47800, "Prata", "Flex", "Manual", "anunciado", R(67900), null));
+    const onix = id(q.vehicle.run("Chevrolet", "Onix", "LT 1.0 Turbo", 2021, 2021, "RLP8B45", 47800, "Prata", "Flex", "Manual", "cadastrado", R(67900), null));
     q.purchase.run(onix, "Particular — Fábio Ramos", d(95), R(61500), "Transferência", null);
     ev("compra", "Compra registrada — Particular (Fábio Ramos)", d(95), { vehicle: onix, amount: R(61500) });
     addCost(onix, "despachante", "Transferência + vistoria", R(450), d(90));
@@ -244,7 +244,7 @@ export function seedDemo(db: DatabaseSync): void {
     ev("status", "Negociação perdida — Lucas Martins", d(20), { vehicle: onix, customer: lucas, deal: onixDeal });
 
     // ------------------------------------------------- 8. Toro — em preparação
-    const toro = id(q.vehicle.run("Fiat", "Toro", "Freedom 1.3 Turbo", 2022, 2022, "SGA6D53", 44600, "Cinza", "Flex", "Automático", "preparacao", null, "Único dono, revisões em concessionária."));
+    const toro = id(q.vehicle.run("Fiat", "Toro", "Freedom 1.3 Turbo", 2022, 2022, "SGA6D53", 44600, "Cinza", "Flex", "Automático", "para_arrumar", null, "Único dono, revisões em concessionária."));
     q.purchase.run(toro, "Particular — Henrique Sales", d(6), R(96000), "Transferência", null);
     ev("compra", "Compra registrada — Particular (Henrique Sales)", d(6), { vehicle: toro, amount: R(96000) });
     addCost(toro, "frete", "Guincho Sorocaba → loja", R(900), d(5));
@@ -256,7 +256,7 @@ export function seedDemo(db: DatabaseSync): void {
     });
 
     // ------------------------------------------------- 9. Kwid — em preparação
-    const kwid = id(q.vehicle.run("Renault", "Kwid", "Zen 1.0", 2023, 2024, "TBC1H96", 12300, "Branco", "Flex", "Manual", "preparacao", null, null));
+    const kwid = id(q.vehicle.run("Renault", "Kwid", "Zen 1.0", 2023, 2024, "TBC1H96", 12300, "Branco", "Flex", "Manual", "para_arrumar", null, null));
     q.purchase.run(kwid, "Particular — Juliana Prado", d(3), R(52000), "PIX", null);
     ev("compra", "Compra registrada — Particular (Juliana Prado)", d(3), { vehicle: kwid, amount: R(52000) });
     const kwidRevCost = addCost(kwid, "manutencao", "Revisão: óleo e filtros", R(380), d(1));

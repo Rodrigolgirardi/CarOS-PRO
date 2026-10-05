@@ -1,7 +1,9 @@
 "use client";
 
-import { saveCommissionRule } from "@/lib/actions/commissions";
+import { Trash2 } from "lucide-react";
+import { deleteCommissionRule, saveCommissionRule } from "@/lib/actions/commissions";
 import type { CommissionRule } from "@/lib/queries/commissions";
+import { ConfirmButton } from "@/components/ui/confirm";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { FormError, SubmitButton, useAction } from "@/components/ui/form";
 
@@ -17,6 +19,17 @@ export function CommissionRuleRow({ rule }: { rule: CommissionRule }) {
         <CurrencyInput name="amount" defaultCents={rule.amount} placeholder="em branco" className="w-36" />
         <SubmitButton variant="secondary">Salvar</SubmitButton>
       </form>
+      {rule.key !== "venda_carro" && (
+        <ConfirmButton
+          action={deleteCommissionRule.bind(null, rule.key)}
+          title={`Remover "${rule.label}"?`}
+          description="O tipo some das sugestões de comissão. Comissões já pagas não mudam."
+          variant="danger-ghost"
+          className="size-8 shrink-0 p-0"
+        >
+          <Trash2 size={15} />
+        </ConfirmButton>
+      )}
     </div>
   );
 }

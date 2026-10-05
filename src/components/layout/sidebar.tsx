@@ -9,7 +9,6 @@ import {
   FileText,
   Handshake,
   LayoutDashboard,
-  Percent,
   ShoppingCart,
   Users,
   Wallet,
@@ -24,7 +23,6 @@ const MAIN = [
   { href: "/vendas", label: "Vendas", icon: Handshake },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/vendedores", label: "Vendedores", icon: BadgePercent },
-  { href: "/comissoes", label: "Comissões", icon: Percent },
 ];
 
 const MANAGE = [

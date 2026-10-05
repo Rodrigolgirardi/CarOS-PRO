@@ -1,22 +1,27 @@
 import { Percent } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { AddRuleButton } from "@/components/commissions/add-rule-button";
+import { CommissionRuleRow } from "@/components/commissions/rule-row";
 import { SellerCreateButton, SellerRowActions } from "@/components/sellers/seller-dialogs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
 import { brl } from "@/lib/format";
+import { listCommissionRules } from "@/lib/queries/commissions";
 import { listSellers } from "@/lib/queries/sellers";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendedores" };
 
+// Vendedores e comissões padrão vivem juntos: uma tela só para a equipe e os valores.
 export default function SellersPage() {
   const sellers = listSellers();
+  const rules = listCommissionRules();
 
   return (
     <>
       <PageHeader
         title="Vendedores"
-        description="Quem vende na sua loja e a comissão padrão de cada um — usada na venda rápida."
+        description="Quem vende na sua loja, a comissão de cada um e os valores padrão por tipo de operação."
         actions={<SellerCreateButton />}
       />
 
@@ -61,6 +66,22 @@ export default function SellersPage() {
           </TBody>
         </Table>
       )}
+
+      <section className="mt-8 max-w-xl">
+        <div className="mb-2.5 flex items-center justify-between gap-3">
+          <h2 className="text-[13px] font-semibold text-zinc-900">Comissões padrão por operação</h2>
+          <AddRuleButton />
+        </div>
+        <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white">
+          {rules.map((rule) => (
+            <CommissionRuleRow key={rule.key} rule={rule} />
+          ))}
+        </div>
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-zinc-400">
+          <Percent size={12} />
+          A venda rápida sugere a comissão “Venda de carro”; vendedores com comissão própria têm prioridade.
+        </p>
+      </section>
     </>
   );
 }

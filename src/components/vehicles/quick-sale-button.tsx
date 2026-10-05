@@ -93,7 +93,7 @@ export function QuickSaleButton({ vehicles, sellers, customers, defaultCommissio
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Vendedor" hint={sellers.length === 0 ? "Cadastre vendedores na aba Comissão." : undefined}>
+            <Field label="Vendedor" hint={sellers.length === 0 ? "Cadastre vendedores na aba Vendedores." : undefined}>
               <Select name="seller_id" value={sellerId} onChange={(e) => setSellerId(e.target.value)}>
                 <option value="">—</option>
                 {sellers.map((s) => (

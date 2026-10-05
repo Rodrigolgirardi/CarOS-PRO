@@ -21,8 +21,8 @@ export const metadata = { title: "Veículos" };
 
 const TABS: { key: VehicleFilter; label: string }[] = [
   { key: "todos", label: "Todos" },
-  { key: "disponivel", label: "Disponíveis" },
-  { key: "anunciado", label: "Anunciados" },
+  { key: "anunciados", label: "Anunciados" }, // inclui reservados (estão no ar)
+  { key: "nao_anunciados", label: "Não anunciados" },
   { key: "vendido", label: "Vendidos" },
 ];
 
@@ -32,12 +32,18 @@ export default async function VehiclesPage({
   searchParams: Promise<{ filtro?: string }>;
 }) {
   const { filtro } = await searchParams;
-  // "preparacao" e "reservado" não têm aba, mas seguem acessíveis por link (ex.: dashboard)
-  const valid =
-    TABS.some((t) => t.key === filtro) || filtro === "parados" || filtro === "preparacao" || filtro === "reservado";
+  // filtros sem aba, mas acessíveis por link (ex.: dashboard)
+  const LINK_ONLY = ["parados", "preparacao", "reservado", "disponivel", "anunciado"];
+  const valid = TABS.some((t) => t.key === filtro) || LINK_ONLY.includes(filtro ?? "");
   const filter = (valid ? filtro : "todos") as VehicleFilter;
   const rows = listVehicles(filter);
   const counts = vehicleCounts();
+  const tabCount: Record<string, number> = {
+    todos: counts.todos,
+    anunciados: (counts.anunciado ?? 0) + (counts.reservado ?? 0),
+    nao_anunciados: (counts.preparacao ?? 0) + (counts.disponivel ?? 0),
+    vendido: counts.vendido ?? 0,
+  };
 
   return (
     <>
@@ -62,7 +68,7 @@ export default async function VehiclesPage({
         tabs={TABS.map((t) => ({
           key: t.key,
           label: t.label,
-          count: t.key === "todos" ? counts.todos : (counts[t.key] ?? 0),
+          count: tabCount[t.key] ?? 0,
           href: t.key === "todos" ? "/veiculos" : `/veiculos?filtro=${t.key}`,
         }))}
       />

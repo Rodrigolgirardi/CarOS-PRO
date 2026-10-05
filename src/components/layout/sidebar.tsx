@@ -51,9 +51,8 @@ export function Sidebar({ children }: { children?: React.ReactNode }) {
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col border-r border-zinc-200 bg-zinc-50/70">
       <div className="flex items-center gap-2.5 px-4 pb-5 pt-5">
-        <div className="grid size-6 shrink-0 place-items-center rounded-md bg-zinc-900 text-white">
-          <Car size={13} strokeWidth={2} />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/caros-mark.png" alt="" className="size-7 shrink-0 rounded-md object-cover" />
         <span className="text-[15px] font-semibold tracking-tight text-zinc-900">CarOS</span>
       </div>
       <nav className="flex-1 overflow-y-auto px-2.5 pb-4">

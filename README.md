@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/brand/caros-logo.webp" alt="CarOS — Sistema de Gestão Automotiva" width="340">
+</p>
+
 # CarOS
 
 **O sistema operacional da sua revenda.** MVP local para gestão de compra e venda de veículos: comprar → preparar → anunciar → negociar → vender → receber → lucro.

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Undo2 } from "lucide-react";
 import { markDelivered, markLost, proposeDeal, registerSale, reserveDeal, undoSale } from "@/lib/actions/deals";
 import { addDaysISO, brl, fmtDate, pct, todayISO } from "@/lib/format";
-import { PAYMENT_METHODS } from "@/lib/labels";
+import { PAYMENT_METHODS, SALE_CHANNELS } from "@/lib/labels";
 import type { DealRow } from "@/lib/types";
 import { DealStageBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -78,8 +78,16 @@ function SaleForm({ deal, onBack, onDone }: { deal: DealRow; onBack: () => void;
         <Field label="Troca (valor)">
           <CurrencyInput name="trade_in_value" onCentsChange={setTrade} />
         </Field>
-        <Field label="Vencimento do saldo" hint="Para o valor que falta receber." className="col-span-2">
+        <Field label="Vencimento do saldo" hint="Para o valor que falta receber.">
           <Input type="date" name="balance_due_date" defaultValue={addDaysISO(todayISO(), 7)} />
+        </Field>
+        <Field label="Canal de venda">
+          <Select name="channel" defaultValue="">
+            <option value="">—</option>
+            {SALE_CHANNELS.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </Select>
         </Field>
       </div>
       <Field label="Observações">
@@ -223,6 +231,7 @@ export function DealDialog({ deal, open, onClose }: DealDialogProps) {
                 <SummaryRow label="Recebido" value={brl(deal.received)} tone="emerald" />
                 <SummaryRow label="Pendente" value={brl(deal.pending)} tone={deal.pending > 0 ? "amber" : undefined} />
                 {deal.sold_date && <SummaryRow label="Vendido em" value={fmtDate(deal.sold_date)} />}
+                {deal.channel && <SummaryRow label="Canal" value={deal.channel} />}
                 {deal.delivered_date && <SummaryRow label="Entregue em" value={fmtDate(deal.delivered_date)} />}
               </dl>
               {deal.pending > 0 && (

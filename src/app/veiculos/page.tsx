@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { LinkTabs } from "@/components/ui/tabs";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
 import { AddExpenseButton } from "@/components/vehicles/add-expense-button";
+import { AddIncomeButton } from "@/components/finance/add-income-button";
 import { QuickSaleButton } from "@/components/vehicles/quick-sale-button";
 import { customerOptions } from "@/lib/queries/customers";
 import { sellerOptions } from "@/lib/queries/sellers";
@@ -14,6 +15,7 @@ import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
 import { VehicleRowActions } from "@/components/vehicles/vehicle-row-actions";
 import { brl, pct } from "@/lib/format";
 import { vehicleMetrics, vehicleLabel } from "@/lib/metrics";
+import { commissionRule } from "@/lib/queries/commissions";
 import { listVehicles, vehicleCounts, vehicleOptions, type VehicleFilter } from "@/lib/queries/vehicles";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +59,13 @@ export default async function VehiclesPage({
               Adicionar veículo
             </LinkButton>
             <AddExpenseButton vehicles={vehicleOptions()} />
-            <QuickSaleButton vehicles={vehicleOptions()} sellers={sellerOptions()} customers={customerOptions()} />
+            <QuickSaleButton
+              vehicles={vehicleOptions()}
+              sellers={sellerOptions()}
+              customers={customerOptions()}
+              defaultCommission={commissionRule("venda_carro")}
+            />
+            <AddIncomeButton customers={customerOptions()} sellers={sellerOptions()} />
           </div>
         }
       />

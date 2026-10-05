@@ -174,5 +174,16 @@ export const PAYABLE_CATEGORIES = [
   "Outros",
 ];
 
+export const SALE_CHANNELS = [
+  "Facebook Marketplace",
+  "OLX",
+  "Webmotors",
+  "Site Próprio",
+  "Loja Física",
+  "GoGarage",
+  "Indicação",
+  "Outros",
+];
+
 export const FUEL_OPTIONS = ["Flex", "Gasolina", "Diesel", "Híbrido", "Elétrico"];
 export const TRANSMISSION_OPTIONS = ["Automático", "Manual", "CVT", "Automatizado"];

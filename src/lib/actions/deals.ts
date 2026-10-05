@@ -184,7 +184,7 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
   tx(() => {
     run(
       `UPDATE deals SET stage = 'vendido', sale_price = ?, down_payment = ?, payment_method = ?, financed_amount = ?,
-         trade_in_desc = ?, trade_in_value = ?, commission = ?, notes = COALESCE(?, notes), sold_date = ?
+         trade_in_desc = ?, trade_in_value = ?, commission = ?, channel = COALESCE(?, channel), notes = COALESCE(?, notes), sold_date = ?
        WHERE id = ?`,
       salePrice,
       down > 0 ? down : null,
@@ -193,6 +193,7 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
       tradeDesc,
       tradeValue > 0 ? tradeValue : null,
       commission > 0 ? commission : null,
+      f.s("channel"),
       f.s("notes"),
       soldDate,
       dealId
@@ -326,6 +327,11 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
   if (commission == null && seller) {
     if (seller.commission_fixed != null) commission = seller.commission_fixed;
     else if (seller.commission_pct != null) commission = Math.round((salePrice * seller.commission_pct) / 100);
+    else {
+      // sem comissão própria: usa a regra padrão "Venda de carro" (aba Comissões)
+      const rule = get<{ amount: number | null }>("SELECT amount FROM commission_rules WHERE key = 'venda_carro'");
+      commission = rule?.amount ?? null;
+    }
   }
   commission ??= 0;
 
@@ -348,12 +354,13 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
 
   tx(() => {
     const dealId = run(
-      "INSERT INTO deals (vehicle_id, customer_id, stage, sale_price, commission, seller_id, sold_date) VALUES (?,?,'vendido',?,?,?,?)",
+      "INSERT INTO deals (vehicle_id, customer_id, stage, sale_price, commission, seller_id, channel, sold_date) VALUES (?,?,'vendido',?,?,?,?,?)",
       vehicleId,
       customerId!,
       salePrice,
       commission > 0 ? commission : null,
       seller?.id ?? null,
+      f.s("channel"),
       soldDate
     ).lastId;
     run("UPDATE vehicles SET status = 'vendido', sale_price = COALESCE(sale_price, ?) WHERE id = ?", salePrice, vehicleId);

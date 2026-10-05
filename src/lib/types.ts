@@ -122,6 +122,7 @@ export interface Deal {
   commission: number | null;
   commission_cost_id: number | null;
   seller_id: number | null;
+  channel: string | null; // canal da venda (OLX, Webmotors…)
   notes: string | null;
   sold_date: string | null;
   delivered_date: string | null;

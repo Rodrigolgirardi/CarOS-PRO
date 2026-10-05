@@ -315,12 +315,6 @@ export default async function VehiclePage({
                     ))}
                   </ul>
                 )}
-                <Link
-                  href="/vendas"
-                  className="mt-3 inline-block text-xs font-medium text-zinc-500 underline-offset-2 hover:text-zinc-900 hover:underline"
-                >
-                  Gerenciar em Vendas →
-                </Link>
               </InfoCard>
             )}
           </div>

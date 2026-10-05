@@ -28,6 +28,7 @@ export function SaleRow({ deal }: { deal: DealRow }) {
           </span>
         </Td>
         <Td className="max-w-[160px] truncate text-zinc-600">{deal.customer_name}</Td>
+        <Td className="max-w-[130px] truncate text-zinc-500">{deal.channel ?? "—"}</Td>
         <Td right className="font-medium">
           {brl(deal.sale_price)}
         </Td>

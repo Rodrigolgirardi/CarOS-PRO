@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import { quickSale } from "@/lib/actions/deals";
 import { brl, todayISO } from "@/lib/format";
+import { SALE_CHANNELS } from "@/lib/labels";
 import type { CustomerOption } from "@/lib/queries/customers";
 import type { VehicleOption } from "@/lib/queries/vehicles";
 import type { Seller } from "@/lib/types";
@@ -17,10 +18,12 @@ interface QuickSaleButtonProps {
   vehicles: VehicleOption[]; // apenas não vendidos
   sellers: Seller[];
   customers: CustomerOption[];
+  /** regra "Venda de carro" da aba Comissões — usada quando o vendedor não tem comissão própria */
+  defaultCommission?: number | null;
 }
 
 /** Botão verde "Vendido": registra a venda escolhendo o carro no modal. */
-export function QuickSaleButton({ vehicles, sellers, customers }: QuickSaleButtonProps) {
+export function QuickSaleButton({ vehicles, sellers, customers, defaultCommission }: QuickSaleButtonProps) {
   const [open, setOpen] = useState(false);
   const [vehicleId, setVehicleId] = useState("");
   const [sellerId, setSellerId] = useState("");
@@ -33,11 +36,13 @@ export function QuickSaleButton({ vehicles, sellers, customers }: QuickSaleButto
   const seller = sellers.find((s) => String(s.id) === sellerId);
   const priceCents = price ?? vehicle?.sale_price ?? null;
   const commissionSuggested =
-    seller?.commission_fixed != null
-      ? seller.commission_fixed
-      : seller?.commission_pct != null && priceCents != null
-        ? Math.round((priceCents * seller.commission_pct) / 100)
-        : undefined;
+    seller == null
+      ? undefined
+      : seller.commission_fixed != null
+        ? seller.commission_fixed
+        : seller.commission_pct != null && priceCents != null
+          ? Math.round((priceCents * seller.commission_pct) / 100)
+          : (defaultCommission ?? undefined);
 
   return (
     <>
@@ -123,6 +128,14 @@ export function QuickSaleButton({ vehicles, sellers, customers }: QuickSaleButto
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Canal de venda">
+            <Select name="channel" defaultValue="">
+              <option value="">—</option>
+              {SALE_CHANNELS.map((c) => (
+                <option key={c}>{c}</option>
               ))}
             </Select>
           </Field>

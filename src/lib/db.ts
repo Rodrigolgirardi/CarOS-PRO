@@ -204,6 +204,22 @@ export function getDb(): DatabaseSync {
   addVehicleCol("leilao", "TEXT");
   const dealCols = (db.prepare("PRAGMA table_info(deals)").all() as { name: string }[]).map((c) => c.name);
   if (!dealCols.includes("seller_id")) db.exec("ALTER TABLE deals ADD COLUMN seller_id INTEGER REFERENCES sellers(id)");
+  if (!dealCols.includes("channel")) db.exec("ALTER TABLE deals ADD COLUMN channel TEXT");
+
+  // tabela de comissões padrão por tipo de operação (valores editáveis na aba Comissões)
+  db.exec(`CREATE TABLE IF NOT EXISTS commission_rules (
+    key    TEXT PRIMARY KEY,
+    label  TEXT NOT NULL,
+    amount INTEGER,
+    sort   INTEGER NOT NULL DEFAULT 0
+  )`);
+  const seedRule = db.prepare("INSERT OR IGNORE INTO commission_rules (key, label, amount, sort) VALUES (?,?,?,?)");
+  seedRule.run("venda_carro", "Venda de carro", 35000, 1);
+  seedRule.run("documentacao", "Documentação", 2000, 2);
+  seedRule.run("financiamento", "Financiamento", 5000, 3);
+  seedRule.run("venda_moto", "Venda de moto", 25000, 4);
+  seedRule.run("venda_caminhao", "Venda de caminhão", 50000, 5);
+  seedRule.run("outros", "Outros", null, 6);
   const sellerCols = (db.prepare("PRAGMA table_info(sellers)").all() as { name: string }[]).map((c) => c.name);
   if (!sellerCols.includes("commission_fixed")) db.exec("ALTER TABLE sellers ADD COLUMN commission_fixed INTEGER");
 

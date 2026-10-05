@@ -1,12 +1,55 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { get, run } from "../db";
+import { get, run, tx } from "../db";
 import { todayISO } from "../format";
 import type { ActionState, Payable, Receivable } from "../types";
 import { err, fields, logEvent, ok } from "./util";
 
 const revalidate = () => revalidatePath("/", "layout");
+
+/**
+ * Entrada avulsa de dinheiro (documentação, retorno de financiamento…):
+ * entra no caixa na data informada; comissão do vendedor, se houver,
+ * vira conta a pagar automaticamente.
+ */
+export async function addIncome(prev: ActionState, formData: FormData): Promise<ActionState> {
+  const f = fields(formData);
+  const description = f.s("description");
+  const amount = f.cents("amount");
+  const date = f.s("date") ?? todayISO();
+  if (!description) return err("Descreva a entrada (ex.: Documentação — Fiat Toro).");
+  if (amount == null || amount <= 0) return err("Informe o valor recebido.");
+
+  const customerId = f.id("customer_id");
+  const sellerId = f.id("seller_id");
+  const commission = f.cents("commission") ?? 0;
+  const seller = sellerId ? get<{ name: string }>("SELECT name FROM sellers WHERE id = ?", sellerId) : undefined;
+
+  tx(() => {
+    run(
+      "INSERT INTO receivables (description, customer_id, amount, due_date, status, received_date) VALUES (?,?,?,?,'recebido',?)",
+      description,
+      customerId,
+      amount,
+      date,
+      date
+    );
+    logEvent({ type: "recebimento", description: `Entrada recebida — ${description}`, customer: customerId, amount, date });
+    if (commission > 0) {
+      run(
+        "INSERT INTO payables (description, category, amount, due_date) VALUES (?,?,?,?)",
+        `Comissão${seller ? ` ${seller.name}` : ""} — ${description}`,
+        "Comissões",
+        commission,
+        date
+      );
+    }
+  });
+
+  revalidate();
+  return ok(commission > 0 ? "Entrada registrada — comissão lançada em contas a pagar." : "Entrada registrada.");
+}
 
 // --------------------------------------------------------------- contas a pagar
 

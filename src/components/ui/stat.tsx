@@ -10,7 +10,7 @@ interface StatProps {
 /** Número de destaque: rótulo em cima, valor grande tabular, contexto embaixo. */
 export function Stat({ label, value, sub, valueClassName }: StatProps) {
   return (
-    <div className="min-w-0 bg-white px-5 py-4">
+    <div className="flex min-w-0 flex-col justify-center bg-white px-5 py-4">
       <p className="truncate text-xs font-medium text-zinc-500">{label}</p>
       <p className={cn("mt-1.5 text-xl font-semibold tracking-tight text-zinc-900 tabular-nums", valueClassName)}>
         {value}

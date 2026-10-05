@@ -22,7 +22,7 @@ export function MonthlySalesChart({ months }: { months: MonthlyPoint[] }) {
   const worst = sold.length > 1 ? sold.reduce((a, b) => (b.revenue < a.revenue ? b : a)) : null;
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5">
+    <div className="flex h-full flex-col rounded-xl border border-zinc-200 bg-white p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-[13px] font-semibold text-zinc-900">Vendas mês a mês</h3>
         <div className="flex items-center gap-4 text-[11px] text-zinc-500">
@@ -41,7 +41,7 @@ export function MonthlySalesChart({ months }: { months: MonthlyPoint[] }) {
         </div>
       </div>
 
-      <div className="mt-4 flex items-end gap-1.5 sm:gap-2">
+      <div className="mt-4 flex flex-1 gap-1.5 sm:gap-2">
         {months.map((m) => {
           const lucro = net(m);
           const empty = m.revenue === 0 && m.spend === 0;
@@ -50,7 +50,7 @@ export function MonthlySalesChart({ months }: { months: MonthlyPoint[] }) {
             : `${m.label} — Faturamento ${brl(m.revenue)} (${m.sales} venda(s)) · Gastos ${brl(m.spend)} · Geração de caixa ${brl(lucro)}`;
           return (
             <div key={m.key} className="flex min-w-0 flex-1 flex-col items-stretch" title={hint}>
-              <div className="flex h-32 items-end justify-center gap-[2px]">
+              <div className="flex min-h-32 flex-1 items-end justify-center gap-[2px]">
                 {empty ? (
                   <div className="h-[2px] w-full rounded-full bg-zinc-100" />
                 ) : (

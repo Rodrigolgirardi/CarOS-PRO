@@ -78,9 +78,9 @@ export default function DashboardPage() {
     <>
       <section>
         <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Vendas</h2>
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_220px]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_220px]">
           <MonthlySalesChart months={data.monthly} />
-          <StatGrid className="grid-cols-2 lg:grid-cols-1">
+          <StatGrid className="grid-cols-2 lg:grid-cols-1 lg:grid-rows-3">
             <Stat
               label="Faturamento"
               value={brl(month.revenue)}

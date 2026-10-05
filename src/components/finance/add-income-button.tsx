@@ -5,6 +5,7 @@ import { Banknote } from "lucide-react";
 import { addIncome } from "@/lib/actions/finance";
 import { todayISO } from "@/lib/format";
 import type { Seller } from "@/lib/types";
+import type { CommissionRule } from "@/lib/queries/commissions";
 import type { CustomerOption } from "@/lib/queries/customers";
 import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
@@ -15,24 +16,18 @@ import { Modal } from "@/components/ui/modal";
 interface AddIncomeButtonProps {
   customers: CustomerOption[];
   sellers: Seller[];
+  /** regras da aba Comissões — o tipo escolhido sugere a comissão */
+  rules: CommissionRule[];
 }
 
-/** Entrada avulsa: documentação, retorno de financiamento… com comissão opcional do vendedor. */
-export function AddIncomeButton({ customers, sellers }: AddIncomeButtonProps) {
+/** Entrada avulsa: documentação, financiamento, venda de moto… com comissão sugerida pelo tipo. */
+export function AddIncomeButton({ customers, sellers, rules }: AddIncomeButtonProps) {
   const [open, setOpen] = useState(false);
-  const [amount, setAmount] = useState<number | null>(null);
-  const [sellerId, setSellerId] = useState<string>("");
+  const [typeKey, setTypeKey] = useState("");
   const { state, formAction } = useAction(addIncome, { onSuccess: () => setOpen(false) });
 
-  const seller = sellers.find((s) => String(s.id) === sellerId);
-  const suggested =
-    seller == null
-      ? null
-      : seller.commission_fixed != null
-        ? seller.commission_fixed
-        : seller.commission_pct != null && amount != null
-          ? Math.round((amount * seller.commission_pct) / 100)
-          : null;
+  const rule = rules.find((r) => r.key === typeKey);
+  const suggested = rule?.amount ?? null;
 
   return (
     <>
@@ -44,21 +39,40 @@ export function AddIncomeButton({ customers, sellers }: AddIncomeButtonProps) {
         open={open}
         onClose={() => setOpen(false)}
         title="Adicionar entrada"
-        description="Dinheiro recebido fora da venda do carro: documentação, retorno de financiamento… Entra no caixa na data informada."
+        description="Dinheiro recebido fora da venda do carro: documentação, financiamento, moto… Entra no caixa na data informada."
       >
         <form action={formAction} className="space-y-4">
-          <Field label="Descrição" required>
-            <Input name="description" placeholder="Documentação — Fiat Toro" required autoFocus />
-          </Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Valor recebido" required>
-              <CurrencyInput name="amount" onCentsChange={setAmount} required />
+            <Field label="Tipo" hint="Define a comissão sugerida.">
+              <Select value={typeKey} onChange={(e) => setTypeKey(e.target.value)}>
+                <option value="">—</option>
+                {rules.map((r) => (
+                  <option key={r.key} value={r.key}>
+                    {r.label}
+                  </option>
+                ))}
+              </Select>
             </Field>
             <Field label="Data">
               <Input type="date" name="date" defaultValue={todayISO()} />
             </Field>
+          </div>
+          <Field label="Descrição" required>
+            <Input
+              name="description"
+              placeholder={rule ? `${rule.label} — Fiat Toro` : "Documentação — Fiat Toro"}
+              required
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Valor recebido" required>
+              <CurrencyInput name="amount" required />
+            </Field>
+            <Field label="Comissão" hint="Sugerida pelo tipo — ajuste se precisar. Vai para Contas a pagar.">
+              <CurrencyInput key={typeKey} name="commission" defaultCents={suggested} />
+            </Field>
             <Field label="Vendedor">
-              <Select name="seller_id" value={sellerId} onChange={(e) => setSellerId(e.target.value)}>
+              <Select name="seller_id" defaultValue="">
                 <option value="">—</option>
                 {sellers.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -67,20 +81,17 @@ export function AddIncomeButton({ customers, sellers }: AddIncomeButtonProps) {
                 ))}
               </Select>
             </Field>
-            <Field label="Comissão" hint="Vai para Contas a pagar.">
-              <CurrencyInput key={`${sellerId}-${suggested ?? ""}`} name="commission" defaultCents={suggested} />
+            <Field label="Cliente (opcional)">
+              <Select name="customer_id" defaultValue="">
+                <option value="">—</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
             </Field>
           </div>
-          <Field label="Cliente (opcional)">
-            <Select name="customer_id" defaultValue="">
-              <option value="">—</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
           <FormError state={state} />
           <div className="flex justify-end gap-2">
             <Button onClick={() => setOpen(false)}>Cancelar</Button>

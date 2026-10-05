@@ -15,7 +15,7 @@ import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
 import { VehicleRowActions } from "@/components/vehicles/vehicle-row-actions";
 import { brl, pct } from "@/lib/format";
 import { vehicleMetrics, vehicleLabel } from "@/lib/metrics";
-import { commissionRule } from "@/lib/queries/commissions";
+import { commissionRule, listCommissionRules } from "@/lib/queries/commissions";
 import { listVehicles, vehicleCounts, vehicleOptions, type VehicleFilter } from "@/lib/queries/vehicles";
 
 export const dynamic = "force-dynamic";
@@ -65,7 +65,7 @@ export default async function VehiclesPage({
               customers={customerOptions()}
               defaultCommission={commissionRule("venda_carro")}
             />
-            <AddIncomeButton customers={customerOptions()} sellers={sellerOptions()} />
+            <AddIncomeButton customers={customerOptions()} sellers={sellerOptions()} rules={listCommissionRules()} />
           </div>
         }
       />

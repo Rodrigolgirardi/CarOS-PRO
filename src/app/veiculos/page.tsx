@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Veículos" };
 
 const TABS: { key: VehicleFilter; label: string }[] = [
-  { key: "todos", label: "Todos" },
+  { key: "estoque", label: "À venda" }, // tudo que ainda não vendeu; vazia = estoque zerado
   { key: "para_cadastrar", label: "Para cadastrar" },
   { key: "para_arrumar", label: "Para arrumar" },
   { key: "cadastrado", label: "Cadastrados" },
@@ -36,13 +36,13 @@ export default async function VehiclesPage({
 }) {
   const { filtro } = await searchParams;
   // filtros sem aba, mas acessíveis por link (ex.: dashboard)
-  const LINK_ONLY = ["parados"];
+  const LINK_ONLY = ["parados", "todos"];
   const valid = TABS.some((t) => t.key === filtro) || LINK_ONLY.includes(filtro ?? "");
-  const filter = (valid ? filtro : "todos") as VehicleFilter;
+  const filter = (valid ? filtro : "estoque") as VehicleFilter;
   const rows = listVehicles(filter);
   const counts = vehicleCounts();
   const tabCount: Record<string, number> = {
-    todos: counts.todos,
+    estoque: counts.todos - (counts.vendido ?? 0),
     para_cadastrar: counts.para_cadastrar ?? 0,
     para_arrumar: counts.para_arrumar ?? 0,
     cadastrado: counts.cadastrado ?? 0,
@@ -79,7 +79,7 @@ export default async function VehiclesPage({
           key: t.key,
           label: t.label,
           count: tabCount[t.key] ?? 0,
-          href: t.key === "todos" ? "/veiculos" : `/veiculos?filtro=${t.key}`,
+          href: t.key === "estoque" ? "/veiculos" : `/veiculos?filtro=${t.key}`,
         }))}
       />
 
@@ -95,14 +95,14 @@ export default async function VehiclesPage({
       {rows.length === 0 ? (
         <EmptyState
           icon={Car}
-          title={filter === "todos" ? "Nenhum veículo cadastrado" : "Nenhum veículo neste filtro"}
+          title={filter === "estoque" ? "Estoque zerado — tudo vendido! 🎉" : "Nenhum veículo neste filtro"}
           description={
-            filter === "todos"
-              ? "Registre a primeira compra — o veículo entra no estoque automaticamente."
+            filter === "estoque"
+              ? "Nenhum carro à venda no momento. Registre a próxima compra para repor o estoque."
               : "Troque o filtro acima para ver outros veículos."
           }
           action={
-            filter === "todos" ? (
+            filter === "estoque" ? (
               <LinkButton href="/compras/nova" variant="primary">
                 <Plus size={14} />
                 Registrar compra

@@ -10,7 +10,6 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import { PageHeader } from "@/components/layout/page-header";
 import { MonthlySalesChart } from "@/components/dashboard/monthly-chart";
 import { BrandLogo } from "@/components/vehicles/brand-logo";
 import { Badge } from "@/components/ui/badge";
@@ -75,15 +74,8 @@ export default function DashboardPage() {
       href: "/financeiro?tab=receber",
     });
 
-  const todayLabel = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
-
   return (
     <>
-      <PageHeader
-        title="Dashboard"
-        description={todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)}
-      />
-
       <section>
         <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Vendas</h2>
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_220px]">

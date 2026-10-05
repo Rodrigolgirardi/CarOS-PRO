@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BadgePercent,
   BarChart3,
   Car,
   FileText,
   Handshake,
   LayoutDashboard,
-  Percent,
   ShoppingCart,
   Users,
   Wallet,
@@ -21,11 +21,11 @@ const MAIN = [
   { href: "/compras", label: "Compras", icon: ShoppingCart },
   { href: "/vendas", label: "Vendas", icon: Handshake },
   { href: "/clientes", label: "Clientes", icon: Users },
+  { href: "/vendedores", label: "Vendedores", icon: BadgePercent },
 ];
 
 const MANAGE = [
   { href: "/financeiro", label: "Financeiro", icon: Wallet },
-  { href: "/comissao", label: "Comissão", icon: Percent },
   { href: "/documentos", label: "Documentos", icon: FileText },
   { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
 ];

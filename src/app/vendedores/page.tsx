@@ -7,16 +7,16 @@ import { brl } from "@/lib/format";
 import { listSellers } from "@/lib/queries/sellers";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Comissão" };
+export const metadata = { title: "Vendedores" };
 
-export default function CommissionPage() {
+export default function SellersPage() {
   const sellers = listSellers();
 
   return (
     <>
       <PageHeader
-        title="Comissão"
-        description="Seus vendedores e a comissão de cada um — usada na venda rápida."
+        title="Vendedores"
+        description="Quem vende na sua loja e a comissão padrão de cada um — usada na venda rápida."
         actions={<SellerCreateButton />}
       />
 

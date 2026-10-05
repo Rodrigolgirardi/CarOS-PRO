@@ -3,6 +3,7 @@ import { BadgeCheck, Clock, Percent, Trophy } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { SaleRow } from "@/components/deals/sale-row";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Stat, StatGrid } from "@/components/ui/stat";
 import { Chips } from "@/components/ui/tabs";
 import { Table, TBody, Th, THead } from "@/components/ui/table";
 import { brl, fmtDate, pct } from "@/lib/format";
@@ -56,7 +57,7 @@ function HighlightCard({
 
 export default async function SalesPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const { tab: tabParam } = await searchParams;
-  const tab = tabParam === "destaques" ? "destaques" : "vendas";
+  const tab = tabParam === "destaques" ? "destaques" : tabParam === "relatorio" ? "relatorio" : "vendas";
   const sold = listDeals()
     .filter((d) => d.stage === "vendido" || d.stage === "entregue")
     .sort((a, b) => ((a.sold_date ?? "") < (b.sold_date ?? "") ? 1 : -1));
@@ -84,6 +85,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
         items={[
           { key: "vendas", label: "Vendas", count: sold.length, href: "/vendas" },
           { key: "destaques", label: "Destaques", href: "/vendas?tab=destaques" },
+          { key: "relatorio", label: "Relatório", href: "/vendas?tab=relatorio" },
         ]}
       />
 
@@ -93,6 +95,75 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
           title="Nenhuma venda registrada"
           description="Venda pelo botão verde “Vendido” na tela de Veículos e o carro aparece aqui."
         />
+      ) : tab === "relatorio" ? (
+        (() => {
+          const priced = sold.filter((d) => d.sale_price != null);
+          const revenue = priced.reduce((s, d) => s + (d.sale_price ?? 0), 0);
+          const profit = priced.reduce((s, d) => s + ((d.sale_price ?? 0) - d.vehicle_total_cost), 0);
+          const ticket = priced.length > 0 ? Math.round(revenue / priced.length) : null;
+          const marginAvg = revenue > 0 ? profit / revenue : null;
+          const daysList = sold.map(daysToSell).filter((n): n is number => n != null);
+          const daysAvg = daysList.length > 0 ? Math.round(daysList.reduce((a, b) => a + b, 0) / daysList.length) : null;
+
+          const byChannel = new Map<string, { count: number; revenue: number }>();
+          for (const d of sold) {
+            const key = d.channel?.trim() || "Sem canal";
+            const b = byChannel.get(key) ?? { count: 0, revenue: 0 };
+            b.count += 1;
+            b.revenue += d.sale_price ?? 0;
+            byChannel.set(key, b);
+          }
+          const channels = [...byChannel.entries()].sort((a, b) => b[1].count - a[1].count);
+          const topChannel = channels[0] ?? null;
+          const maxCount = Math.max(...channels.map(([, c]) => c.count), 1);
+
+          return (
+            <div className="space-y-6">
+              <StatGrid className="grid-cols-2 md:grid-cols-4">
+                <Stat
+                  label="Canal mais vendido"
+                  value={topChannel ? topChannel[0] : "—"}
+                  sub={topChannel ? `${topChannel[1].count} de ${sold.length} venda(s)` : undefined}
+                />
+                <Stat label="Ticket médio" value={brl(ticket)} sub={`${priced.length} venda(s) com valor`} />
+                <Stat
+                  label="Margem média"
+                  value={pct(marginAvg)}
+                  valueClassName={marginAvg != null && marginAvg < 0 ? "text-red-600" : "text-emerald-600"}
+                  sub="Lucro ÷ faturamento"
+                />
+                <Stat
+                  label="Prazo médio de venda"
+                  value={daysAvg != null ? `${daysAvg} dias` : "—"}
+                  sub="Da compra à venda"
+                />
+              </StatGrid>
+
+              <section className="max-w-xl">
+                <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Vendas por canal</h2>
+                <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white">
+                  {channels.map(([name, c]) => (
+                    <div key={name} className="flex items-center gap-3 px-4 py-2.5">
+                      <span className="w-28 shrink-0 truncate text-[13px] font-medium text-zinc-800">{name}</span>
+                      <span className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
+                        <span
+                          className="block h-full rounded-full bg-blue-600"
+                          style={{ width: `${(c.count / maxCount) * 100}%` }}
+                        />
+                      </span>
+                      <span className="w-16 shrink-0 text-right text-xs tabular-nums text-zinc-500">
+                        {c.count} venda{c.count === 1 ? "" : "s"}
+                      </span>
+                      <span className="w-24 shrink-0 text-right text-[13px] font-medium tabular-nums text-zinc-900">
+                        {brl(c.revenue)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          );
+        })()
       ) : tab === "destaques" ? (
         (() => {
           const priced = sold.filter((d) => d.sale_price != null);

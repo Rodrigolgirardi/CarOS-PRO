@@ -70,6 +70,12 @@ export function dreData(): DreVehicle[] {
 
   return listVehicles("todos").map((v) => {
     const m = vehicleMetrics(v);
+    const costs = (costsByVehicle.get(v.id) ?? []).sort((a, b) => b.total - a.total);
+    // consignado ainda não vendido: o repasse combinado entra como custo previsto
+    const pendingRepasse = v.consignado === 1 && !m.sold && v.consignor_value != null ? v.consignor_value : 0;
+    if (pendingRepasse > 0) {
+      costs.push({ category: "outros", label: "Repasse ao dono (combinado)", total: pendingRepasse });
+    }
     return {
       id: v.id,
       label: vehicleLabel(v),
@@ -77,10 +83,10 @@ export function dreData(): DreVehicle[] {
       status: v.status,
       sold: m.sold,
       purchase: v.purchase_price ?? 0,
-      costs: (costsByVehicle.get(v.id) ?? []).sort((a, b) => b.total - a.total),
-      costsTotal: v.costs_total,
+      costs,
+      costsTotal: v.costs_total + pendingRepasse,
       sale: m.priceRef,
-      profit: m.profit,
+      profit: m.profit != null ? m.profit - pendingRepasse : null,
     };
   });
 }

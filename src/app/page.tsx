@@ -127,6 +127,11 @@ export default function DashboardPage() {
                     <span className="flex min-w-0 items-center gap-2.5">
                       <BrandLogo brand={v.label} size={18} />
                       <span className="truncate text-[13px] font-medium text-zinc-800">{v.label}</span>
+                      {v.consigned && (
+                        <span className="shrink-0 rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-700">
+                          Consignado
+                        </span>
+                      )}
                     </span>
                     <span className="shrink-0 text-[13px] tabular-nums text-zinc-600">{brl(v.invested)}</span>
                   </Link>

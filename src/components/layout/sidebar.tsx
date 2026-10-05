@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BadgePercent,
-  BarChart3,
   Car,
+  KeyRound,
   FileText,
   Handshake,
   LayoutDashboard,
@@ -19,6 +19,7 @@ import { cn } from "@/lib/cn";
 const MAIN = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/veiculos", label: "Veículos", icon: Car },
+  { href: "/consignados", label: "Consignados", icon: KeyRound },
   { href: "/compras", label: "Compras", icon: ShoppingCart },
   { href: "/vendas", label: "Vendas", icon: Handshake },
   { href: "/clientes", label: "Clientes", icon: Users },
@@ -29,7 +30,6 @@ const MAIN = [
 const MANAGE = [
   { href: "/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/documentos", label: "Documentos", icon: FileText },
-  { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
 ];
 
 function NavItem({ href, label, icon: Icon }: (typeof MAIN)[number]) {

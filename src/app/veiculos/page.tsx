@@ -120,6 +120,7 @@ export default async function VehiclesPage({
             <Th>Placa</Th>
             <Th right>KM</Th>
             <Th right>Compra</Th>
+            <Th right>FIPE</Th>
             <Th right>Custo total</Th>
             <Th right>Venda</Th>
             <Th right>Lucro</Th>
@@ -138,8 +139,15 @@ export default async function VehiclesPage({
                     <Link href={`/veiculos/${v.id}`} className="flex items-center gap-2.5">
                       <VehiclePhoto photo={v.photo} brand={v.brand} size="sm" />
                       <span className="min-w-0">
-                        <span className="block truncate font-medium text-zinc-900 group-hover:underline group-hover:underline-offset-2">
-                          {v.brand} {v.model}
+                        <span className="flex items-center gap-1.5">
+                          <span className="truncate font-medium text-zinc-900 group-hover:underline group-hover:underline-offset-2">
+                            {v.brand} {v.model}
+                          </span>
+                          {v.consignado === 1 && (
+                            <span className="shrink-0 rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-700">
+                              Consignado
+                            </span>
+                          )}
                         </span>
                         <span className="block truncate text-xs text-zinc-400">{v.version ?? "—"}</span>
                       </span>
@@ -164,6 +172,9 @@ export default async function VehiclesPage({
                   </Td>
                   <Td right className="text-zinc-500">
                     {brl(v.purchase_price)}
+                  </Td>
+                  <Td right className="text-zinc-500">
+                    {v.fipe_price != null ? brl(v.fipe_price) : <span className="text-zinc-300">—</span>}
                   </Td>
                   <Td right className="font-medium text-zinc-900">
                     {brl(v.total_cost)}

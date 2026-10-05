@@ -13,6 +13,7 @@ export interface StockVehicleSlice {
   purchase: number; // só o preço de compra
   sale: number | null;
   profit: number | null; // null quando não há preço de venda
+  consigned: boolean; // carro de terceiro na loja
 }
 
 export interface MonthlyPoint {
@@ -79,6 +80,7 @@ export function dashboardData(): DashboardData {
       purchase: v.purchase_price ?? 0,
       sale: v.sale_price,
       profit: v.sale_price != null ? (m.profit ?? v.sale_price - v.total_cost) : null,
+      consigned: v.consignado === 1,
     });
     if (v.sale_price != null) {
       saleValue += v.sale_price;

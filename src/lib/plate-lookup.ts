@@ -6,6 +6,14 @@ import { BRANDS, brandSlug } from "./brands";
  * Para trocar de provedor na fase 2, basta reimplementar `fetchPlate`.
  */
 
+export interface FipeOption {
+  code: string;
+  model: string;
+  valueCents: number | null;
+  valueText: string;
+  score: number;
+}
+
 export interface PlateData {
   brand: string | null;
   model: string | null;
@@ -15,7 +23,12 @@ export interface PlateData {
   color: string | null;
   fuel: string | null;
   city: string | null;
+  uf: string | null;
   chassis: string | null;
+  situation: string | null; // ex.: "Sem restrição"
+  restrictions: string[]; // restrições ativas (vazio = nada consta)
+  fipe: FipeOption[]; // versões FIPE possíveis, da mais provável para a menos
+  details: { label: string; value: string }[]; // ficha técnica/registro (só campos preenchidos)
 }
 
 export type PlateLookupResult =
@@ -96,9 +109,44 @@ export function parsePlateResponse(json: Record<string, unknown>): PlateData {
 
   const color = pick("cor", "COR");
   const city = pick("municipio", "MUNICIPIO");
+  const uf = pick("uf", "UF");
 
-  // chassi: alguns provedores mascaram com "*" — só aceitamos um VIN completo
-  const chassisRaw = pick("chassi", "CHASSI", "chassis")?.toUpperCase().replace(/\s+/g, "") ?? null;
+  // situação e restrições (extra.restricao_1..4; "SEM RESTRICAO" = nada consta)
+  const situation = pick("situacao", "SITUACAO");
+  const restrictions: string[] = [];
+  const extraObj = (typeof json.extra === "object" && json.extra != null ? json.extra : {}) as Record<string, unknown>;
+  for (const k of ["restricao_1", "restricao_2", "restricao_3", "restricao_4"]) {
+    const r = str(extraObj[k]);
+    if (r && !/SEM RESTRICAO/i.test(r)) restrictions.push(titleCase(r));
+  }
+
+  // ficha técnica: só o que interessa na avaliação (cilindradas)
+  const details: { label: string; value: string }[] = [];
+  const cilindradas = str(extraObj.cilindradas);
+  if (cilindradas) details.push({ label: "Cilindradas", value: cilindradas });
+  const fipeRaw = (json.fipe as { dados?: unknown[] } | undefined)?.dados;
+  const fipe: FipeOption[] = Array.isArray(fipeRaw)
+    ? fipeRaw
+        .map((d) => {
+          const o = (typeof d === "object" && d != null ? d : {}) as Record<string, unknown>;
+          const valueText = str(o.texto_valor) ?? "";
+          const digits = valueText.replace(/\D/g, "");
+          return {
+            code: str(o.codigo_fipe) ?? "",
+            model: str(o.texto_modelo) ?? "",
+            valueText,
+            valueCents: digits ? Number(digits) : null,
+            score: Number(o.score) || 0,
+          };
+        })
+        .filter((f) => f.model && f.valueCents != null)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+    : [];
+
+  // chassi: o campo de topo costuma vir mascarado com "*", mas o completo vem em extra.chassi
+  const extra = (typeof json.extra === "object" && json.extra != null ? json.extra : {}) as Record<string, unknown>;
+  const chassisRaw = (str(extra.chassi) ?? pick("chassi", "CHASSI", "chassis"))?.toUpperCase().replace(/\s+/g, "") ?? null;
   const chassis = chassisRaw && /^[A-HJ-NPR-Z0-9]{17}$/.test(chassisRaw) ? chassisRaw : null;
   return {
     brand,
@@ -109,7 +157,12 @@ export function parsePlateResponse(json: Record<string, unknown>): PlateData {
     color: color ? titleCase(color) : null,
     fuel: mapFuel(pick("combustivel", "COMBUSTIVEL", "extra_combustivel")),
     city: city ? titleCase(city) : null,
+    uf,
     chassis,
+    situation,
+    restrictions,
+    fipe,
+    details,
   };
 }
 
@@ -141,6 +194,9 @@ export async function fetchPlate(plate: string, token: string): Promise<PlateLoo
   } catch {
     return { ok: false, error: "Resposta inesperada do serviço de consulta." };
   }
+
+  // log completo para inspecionar quais campos o provedor devolve (aparece no terminal do servidor)
+  console.log(`[API Placas] resposta completa para ${plate}:\n${JSON.stringify(json, null, 2)}`);
 
   const data = parsePlateResponse(json);
   if (!data.brand && !data.model) {

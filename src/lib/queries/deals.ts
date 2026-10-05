@@ -11,6 +11,7 @@ SELECT
   v.plate      AS vehicle_plate,
   v.sale_price AS vehicle_sale_price,
   COALESCE(p.price, 0) + COALESCE(c.total, 0) AS vehicle_total_cost,
+  p.date AS purchase_date,
   COALESCE(r.received, 0) AS received,
   COALESCE(r.pending, 0)  AS pending
 FROM deals d

@@ -63,6 +63,10 @@ export interface Vehicle {
   laudo: VehicleLaudo | null;
   blindado: number | null; // 1 = sim, 0 = não, null = não informado
   leilao: VehicleLeilao | null;
+  fipe_price: number | null; // valor FIPE de referência (centavos), vindo da consulta de placa
+  consignado: number; // 1 = carro de terceiro na loja (sem compra, sem saída de caixa)
+  consignor: string | null; // dono do carro consignado
+  consignor_value: number | null; // repasse combinado com o dono (centavos)
   status: VehicleStatus;
   sale_price: number | null; // preço de venda anunciado/planejado
   photo: string | null;
@@ -233,6 +237,7 @@ export interface DealRow extends Deal {
   vehicle_plate: string | null;
   vehicle_sale_price: number | null; // preço anunciado
   vehicle_total_cost: number;
+  purchase_date: string | null; // data de compra do veículo (p/ dias até vender)
   received: number; // soma de recebíveis recebidos da venda
   pending: number; // soma de recebíveis pendentes
 }

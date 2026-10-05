@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS vehicles (
   laudo        TEXT,
   blindado     INTEGER,
   leilao       TEXT,
+  fipe_price   INTEGER,
+  consignado   INTEGER NOT NULL DEFAULT 0,
+  consignor    TEXT,
+  consignor_value INTEGER,
   status       TEXT NOT NULL DEFAULT 'preparacao',
   sale_price   INTEGER,
   photo        TEXT,
@@ -202,6 +206,10 @@ export function getDb(): DatabaseSync {
   addVehicleCol("laudo", "TEXT");
   addVehicleCol("blindado", "INTEGER");
   addVehicleCol("leilao", "TEXT");
+  addVehicleCol("fipe_price", "INTEGER");
+  addVehicleCol("consignado", "INTEGER NOT NULL DEFAULT 0");
+  addVehicleCol("consignor", "TEXT");
+  addVehicleCol("consignor_value", "INTEGER");
   const dealCols = (db.prepare("PRAGMA table_info(deals)").all() as { name: string }[]).map((c) => c.name);
   if (!dealCols.includes("seller_id")) db.exec("ALTER TABLE deals ADD COLUMN seller_id INTEGER REFERENCES sellers(id)");
   if (!dealCols.includes("channel")) db.exec("ALTER TABLE deals ADD COLUMN channel TEXT");

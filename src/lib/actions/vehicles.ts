@@ -15,25 +15,33 @@ const cleanChassis = (c: string | null) => (c ? c.toUpperCase().replace(/\s+/g, 
 const oneOf = (v: string | null, allowed: Record<string, string>) => (v && v in allowed ? v : null);
 const simNao = (v: string | null) => (v === "1" ? 1 : v === "0" ? 0 : null);
 
-/** Compra = veículo entra no estoque com checklist de preparação criado. */
+/**
+ * Entrada de veículo. "Estoque próprio" cria a compra (dinheiro sai do caixa);
+ * "Consignado" registra carro de terceiro na loja, sem compra e sem saída de
+ * caixa — o repasse ao dono só vira custo quando o carro for vendido.
+ */
 export async function createPurchase(prev: ActionState, formData: FormData): Promise<ActionState> {
   const f = fields(formData);
+  const consigned = f.s("entry_type") === "consignado";
   const brand = f.s("brand");
   const model = f.s("model");
   const price = f.cents("purchase_price");
   const date = f.s("purchase_date") ?? todayISO();
   if (!brand || !model) return err("Informe marca e modelo do veículo.");
-  if (price == null || price <= 0) return err("Informe o preço de compra.");
+  if (!consigned && (price == null || price <= 0)) return err("Informe o preço de compra.");
+  const consignor = f.s("consignor");
+  if (consigned && !consignor) return err("Informe o dono do veículo consignado.");
 
   const photoFile = f.file("photo");
   const photo = photoFile ? (await saveUpload(photoFile)).fileName : null;
   const salePrice = f.cents("sale_price");
   const seller = f.s("seller");
+  const consignorValue = f.cents("consignor_value");
 
   const vehicleId = tx(() => {
     const v = run(
-      `INSERT INTO vehicles (brand, model, version, year_fab, year_model, plate, km, color, fuel, transmission, renavam, chassis, laudo, blindado, leilao, status, sale_price, photo, notes)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'preparacao',?,?,?)`,
+      `INSERT INTO vehicles (brand, model, version, year_fab, year_model, plate, km, color, fuel, transmission, renavam, chassis, laudo, blindado, leilao, fipe_price, consignado, consignor, consignor_value, status, sale_price, photo, notes)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'preparacao',?,?,?)`,
       brand,
       model,
       f.s("version"),
@@ -49,29 +57,44 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
       oneOf(f.s("laudo"), VEHICLE_LAUDO),
       simNao(f.s("blindado")),
       oneOf(f.s("leilao"), VEHICLE_LEILAO),
+      f.int("fipe_price_cents"),
+      consigned ? 1 : 0,
+      consigned ? consignor : null,
+      consigned ? consignorValue : null,
       salePrice,
       photo,
       f.s("notes")
     );
     const vid = v.lastId;
-    run(
-      "INSERT INTO purchases (vehicle_id, seller, date, price, payment_method, notes) VALUES (?,?,?,?,?,?)",
-      vid,
-      seller,
-      date,
-      price,
-      f.s("payment_method"),
-      f.s("purchase_notes")
-    );
+    if (!consigned) {
+      run(
+        "INSERT INTO purchases (vehicle_id, seller, date, price, payment_method, notes) VALUES (?,?,?,?,?,?)",
+        vid,
+        seller,
+        date,
+        price,
+        f.s("payment_method"),
+        f.s("purchase_notes")
+      );
+    }
     // checklist padrão de preparação (vira o módulo Operações)
     for (const t of DEFAULT_CHECKLIST) run("INSERT INTO tasks (vehicle_id, type) VALUES (?, ?)", vid, t);
-    logEvent({
-      type: "compra",
-      description: `Compra registrada${seller ? ` — ${seller}` : ""}`,
-      vehicle: vid,
-      amount: price,
-      date,
-    });
+    if (consigned) {
+      logEvent({
+        type: "outro",
+        description: `Consignado recebido — dono: ${consignor}${consignorValue != null ? ` (repasse ${brl(consignorValue)})` : ""}`,
+        vehicle: vid,
+        date,
+      });
+    } else {
+      logEvent({
+        type: "compra",
+        description: `Compra registrada${seller ? ` — ${seller}` : ""}`,
+        vehicle: vid,
+        amount: price,
+        date,
+      });
+    }
     if (salePrice != null)
       logEvent({ type: "preco", description: `Preço de venda definido: ${brl(salePrice)}`, vehicle: vid, amount: salePrice, date });
     return vid;
@@ -89,8 +112,9 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
   const brand = f.s("brand");
   const model = f.s("model");
   const price = f.cents("purchase_price");
+  const isConsigned = current.consignado === 1;
   if (!brand || !model) return err("Informe marca e modelo do veículo.");
-  if (price == null || price <= 0) return err("Informe o preço de compra.");
+  if (!isConsigned && (price == null || price <= 0)) return err("Informe o preço de compra.");
 
   const photoFile = f.file("photo");
   let photo = current.photo;
@@ -102,7 +126,7 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
 
   tx(() => {
     run(
-      `UPDATE vehicles SET brand=?, model=?, version=?, year_fab=?, year_model=?, plate=?, km=?, color=?, fuel=?, transmission=?, renavam=?, chassis=?, laudo=?, blindado=?, leilao=?, sale_price=?, photo=?, notes=? WHERE id=?`,
+      `UPDATE vehicles SET brand=?, model=?, version=?, year_fab=?, year_model=?, plate=?, km=?, color=?, fuel=?, transmission=?, renavam=?, chassis=?, laudo=?, blindado=?, leilao=?, fipe_price=?, consignor=?, consignor_value=?, sale_price=?, photo=?, notes=? WHERE id=?`,
       brand,
       model,
       f.s("version"),
@@ -118,33 +142,39 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
       oneOf(f.s("laudo"), VEHICLE_LAUDO),
       simNao(f.s("blindado")),
       oneOf(f.s("leilao"), VEHICLE_LEILAO),
+      f.int("fipe_price_cents") ?? current.fipe_price,
+      isConsigned ? (f.s("consignor") ?? current.consignor) : current.consignor,
+      isConsigned ? f.cents("consignor_value") : current.consignor_value,
       salePrice,
       photo,
       f.s("notes"),
       id
     );
-    const purchase = get<{ id: number }>("SELECT id FROM purchases WHERE vehicle_id = ? ORDER BY id LIMIT 1", id);
-    const pDate = f.s("purchase_date") ?? todayISO();
-    if (purchase) {
-      run(
-        "UPDATE purchases SET seller=?, date=?, price=?, payment_method=?, notes=? WHERE id=?",
-        f.s("seller"),
-        pDate,
-        price,
-        f.s("payment_method"),
-        f.s("purchase_notes"),
-        purchase.id
-      );
-    } else {
-      run(
-        "INSERT INTO purchases (vehicle_id, seller, date, price, payment_method, notes) VALUES (?,?,?,?,?,?)",
-        id,
-        f.s("seller"),
-        pDate,
-        price,
-        f.s("payment_method"),
-        f.s("purchase_notes")
-      );
+    if (!isConsigned) {
+      // consignado não tem compra para criar/atualizar
+      const purchase = get<{ id: number }>("SELECT id FROM purchases WHERE vehicle_id = ? ORDER BY id LIMIT 1", id);
+      const pDate = f.s("purchase_date") ?? todayISO();
+      if (purchase) {
+        run(
+          "UPDATE purchases SET seller=?, date=?, price=?, payment_method=?, notes=? WHERE id=?",
+          f.s("seller"),
+          pDate,
+          price,
+          f.s("payment_method"),
+          f.s("purchase_notes"),
+          purchase.id
+        );
+      } else {
+        run(
+          "INSERT INTO purchases (vehicle_id, seller, date, price, payment_method, notes) VALUES (?,?,?,?,?,?)",
+          id,
+          f.s("seller"),
+          pDate,
+          price,
+          f.s("payment_method"),
+          f.s("purchase_notes")
+        );
+      }
     }
     if ((salePrice ?? null) !== (current.sale_price ?? null)) {
       logEvent({

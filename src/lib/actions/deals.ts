@@ -29,13 +29,18 @@ interface DealCtx extends Deal {
   vehicle_label: string;
   vehicle_status: VehicleStatus;
   vehicle_sale_price: number | null;
+  vehicle_consignado: number;
+  vehicle_consignor: string | null;
+  vehicle_consignor_value: number | null;
 }
 
 function dealCtx(id: number): DealCtx | undefined {
   return get<DealCtx>(
     `SELECT d.*, cu.name AS customer_name,
        TRIM(v.brand || ' ' || v.model || ' ' || COALESCE(v.version, '')) AS vehicle_label,
-       v.status AS vehicle_status, v.sale_price AS vehicle_sale_price
+       v.status AS vehicle_status, v.sale_price AS vehicle_sale_price,
+       v.consignado AS vehicle_consignado, v.consignor AS vehicle_consignor,
+       v.consignor_value AS vehicle_consignor_value
      FROM deals d
      JOIN customers cu ON cu.id = d.customer_id
      JOIN vehicles v   ON v.id = d.vehicle_id
@@ -218,6 +223,24 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
       });
     }
 
+    // consignado: o repasse combinado com o dono vira custo na venda
+    if (deal.vehicle_consignado === 1 && deal.vehicle_consignor_value != null && deal.vehicle_consignor_value > 0) {
+      run(
+        "INSERT INTO costs (vehicle_id, category, description, amount, date) VALUES (?, 'outros', ?, ?, ?)",
+        deal.vehicle_id,
+        `Repasse ao dono${deal.vehicle_consignor ? ` — ${deal.vehicle_consignor}` : ""} (consignação)`,
+        deal.vehicle_consignor_value,
+        soldDate
+      );
+      logEvent({
+        type: "custo",
+        description: `Repasse ao dono${deal.vehicle_consignor ? ` — ${deal.vehicle_consignor}` : ""} (consignação)`,
+        vehicle: deal.vehicle_id,
+        amount: deal.vehicle_consignor_value,
+        date: soldDate,
+      });
+    }
+
     logEvent({
       type: "venda",
       description: `Venda registrada para ${deal.customer_name} — ${brl(salePrice)}`,
@@ -309,8 +332,8 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
   const f = fields(formData);
   const vehicleId = f.id("vehicle_id");
   if (!vehicleId) return err("Escolha o veículo vendido.");
-  const vehicle = get<{ status: string; label: string }>(
-    "SELECT status, TRIM(brand || ' ' || model || ' ' || COALESCE(version, '')) AS label FROM vehicles WHERE id = ?",
+  const vehicle = get<{ status: string; label: string; consignado: number; consignor: string | null; consignor_value: number | null }>(
+    "SELECT status, TRIM(brand || ' ' || model || ' ' || COALESCE(version, '')) AS label, consignado, consignor, consignor_value FROM vehicles WHERE id = ?",
     vehicleId
   );
   if (!vehicle) return err("Veículo não encontrado.");
@@ -379,6 +402,24 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
         description: `Custo adicionado — Comissão${seller ? `: ${seller.name}` : ""}`,
         vehicle: vehicleId,
         amount: commission,
+        date: soldDate,
+      });
+    }
+
+    // consignado: o repasse combinado com o dono vira custo na venda
+    if (vehicle.consignado === 1 && vehicle.consignor_value != null && vehicle.consignor_value > 0) {
+      run(
+        "INSERT INTO costs (vehicle_id, category, description, amount, date) VALUES (?, 'outros', ?, ?, ?)",
+        vehicleId,
+        `Repasse ao dono${vehicle.consignor ? ` — ${vehicle.consignor}` : ""} (consignação)`,
+        vehicle.consignor_value,
+        soldDate
+      );
+      logEvent({
+        type: "custo",
+        description: `Repasse ao dono${vehicle.consignor ? ` — ${vehicle.consignor}` : ""} (consignação)`,
+        vehicle: vehicleId,
+        amount: vehicle.consignor_value,
         date: soldDate,
       });
     }

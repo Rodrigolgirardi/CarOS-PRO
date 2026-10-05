@@ -232,6 +232,15 @@ export default async function VehiclePage({
               <Row label="Laudo cautelar" value={vehicle.laudo ? VEHICLE_LAUDO[vehicle.laudo] : null} />
               <Row label="Blindado" value={vehicle.blindado == null ? null : vehicle.blindado ? "Sim" : "Não"} />
               <Row label="Leilão" value={vehicle.leilao ? VEHICLE_LEILAO[vehicle.leilao] : null} />
+              {vehicle.consignado === 1 && (
+                <>
+                  <Row label="Consignação — dono" value={vehicle.consignor} />
+                  <Row
+                    label="Repasse combinado"
+                    value={vehicle.consignor_value != null ? brl(vehicle.consignor_value) : null}
+                  />
+                </>
+              )}
             </dl>
             {vehicle.notes && (
               <p className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-[13px] leading-relaxed text-zinc-600">

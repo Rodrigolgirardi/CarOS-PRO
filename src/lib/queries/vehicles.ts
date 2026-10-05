@@ -33,15 +33,18 @@ export type VehicleFilter =
   | "estoque"
   | "parados"
   | "anunciados" // no ar: anunciado + reservado
-  | "nao_anunciados"; // ainda fora do ar: preparação + disponível
+  | "nao_anunciados" // ainda fora do ar: preparação + disponível
+  | "consignados"; // carros de terceiros ainda na loja
 
 const STATUS_FILTERS: VehicleStatus[] = ["disponivel", "preparacao", "anunciado", "reservado", "vendido"];
 
+// Consignados ficam junto do estoque em todas as listas; a aba Consignados é só um recorte.
 export function listVehicles(filter: VehicleFilter = "todos"): VehicleRow[] {
   let where = "";
   if (filter === "estoque") where = "WHERE v.status != 'vendido'";
   else if (filter === "anunciados") where = "WHERE v.status IN ('anunciado', 'reservado')";
   else if (filter === "nao_anunciados") where = "WHERE v.status IN ('preparacao', 'disponivel')";
+  else if (filter === "consignados") where = "WHERE v.consignado = 1 AND v.status != 'vendido'";
   else if (filter === "parados")
     where =
       "WHERE v.status != 'vendido' AND p.date IS NOT NULL AND julianday('now', 'localtime') - julianday(p.date) > 60";

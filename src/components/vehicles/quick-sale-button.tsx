@@ -41,11 +41,7 @@ export function QuickSaleButton({ vehicles, sellers, customers }: QuickSaleButto
 
   return (
     <>
-      <Button
-        onClick={() => setOpen(true)}
-        disabled={vehicles.length === 0}
-        className="border-transparent bg-emerald-600 text-white hover:bg-emerald-700"
-      >
+      <Button variant="success" onClick={() => setOpen(true)} disabled={vehicles.length === 0}>
         <BadgeCheck size={14} />
         Vendido
       </Button>

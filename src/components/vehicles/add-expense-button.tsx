@@ -21,7 +21,7 @@ export function AddExpenseButton({ vehicles }: { vehicles: VehicleOption[] }) {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} disabled={vehicles.length === 0}>
+      <Button variant="warning" onClick={() => setOpen(true)} disabled={vehicles.length === 0}>
         <Receipt size={14} />
         Adicionar gasto
       </Button>

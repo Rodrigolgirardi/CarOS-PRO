@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "danger-ghost";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "danger-ghost" | "success" | "warning";
 export type ButtonSize = "sm" | "md";
 
 const BASE =
@@ -13,6 +13,8 @@ const VARIANTS: Record<ButtonVariant, string> = {
   ghost: "border-transparent bg-transparent text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900",
   danger: "border-zinc-200 bg-white text-red-600 hover:border-red-200 hover:bg-red-50",
   "danger-ghost": "border-transparent bg-transparent text-red-500 hover:bg-red-50 hover:text-red-600",
+  success: "border-transparent bg-emerald-600 text-white hover:bg-emerald-500",
+  warning: "border-transparent bg-orange-500 text-white hover:bg-orange-400",
 };
 
 const SIZES: Record<ButtonSize, string> = {

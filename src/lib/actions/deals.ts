@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { all, get, run, tx } from "../db";
 import { addDaysISO, brl, todayISO } from "../format";
-import type { ActionState, Customer, CustomerStatus, Deal, VehicleStatus } from "../types";
+import type { ActionState, Customer, CustomerStatus, Deal, Seller, VehicleStatus } from "../types";
 import { err, fields, logEvent, ok } from "./util";
 
 const revalidate = () => revalidatePath("/", "layout");
@@ -297,6 +297,138 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
       ? "Venda registrada. Lembre de cadastrar o veículo recebido na troca em Compras."
       : "Venda registrada."
   );
+}
+
+/**
+ * Venda rápida pelo botão "Vendido": escolhe o veículo, valor e (opcional)
+ * vendedor/cliente. Cria a negociação já vendida, baixa o estoque, lança a
+ * comissão como custo e registra o valor como recebido na data da venda.
+ */
+export async function quickSale(prev: ActionState, formData: FormData): Promise<ActionState> {
+  const f = fields(formData);
+  const vehicleId = f.id("vehicle_id");
+  if (!vehicleId) return err("Escolha o veículo vendido.");
+  const vehicle = get<{ status: string; label: string }>(
+    "SELECT status, TRIM(brand || ' ' || model || ' ' || COALESCE(version, '')) AS label FROM vehicles WHERE id = ?",
+    vehicleId
+  );
+  if (!vehicle) return err("Veículo não encontrado.");
+  if (vehicle.status === "vendido") return err("Este veículo já foi vendido.");
+
+  const salePrice = f.cents("sale_price");
+  if (salePrice == null || salePrice <= 0) return err("Informe o valor da venda.");
+  const soldDate = f.s("sold_date") ?? todayISO();
+
+  const sellerId = f.id("seller_id");
+  const seller = sellerId ? get<Seller>("SELECT * FROM sellers WHERE id = ?", sellerId) : undefined;
+  if (sellerId && !seller) return err("Vendedor não encontrado.");
+  let commission = f.cents("commission");
+  if (commission == null && seller) {
+    if (seller.commission_fixed != null) commission = seller.commission_fixed;
+    else if (seller.commission_pct != null) commission = Math.round((salePrice * seller.commission_pct) / 100);
+  }
+  commission ??= 0;
+
+  // sem cliente escolhido, a venda entra num cliente genérico de balcão
+  let customerId = f.id("customer_id");
+  let customerName: string;
+  if (customerId) {
+    const c = get<Customer>("SELECT * FROM customers WHERE id = ?", customerId);
+    if (!c) return err("Cliente não encontrado.");
+    customerName = c.name;
+  } else {
+    const generic = get<Customer>("SELECT * FROM customers WHERE name = 'Venda balcão'");
+    customerId =
+      generic?.id ??
+      run(
+        "INSERT INTO customers (name, status, notes) VALUES ('Venda balcão', 'vendido', 'Cliente genérico usado pelas vendas rápidas (botão Vendido).')"
+      ).lastId;
+    customerName = "Venda balcão";
+  }
+
+  tx(() => {
+    const dealId = run(
+      "INSERT INTO deals (vehicle_id, customer_id, stage, sale_price, commission, seller_id, sold_date) VALUES (?,?,'vendido',?,?,?,?)",
+      vehicleId,
+      customerId!,
+      salePrice,
+      commission > 0 ? commission : null,
+      seller?.id ?? null,
+      soldDate
+    ).lastId;
+    run("UPDATE vehicles SET status = 'vendido', sale_price = COALESCE(sale_price, ?) WHERE id = ?", salePrice, vehicleId);
+
+    if (commission > 0) {
+      const c = run(
+        "INSERT INTO costs (vehicle_id, category, description, amount, date) VALUES (?, 'comissao', ?, ?, ?)",
+        vehicleId,
+        `Comissão — ${seller?.name ?? "venda"}`,
+        commission,
+        soldDate
+      );
+      run("UPDATE deals SET commission_cost_id = ? WHERE id = ?", c.lastId, dealId);
+      logEvent({
+        type: "custo",
+        description: `Custo adicionado — Comissão${seller ? `: ${seller.name}` : ""}`,
+        vehicle: vehicleId,
+        amount: commission,
+        date: soldDate,
+      });
+    }
+
+    logEvent({
+      type: "venda",
+      description: `Venda registrada${seller ? ` por ${seller.name}` : ""} — ${brl(salePrice)}`,
+      vehicle: vehicleId,
+      customer: customerId!,
+      deal: dealId,
+      amount: salePrice,
+      date: soldDate,
+    });
+
+    run(
+      "INSERT INTO receivables (description, customer_id, deal_id, amount, due_date, status, received_date) VALUES (?,?,?,?,?,'recebido',?)",
+      `Venda — ${vehicle.label}`,
+      customerId!,
+      dealId,
+      salePrice,
+      soldDate,
+      soldDate
+    );
+    logEvent({
+      type: "recebimento",
+      description: `Venda recebida — ${vehicle.label}`,
+      vehicle: vehicleId,
+      customer: customerId!,
+      deal: dealId,
+      amount: salePrice,
+      date: soldDate,
+    });
+
+    // negociações concorrentes do mesmo veículo são encerradas
+    const competing = all<{ id: number; customer_id: number; name: string }>(
+      `SELECT d.id, d.customer_id, cu.name FROM deals d JOIN customers cu ON cu.id = d.customer_id
+       WHERE d.vehicle_id = ? AND d.id != ? AND d.stage IN ('interessado', 'proposta', 'reservado')`,
+      vehicleId,
+      dealId
+    );
+    for (const c of competing) {
+      run("UPDATE deals SET stage = 'perdido' WHERE id = ?", c.id);
+      logEvent({
+        type: "status",
+        description: `Negociação com ${c.name} encerrada — veículo vendido`,
+        vehicle: vehicleId,
+        customer: c.customer_id,
+        deal: c.id,
+        date: soldDate,
+      });
+    }
+
+    run("UPDATE customers SET status = 'vendido' WHERE id = ?", customerId!);
+  });
+
+  revalidate();
+  return ok(`Venda do ${vehicle.label} registrada${customerName !== "Venda balcão" ? ` para ${customerName}` : ""}.`);
 }
 
 export async function markDelivered(dealId: number): Promise<{ ok: boolean; error?: string }> {

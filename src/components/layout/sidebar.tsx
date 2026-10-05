@@ -8,10 +8,10 @@ import {
   FileText,
   Handshake,
   LayoutDashboard,
+  Percent,
   ShoppingCart,
   Users,
   Wallet,
-  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -25,7 +25,7 @@ const MAIN = [
 
 const MANAGE = [
   { href: "/financeiro", label: "Financeiro", icon: Wallet },
-  { href: "/operacoes", label: "Operações", icon: Wrench },
+  { href: "/comissao", label: "Comissão", icon: Percent },
   { href: "/documentos", label: "Documentos", icon: FileText },
   { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
 ];

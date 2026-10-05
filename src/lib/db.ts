@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS vehicles (
   fuel         TEXT,
   transmission TEXT,
   renavam      TEXT,
+  chassis      TEXT,
+  laudo        TEXT,
+  blindado     INTEGER,
+  leilao       TEXT,
   status       TEXT NOT NULL DEFAULT 'preparacao',
   sale_price   INTEGER,
   photo        TEXT,
@@ -85,6 +89,14 @@ CREATE TABLE IF NOT EXISTS deals (
   delivered_date     TEXT,
   is_demo            INTEGER NOT NULL DEFAULT 0,
   created_at         TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS sellers (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  name             TEXT NOT NULL,
+  commission_pct   REAL,
+  commission_fixed INTEGER,
+  created_at       TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS tasks (
@@ -180,6 +192,20 @@ export function getDb(): DatabaseSync {
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec(SCHEMA);
+
+  // Migrações leves: colunas adicionadas depois do primeiro schema.
+  const vehicleCols = (db.prepare("PRAGMA table_info(vehicles)").all() as { name: string }[]).map((c) => c.name);
+  const addVehicleCol = (name: string, ddl: string) => {
+    if (!vehicleCols.includes(name)) db.exec(`ALTER TABLE vehicles ADD COLUMN ${name} ${ddl}`);
+  };
+  addVehicleCol("chassis", "TEXT");
+  addVehicleCol("laudo", "TEXT");
+  addVehicleCol("blindado", "INTEGER");
+  addVehicleCol("leilao", "TEXT");
+  const dealCols = (db.prepare("PRAGMA table_info(deals)").all() as { name: string }[]).map((c) => c.name);
+  if (!dealCols.includes("seller_id")) db.exec("ALTER TABLE deals ADD COLUMN seller_id INTEGER REFERENCES sellers(id)");
+  const sellerCols = (db.prepare("PRAGMA table_info(sellers)").all() as { name: string }[]).map((c) => c.name);
+  if (!sellerCols.includes("commission_fixed")) db.exec("ALTER TABLE sellers ADD COLUMN commission_fixed INTEGER");
 
   // Dados de demonstração: apenas na primeira execução, nunca de novo após limpeza.
   const seeded = db.prepare("SELECT value FROM meta WHERE key = 'demo_seeded'").get();

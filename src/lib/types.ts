@@ -1,6 +1,8 @@
 // Entidades do CarOS. Valores monetários em centavos (integer); datas em ISO (YYYY-MM-DD).
 
 export type VehicleStatus = "preparacao" | "disponivel" | "anunciado" | "reservado" | "vendido";
+export type VehicleLaudo = "aprovado_sem" | "aprovado_com";
+export type VehicleLeilao = "nao" | "pequena_monta" | "media_monta" | "financeira" | "outros";
 export type DealStage = "interessado" | "proposta" | "reservado" | "vendido" | "entregue" | "perdido";
 export type CustomerStatus = "novo" | "contato" | "interessado" | "negociacao" | "vendido" | "perdido";
 export type CostCategory =
@@ -57,6 +59,10 @@ export interface Vehicle {
   fuel: string | null;
   transmission: string | null;
   renavam: string | null;
+  chassis: string | null;
+  laudo: VehicleLaudo | null;
+  blindado: number | null; // 1 = sim, 0 = não, null = não informado
+  leilao: VehicleLeilao | null;
   status: VehicleStatus;
   sale_price: number | null; // preço de venda anunciado/planejado
   photo: string | null;
@@ -115,10 +121,19 @@ export interface Deal {
   trade_in_value: number | null;
   commission: number | null;
   commission_cost_id: number | null;
+  seller_id: number | null;
   notes: string | null;
   sold_date: string | null;
   delivered_date: string | null;
   is_demo: number;
+  created_at: string;
+}
+
+export interface Seller {
+  id: number;
+  name: string;
+  commission_pct: number | null; // % padrão sobre o valor da venda
+  commission_fixed: number | null; // ou valor fixo em centavos por venda
   created_at: string;
 }
 

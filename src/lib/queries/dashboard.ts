@@ -3,7 +3,26 @@ import { monthStartISO } from "../format";
 import { vehicleMetrics } from "../metrics";
 import type { EventRow, VehicleRow } from "../types";
 import { recentEvents } from "./events";
+import { cashflow } from "./finance";
 import { listVehicles } from "./vehicles";
+
+export interface StockVehicleSlice {
+  id: number;
+  label: string;
+  invested: number; // compra + custos
+  purchase: number; // só o preço de compra
+  sale: number | null;
+  profit: number | null; // null quando não há preço de venda
+}
+
+export interface MonthlyPoint {
+  key: string; // "2026-10"
+  label: string; // "out" (com /ano na virada)
+  sales: number;
+  revenue: number;
+  profit: number; // lucro das vendas do mês (venda − custo dos carros vendidos)
+  spend: number; // saídas do mês: compras + custos + contas pagas
+}
 
 export interface DashboardData {
   stock: {
@@ -14,13 +33,17 @@ export interface DashboardData {
     pricedCount: number;
     potentialProfit: number;
     avgDays: number | null;
+    vehicles: StockVehicleSlice[];
   };
   month: {
     sales: number;
     revenue: number;
     profit: number;
     margin: number | null;
+    spend: number; // saídas do mês: compras + custos + contas pagas
   };
+  monthly: MonthlyPoint[]; // últimos 12 meses, do mais antigo ao atual
+
   attention: {
     stale: number; // parados há mais de 60 dias
     docsPendingVehicles: number; // veículos com documentação/transferência pendente
@@ -45,9 +68,18 @@ export function dashboardData(): DashboardData {
   let daysSum = 0;
   let daysCount = 0;
   let stale = 0;
+  const slices: StockVehicleSlice[] = [];
   for (const v of stockRows) {
     const m = vehicleMetrics(v);
     invested += v.total_cost;
+    slices.push({
+      id: v.id,
+      label: `${v.brand} ${v.model}`,
+      invested: v.total_cost,
+      purchase: v.purchase_price ?? 0,
+      sale: v.sale_price,
+      profit: v.sale_price != null ? (m.profit ?? v.sale_price - v.total_cost) : null,
+    });
     if (v.sale_price != null) {
       saleValue += v.sale_price;
       pricedCount += 1;
@@ -58,6 +90,37 @@ export function dashboardData(): DashboardData {
       daysCount += 1;
       if (m.days > 60) stale += 1;
     }
+  }
+
+  // série mensal: últimos 12 meses, incluindo meses sem venda
+  const MONTHS_PT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const now = new Date();
+  const monthly: MonthlyPoint[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const showYear = i === 11 || d.getMonth() === 0;
+    monthly.push({
+      key,
+      label: `${MONTHS_PT[d.getMonth()]}${showYear ? `/${String(d.getFullYear()).slice(2)}` : ""}`,
+      sales: 0,
+      revenue: 0,
+      profit: 0,
+      spend: 0,
+    });
+  }
+  const byMonth = new Map(monthly.map((m) => [m.key, m]));
+  for (const v of soldRows) {
+    const bucket = v.sold_date ? byMonth.get(v.sold_date.slice(0, 7)) : undefined;
+    if (!bucket) continue;
+    const m = vehicleMetrics(v);
+    bucket.sales += 1;
+    bucket.revenue += m.priceRef ?? 0;
+    bucket.profit += m.profit ?? 0;
+  }
+  for (const cm of cashflow(null).monthly) {
+    const bucket = byMonth.get(cm.key);
+    if (bucket) bucket.spend = cm.outflow;
   }
 
   const monthSold = soldRows.filter((v) => v.sold_date && v.sold_date >= monthStart);
@@ -92,13 +155,16 @@ export function dashboardData(): DashboardData {
       pricedCount,
       potentialProfit,
       avgDays: daysCount > 0 ? Math.round(daysSum / daysCount) : null,
+      vehicles: slices.sort((a, b) => b.invested - a.invested),
     },
     month: {
       sales: monthSold.length,
       revenue,
       profit,
       margin: revenue > 0 ? profit / revenue : null,
+      spend: cashflow(monthStart).outflow,
     },
+    monthly,
     attention: {
       stale,
       docsPendingVehicles: docsPending.n,

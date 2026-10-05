@@ -35,6 +35,16 @@ export async function addCost(vehicleId: number, prev: ActionState, formData: Fo
   return ok("Custo adicionado.");
 }
 
+/** Variante do addCost em que o veículo vem do próprio formulário (lançamento rápido). */
+export async function addCostForVehicle(prev: ActionState, formData: FormData): Promise<ActionState> {
+  const f = fields(formData);
+  const vehicleId = f.int("vehicle_id");
+  if (vehicleId == null) return err("Escolha o veículo.");
+  const vehicle = get<{ id: number }>("SELECT id FROM vehicles WHERE id = ?", vehicleId);
+  if (!vehicle) return err("Veículo não encontrado.");
+  return addCost(vehicleId, prev, formData);
+}
+
 export async function updateCost(costId: number, prev: ActionState, formData: FormData): Promise<ActionState> {
   const cost = get<Cost>("SELECT * FROM costs WHERE id = ?", costId);
   if (!cost) return err("Custo não encontrado.");

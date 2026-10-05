@@ -15,6 +15,7 @@ export interface PlateData {
   color: string | null;
   fuel: string | null;
   city: string | null;
+  chassis: string | null;
 }
 
 export type PlateLookupResult =
@@ -95,6 +96,10 @@ export function parsePlateResponse(json: Record<string, unknown>): PlateData {
 
   const color = pick("cor", "COR");
   const city = pick("municipio", "MUNICIPIO");
+
+  // chassi: alguns provedores mascaram com "*" — só aceitamos um VIN completo
+  const chassisRaw = pick("chassi", "CHASSI", "chassis")?.toUpperCase().replace(/\s+/g, "") ?? null;
+  const chassis = chassisRaw && /^[A-HJ-NPR-Z0-9]{17}$/.test(chassisRaw) ? chassisRaw : null;
   return {
     brand,
     model,
@@ -104,6 +109,7 @@ export function parsePlateResponse(json: Record<string, unknown>): PlateData {
     color: color ? titleCase(color) : null,
     fuel: mapFuel(pick("combustivel", "COMBUSTIVEL", "extra_combustivel")),
     city: city ? titleCase(city) : null,
+    chassis,
   };
 }
 

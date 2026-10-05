@@ -19,7 +19,16 @@ import { LinkTabs } from "@/components/ui/tabs";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
 import { deleteDocument } from "@/lib/actions/documents";
 import { brl, daysUntil, fmtBytes, fmtDate, fmtKm, pct } from "@/lib/format";
-import { COST_CATEGORY, DEFAULT_CHECKLIST, DOC_TYPE, DOT_CLASS, EVENT_META, TASK_TYPE } from "@/lib/labels";
+import {
+  COST_CATEGORY,
+  DEFAULT_CHECKLIST,
+  DOC_TYPE,
+  DOT_CLASS,
+  EVENT_META,
+  TASK_TYPE,
+  VEHICLE_LAUDO,
+  VEHICLE_LEILAO,
+} from "@/lib/labels";
 import { vehicleLabel, vehicleMetrics } from "@/lib/metrics";
 import { customerOptions } from "@/lib/queries/customers";
 import { dealsForVehicle } from "@/lib/queries/deals";
@@ -192,7 +201,6 @@ export default async function VehiclePage({
         tabs={[
           { key: "resumo", label: "Resumo", href: `/veiculos/${id}` },
           { key: "custos", label: "Custos", count: costs.length, href: `/veiculos/${id}?tab=custos` },
-          { key: "operacoes", label: "Operações", count: pendingTasks, href: `/veiculos/${id}?tab=operacoes` },
           { key: "documentos", label: "Documentos", count: docs.length, href: `/veiculos/${id}?tab=documentos` },
           { key: "historico", label: "Histórico", href: `/veiculos/${id}?tab=historico` },
         ]}
@@ -220,6 +228,10 @@ export default async function VehiclePage({
               <Row label="Câmbio" value={vehicle.transmission} />
               <Row label="Combustível" value={vehicle.fuel} />
               <Row label="Renavam" value={vehicle.renavam} />
+              <Row label="Chassi" value={vehicle.chassis} />
+              <Row label="Laudo cautelar" value={vehicle.laudo ? VEHICLE_LAUDO[vehicle.laudo] : null} />
+              <Row label="Blindado" value={vehicle.blindado == null ? null : vehicle.blindado ? "Sim" : "Não"} />
+              <Row label="Leilão" value={vehicle.leilao ? VEHICLE_LEILAO[vehicle.leilao] : null} />
             </dl>
             {vehicle.notes && (
               <p className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-[13px] leading-relaxed text-zinc-600">

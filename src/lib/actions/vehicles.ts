@@ -4,13 +4,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { all, get, run, tx } from "../db";
 import { brl, todayISO } from "../format";
-import { DEFAULT_CHECKLIST, VEHICLE_STATUS } from "../labels";
+import { DEFAULT_CHECKLIST, VEHICLE_LAUDO, VEHICLE_LEILAO, VEHICLE_STATUS } from "../labels";
 import { deleteUpload, saveUpload } from "../uploads";
 import type { ActionState, Vehicle, VehicleStatus } from "../types";
 import { err, fields, logEvent, ok } from "./util";
 
 const revalidate = () => revalidatePath("/", "layout");
 const cleanPlate = (p: string | null) => (p ? p.toUpperCase().replace(/[\s-]+/g, "") : null);
+const cleanChassis = (c: string | null) => (c ? c.toUpperCase().replace(/\s+/g, "") : null);
+const oneOf = (v: string | null, allowed: Record<string, string>) => (v && v in allowed ? v : null);
+const simNao = (v: string | null) => (v === "1" ? 1 : v === "0" ? 0 : null);
 
 /** Compra = veículo entra no estoque com checklist de preparação criado. */
 export async function createPurchase(prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -29,8 +32,8 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
 
   const vehicleId = tx(() => {
     const v = run(
-      `INSERT INTO vehicles (brand, model, version, year_fab, year_model, plate, km, color, fuel, transmission, renavam, status, sale_price, photo, notes)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,'preparacao',?,?,?)`,
+      `INSERT INTO vehicles (brand, model, version, year_fab, year_model, plate, km, color, fuel, transmission, renavam, chassis, laudo, blindado, leilao, status, sale_price, photo, notes)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'preparacao',?,?,?)`,
       brand,
       model,
       f.s("version"),
@@ -42,6 +45,10 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
       f.s("fuel"),
       f.s("transmission"),
       f.s("renavam"),
+      cleanChassis(f.s("chassis")),
+      oneOf(f.s("laudo"), VEHICLE_LAUDO),
+      simNao(f.s("blindado")),
+      oneOf(f.s("leilao"), VEHICLE_LEILAO),
       salePrice,
       photo,
       f.s("notes")
@@ -95,7 +102,7 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
 
   tx(() => {
     run(
-      `UPDATE vehicles SET brand=?, model=?, version=?, year_fab=?, year_model=?, plate=?, km=?, color=?, fuel=?, transmission=?, renavam=?, sale_price=?, photo=?, notes=? WHERE id=?`,
+      `UPDATE vehicles SET brand=?, model=?, version=?, year_fab=?, year_model=?, plate=?, km=?, color=?, fuel=?, transmission=?, renavam=?, chassis=?, laudo=?, blindado=?, leilao=?, sale_price=?, photo=?, notes=? WHERE id=?`,
       brand,
       model,
       f.s("version"),
@@ -107,6 +114,10 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
       f.s("fuel"),
       f.s("transmission"),
       f.s("renavam"),
+      cleanChassis(f.s("chassis")),
+      oneOf(f.s("laudo"), VEHICLE_LAUDO),
+      simNao(f.s("blindado")),
+      oneOf(f.s("leilao"), VEHICLE_LEILAO),
       salePrice,
       photo,
       f.s("notes"),

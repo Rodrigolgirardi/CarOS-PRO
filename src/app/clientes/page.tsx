@@ -37,7 +37,7 @@ export default async function CustomersPage({
         activeKey={filter}
         items={[
           { key: "todos", label: "Todos", count: counts.todos, href: "/clientes" },
-          ...(Object.keys(CUSTOMER_STATUS) as CustomerStatus[]).map((s) => ({
+          ...(["negociacao", "vendido"] as CustomerStatus[]).map((s) => ({
             key: s,
             label: CUSTOMER_STATUS[s].label,
             count: counts[s] ?? 0,

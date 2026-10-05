@@ -1,6 +1,8 @@
 import { all, get } from "../db";
 import { COST_CATEGORY } from "../labels";
-import type { CostCategory, PayableRow, ReceivableRow } from "../types";
+import { vehicleLabel, vehicleMetrics } from "../metrics";
+import type { CostCategory, PayableRow, ReceivableRow, VehicleStatus } from "../types";
+import { listVehicles } from "./vehicles";
 
 export type FinanceStatusFilter = "pendentes" | "resolvidas" | "todas";
 
@@ -35,6 +37,54 @@ export function listReceivables(filter: FinanceStatusFilter = "pendentes"): Rece
   );
 }
 
+/** DRE por veículo: compra − custos por categoria + venda = lucro/prejuízo. */
+export interface DreCostLine {
+  category: CostCategory;
+  label: string;
+  total: number;
+}
+
+export interface DreVehicle {
+  id: number;
+  label: string;
+  plate: string | null;
+  status: VehicleStatus;
+  sold: boolean;
+  purchase: number;
+  costs: DreCostLine[];
+  costsTotal: number;
+  sale: number | null; // vendido → valor real; em estoque → preço anunciado
+  profit: number | null;
+}
+
+export function dreData(): DreVehicle[] {
+  const grouped = all<{ vehicle_id: number; category: CostCategory; total: number }>(
+    "SELECT vehicle_id, category, SUM(amount) AS total FROM costs GROUP BY vehicle_id, category"
+  );
+  const costsByVehicle = new Map<number, DreCostLine[]>();
+  for (const g of grouped) {
+    const list = costsByVehicle.get(g.vehicle_id) ?? [];
+    list.push({ category: g.category, label: COST_CATEGORY[g.category] ?? g.category, total: g.total });
+    costsByVehicle.set(g.vehicle_id, list);
+  }
+
+  return listVehicles("todos").map((v) => {
+    const m = vehicleMetrics(v);
+    return {
+      id: v.id,
+      label: vehicleLabel(v),
+      plate: v.plate,
+      status: v.status,
+      sold: m.sold,
+      purchase: v.purchase_price ?? 0,
+      costs: (costsByVehicle.get(v.id) ?? []).sort((a, b) => b.total - a.total),
+      costsTotal: v.costs_total,
+      sale: m.priceRef,
+      profit: m.profit,
+    };
+  });
+}
+
 export function openTotals(): { payables: number; payablesCount: number; receivables: number; receivablesCount: number } {
   const p = get<{ total: number; n: number }>(
     "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS n FROM payables WHERE status = 'pendente'"
@@ -54,11 +104,19 @@ export interface CashEntry {
   href: string | null;
 }
 
+export interface CashMonth {
+  key: string; // "2026-10"
+  label: string; // "out" (com /ano na virada)
+  inflow: number;
+  outflow: number;
+}
+
 export interface Cashflow {
   balance: number; // saldo acumulado (todo o histórico)
   inflow: number; // entradas no período
   outflow: number; // saídas no período
   entries: CashEntry[]; // extrato do período (desc)
+  monthly: CashMonth[]; // últimos 12 meses, do mais antigo ao atual
 }
 
 /** Fluxo de caixa: entradas = recebimentos; saídas = compras + custos + contas pagas. */
@@ -121,10 +179,34 @@ export function cashflow(fromISO: string | null): Cashflow {
   const inPeriod = fromISO ? entries.filter((e) => e.date >= fromISO) : entries;
   inPeriod.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
+  // série mensal (independe do filtro de período)
+  const MONTHS_PT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const now = new Date();
+  const monthly: CashMonth[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const showYear = i === 11 || d.getMonth() === 0;
+    monthly.push({
+      key,
+      label: `${MONTHS_PT[d.getMonth()]}${showYear ? `/${String(d.getFullYear()).slice(2)}` : ""}`,
+      inflow: 0,
+      outflow: 0,
+    });
+  }
+  const byMonth = new Map(monthly.map((m) => [m.key, m]));
+  for (const e of entries) {
+    const bucket = byMonth.get(e.date.slice(0, 7));
+    if (!bucket) continue;
+    bucket.inflow += e.inflow;
+    bucket.outflow += e.outflow;
+  }
+
   return {
     balance,
     inflow: inPeriod.reduce((acc, e) => acc + e.inflow, 0),
     outflow: inPeriod.reduce((acc, e) => acc + e.outflow, 0),
     entries: inPeriod,
+    monthly,
   };
 }

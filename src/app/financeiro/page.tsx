@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { CashflowChart } from "@/components/finance/cashflow-chart";
 import { NewPayableButton, NewReceivableButton } from "@/components/finance/finance-dialogs";
 import { ActionButton } from "@/components/ui/action-button";
-import { Badge } from "@/components/ui/badge";
+import { Badge, VehicleStatusBadge } from "@/components/ui/badge";
 import { ConfirmButton } from "@/components/ui/confirm";
 import { Stat, StatGrid } from "@/components/ui/stat";
 import { Chips, LinkTabs } from "@/components/ui/tabs";
@@ -11,7 +12,7 @@ import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
 import { deletePayable, deleteReceivable, togglePayable, toggleReceivable } from "@/lib/actions/finance";
 import { addDaysISO, brl, daysUntil, fmtDate, monthStartISO, todayISO } from "@/lib/format";
 import { customerOptions } from "@/lib/queries/customers";
-import { cashflow, listPayables, listReceivables, openTotals, type FinanceStatusFilter } from "@/lib/queries/finance";
+import { cashflow, dreData, listPayables, listReceivables, openTotals, type FinanceStatusFilter } from "@/lib/queries/finance";
 import { vehicleOptions } from "@/lib/queries/vehicles";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +56,7 @@ export default async function FinancePage({
   searchParams: Promise<{ tab?: string; periodo?: string; status?: string }>;
 }) {
   const sp = await searchParams;
-  const tab = ["caixa", "pagar", "receber"].includes(sp.tab ?? "") ? sp.tab! : "caixa";
+  const tab = ["caixa", "dre", "pagar", "receber"].includes(sp.tab ?? "") ? sp.tab! : "caixa";
   const periodo = PERIODS.some((p) => p.key === sp.periodo) ? sp.periodo! : "30";
   const statusFilter: FinanceStatusFilter = ["pendentes", "resolvidas", "todas"].includes(sp.status ?? "")
     ? (sp.status as FinanceStatusFilter)
@@ -76,8 +77,7 @@ export default async function FinancePage({
         activeKey={tab}
         tabs={[
           { key: "caixa", label: "Fluxo de caixa", href: tabHref("caixa") },
-          { key: "pagar", label: "Contas a pagar", count: totals.payablesCount, href: tabHref("pagar") },
-          { key: "receber", label: "Contas a receber", count: totals.receivablesCount, href: tabHref("receber") },
+          { key: "dre", label: "DRE", href: tabHref("dre") },
         ]}
       />
 
@@ -105,6 +105,8 @@ export default async function FinancePage({
                 sub="Entradas − saídas"
               />
             </StatGrid>
+
+            <CashflowChart months={flow.monthly} />
 
             {flow.entries.length === 0 ? (
               <p className="rounded-xl border border-dashed border-zinc-200 px-6 py-10 text-center text-[13px] text-zinc-400">
@@ -148,6 +150,118 @@ export default async function FinancePage({
                   })}
                 </TBody>
               </Table>
+            )}
+          </div>
+        );
+      })()}
+
+      {tab === "dre" && (() => {
+        const dre = dreData();
+        const sold = dre.filter((d) => d.sold);
+        const stock = dre.filter((d) => !d.sold);
+        const revenue = sold.reduce((s, d) => s + (d.sale ?? 0), 0);
+        const profitReal = sold.reduce((s, d) => s + (d.profit ?? 0), 0);
+        const profitPot = stock.reduce((s, d) => s + (d.profit ?? 0), 0);
+
+        const Card = ({ d }: { d: (typeof dre)[number] }) => (
+          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+            <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3">
+              <div className="min-w-0">
+                <Link
+                  href={`/veiculos/${d.id}`}
+                  className="block truncate text-[13px] font-semibold text-zinc-900 underline-offset-2 hover:underline"
+                >
+                  {d.label}
+                </Link>
+                {d.plate && (
+                  <span className="mt-0.5 inline-block rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">
+                    {d.plate}
+                  </span>
+                )}
+              </div>
+              <VehicleStatusBadge status={d.status} />
+            </div>
+            <dl className="space-y-1 px-4 py-3 text-[13px]">
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-zinc-500">Preço de compra</dt>
+                <dd className="font-medium tabular-nums text-red-600">− {brl(d.purchase)}</dd>
+              </div>
+              {d.costs.map((c) => (
+                <div key={c.category} className="flex items-center justify-between gap-3">
+                  <dt className="text-zinc-500">{c.label}</dt>
+                  <dd className="font-medium tabular-nums text-red-600">− {brl(c.total)}</dd>
+                </div>
+              ))}
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-zinc-500">{d.sold ? "Valor de venda" : "Venda prevista (anúncio)"}</dt>
+                <dd className={`font-medium tabular-nums ${d.sale != null ? "text-emerald-600" : "text-zinc-300"}`}>
+                  {d.sale != null ? `+ ${brl(d.sale)}` : "sem preço"}
+                </dd>
+              </div>
+              <div className="!mt-2.5 flex items-center justify-between gap-3 border-t border-zinc-100 pt-2.5">
+                <dt className="font-semibold text-zinc-900">{d.profit != null && d.profit < 0 ? "Prejuízo" : "Lucro"}</dt>
+                <dd
+                  className={`text-sm font-semibold tabular-nums ${
+                    d.profit == null ? "text-zinc-300" : d.profit >= 0 ? "text-emerald-600" : "text-red-600"
+                  }`}
+                >
+                  {d.profit == null ? "—" : brl(d.profit)}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        );
+
+        return (
+          <div className="space-y-6">
+            <StatGrid className="grid-cols-2 md:grid-cols-4">
+              <Stat label="Receita realizada" value={brl(revenue)} sub={`${sold.length} veículo(s) vendido(s)`} />
+              <Stat
+                label="Lucro realizado"
+                value={brl(profitReal)}
+                valueClassName={profitReal >= 0 ? "text-emerald-600" : "text-red-600"}
+                sub="Vendas concluídas"
+              />
+              <Stat
+                label="Lucro potencial"
+                value={brl(profitPot)}
+                valueClassName={profitPot >= 0 ? "text-emerald-600" : "text-red-600"}
+                sub="Estoque atual"
+              />
+              <Stat
+                label="Resultado total"
+                value={brl(profitReal + profitPot)}
+                valueClassName={profitReal + profitPot >= 0 ? "text-emerald-600" : "text-red-600"}
+                sub="Realizado + potencial"
+              />
+            </StatGrid>
+
+            {stock.length > 0 && (
+              <section>
+                <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Em estoque — resultado potencial</h2>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {stock.map((d) => (
+                    <Card key={d.id} d={d} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {sold.length > 0 && (
+              <section>
+                <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Vendidos — resultado realizado</h2>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {sold.map((d) => (
+                    <Card key={d.id} d={d} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {dre.length === 0 && (
+              <p className="rounded-xl border border-dashed border-zinc-200 px-6 py-10 text-center text-[13px] text-zinc-400">
+                A DRE aparece aqui conforme você registra compras, custos e vendas.
+              </p>
             )}
           </div>
         );

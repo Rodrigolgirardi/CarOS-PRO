@@ -11,6 +11,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { MonthlySalesChart } from "@/components/dashboard/monthly-chart";
+import { BrandLogo } from "@/components/vehicles/brand-logo";
 import { Badge } from "@/components/ui/badge";
 import { Stat, StatGrid } from "@/components/ui/stat";
 import { brl, fmtDateShort, pct } from "@/lib/format";
@@ -83,50 +85,81 @@ export default function DashboardPage() {
       />
 
       <section>
-        <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Estoque</h2>
-        <StatGrid className="grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-          <Stat
-            label="Veículos em estoque"
-            value={stock.count}
-            sub={stock.preparing > 0 ? `${stock.preparing} em preparação` : "—"}
-          />
-          <Stat label="Capital investido" value={brl(stock.invested)} sub="Compra + custos" />
-          <Stat
-            label="Valor de venda"
-            value={brl(stock.saleValue)}
-            sub={
-              stock.pricedCount < stock.count
-                ? `${stock.count - stock.pricedCount} sem preço definido`
-                : "Todos com preço"
-            }
-          />
-          <Stat
-            label="Lucro potencial"
-            value={brl(stock.potentialProfit)}
-            valueClassName={stock.potentialProfit >= 0 ? "text-emerald-600" : "text-red-600"}
-            sub={stock.saleValue > 0 ? `Margem ${pct(stock.potentialProfit / stock.saleValue)}` : "—"}
-          />
-          <Stat label="Dias em estoque" value={stock.avgDays != null ? `${stock.avgDays}` : "—"} sub="Média atual" />
-        </StatGrid>
+        <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Vendas</h2>
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_220px]">
+          <MonthlySalesChart months={data.monthly} />
+          <StatGrid className="grid-cols-2 lg:grid-cols-1">
+            <Stat
+              label="Faturamento"
+              value={brl(month.revenue)}
+              sub={month.sales === 0 ? "Nenhuma venda no mês" : `${month.sales} venda(s) no mês`}
+            />
+            <Stat
+              label="Gastos"
+              value={brl(month.spend)}
+              valueClassName="text-red-600"
+              sub="Compras + custos + contas"
+            />
+            <Stat
+              label="Geração de caixa"
+              value={brl(month.revenue - month.spend)}
+              valueClassName={month.revenue - month.spend >= 0 ? "text-emerald-600" : "text-red-600"}
+              sub="Faturamento − gastos"
+            />
+          </StatGrid>
+        </div>
       </section>
 
       <section className="mt-7">
-        <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Este mês</h2>
-        <StatGrid className="grid-cols-2 md:grid-cols-4">
-          <Stat label="Vendas" value={month.sales} sub={month.sales === 0 ? "Nenhuma venda ainda" : undefined} />
-          <Stat label="Faturamento" value={brl(month.revenue)} />
-          <Stat
-            label="Lucro realizado"
-            value={brl(month.profit)}
-            valueClassName={month.profit >= 0 ? "text-emerald-600" : "text-red-600"}
-          />
-          <Stat label="Margem média" value={pct(month.margin)} />
-        </StatGrid>
+        <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Estoque</h2>
+        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+          <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3">
+            <p className="text-[13px] font-semibold text-zinc-900">
+              {stock.count} {stock.count === 1 ? "veículo" : "veículos"} em estoque
+            </p>
+            <p className="text-xs text-zinc-400">
+              {stock.preparing > 0 ? `${stock.preparing} em preparação` : ""}
+            </p>
+          </div>
+          {stock.vehicles.length === 0 ? (
+            <p className="px-4 py-6 text-[13px] text-zinc-400">Nenhum veículo em estoque.</p>
+          ) : (
+            <>
+              <div className="divide-y divide-zinc-100">
+                {stock.vehicles.map((v) => (
+                  <Link
+                    key={v.id}
+                    href={`/veiculos/${v.id}`}
+                    className="flex items-center justify-between gap-3 px-4 py-2.5 transition-colors hover:bg-zinc-50"
+                  >
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <BrandLogo brand={v.label} size={18} />
+                      <span className="truncate text-[13px] font-medium text-zinc-800">{v.label}</span>
+                    </span>
+                    <span className="shrink-0 text-[13px] tabular-nums text-zinc-600">{brl(v.invested)}</span>
+                  </Link>
+                ))}
+              </div>
+              <div className="flex items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50/60 px-4 py-2.5">
+                <span className="text-[13px] font-semibold text-zinc-900">Custo total (compra + custos)</span>
+                <span className="text-[13px] font-semibold tabular-nums text-zinc-900">{brl(stock.invested)}</span>
+              </div>
+            </>
+          )}
+        </div>
       </section>
 
       <div className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <section>
-          <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Requer sua atenção</h2>
+        <details className="group">
+          <summary className="mb-2.5 flex cursor-pointer list-none items-center gap-1.5 text-[13px] font-semibold text-zinc-900 [&::-webkit-details-marker]:hidden">
+            <ChevronRight size={14} className="text-zinc-400 transition-transform group-open:rotate-90" />
+            Requer sua atenção
+            {items.length > 0 && (
+              <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-zinc-500">
+                {items.length}
+              </span>
+            )}
+          </summary>
           <div className="divide-y divide-zinc-100 overflow-hidden rounded-xl border border-zinc-200 bg-white">
             {items.length === 0 ? (
               <div className="flex items-center gap-3 px-4 py-6 text-[13px] text-zinc-500">
@@ -156,10 +189,18 @@ export default function DashboardPage() {
               ))
             )}
           </div>
-        </section>
+        </details>
 
-        <section>
-          <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Atividade recente</h2>
+        <details className="group">
+          <summary className="mb-2.5 flex cursor-pointer list-none items-center gap-1.5 text-[13px] font-semibold text-zinc-900 [&::-webkit-details-marker]:hidden">
+            <ChevronRight size={14} className="text-zinc-400 transition-transform group-open:rotate-90" />
+            Atividade recente
+            {recent.length > 0 && (
+              <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-zinc-500">
+                {recent.length}
+              </span>
+            )}
+          </summary>
           <div className="divide-y divide-zinc-100 overflow-hidden rounded-xl border border-zinc-200 bg-white">
             {recent.length === 0 ? (
               <p className="px-4 py-6 text-[13px] text-zinc-400">
@@ -202,7 +243,7 @@ export default function DashboardPage() {
               })
             )}
           </div>
-        </section>
+        </details>
       </div>
     </>
   );

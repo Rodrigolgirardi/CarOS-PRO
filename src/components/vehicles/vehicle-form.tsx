@@ -6,7 +6,7 @@ import { lookupPlate, savePlateApiToken } from "@/lib/actions/plate";
 import { createPurchase, updateVehicle } from "@/lib/actions/vehicles";
 import { BRANDS } from "@/lib/brands";
 import { brl, pct, todayISO } from "@/lib/format";
-import { FUEL_OPTIONS, PAYMENT_METHODS, TRANSMISSION_OPTIONS } from "@/lib/labels";
+import { FUEL_OPTIONS, PAYMENT_METHODS, TRANSMISSION_OPTIONS, VEHICLE_LAUDO, VEHICLE_LEILAO } from "@/lib/labels";
 import type { VehicleRow } from "@/lib/types";
 import { Button, LinkButton } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
@@ -69,6 +69,7 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
       set("year_model", d.year_model);
       set("color", d.color);
       set("fuel", d.fuel);
+      set("chassis", d.chassis);
       toast(`Encontrado: ${[d.brand, d.model, d.version].filter(Boolean).join(" ")}`);
     });
 
@@ -111,6 +112,15 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
                   Buscar
                 </Button>
               </div>
+            </Field>
+            <Field label="Chassi" className="md:col-span-2">
+              <Input
+                name="chassis"
+                defaultValue={vehicle?.chassis ?? ""}
+                placeholder="9BWZZZ377VT004251"
+                maxLength={17}
+                className="uppercase"
+              />
             </Field>
             <Field label="Marca" required className="md:col-span-2">
               <div className="relative">
@@ -169,6 +179,33 @@ export function VehicleForm({ vehicle }: VehicleFormProps) {
             </Field>
             <Field label="Renavam">
               <Input name="renavam" defaultValue={vehicle?.renavam ?? ""} inputMode="numeric" />
+            </Field>
+            <Field label="Laudo cautelar">
+              <Select name="laudo" defaultValue={vehicle?.laudo ?? ""}>
+                <option value="">—</option>
+                {Object.entries(VEHICLE_LAUDO).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Blindado">
+              <Select name="blindado" defaultValue={vehicle?.blindado == null ? "" : String(vehicle.blindado)}>
+                <option value="">—</option>
+                <option value="1">Sim</option>
+                <option value="0">Não</option>
+              </Select>
+            </Field>
+            <Field label="Passagem por leilão">
+              <Select name="leilao" defaultValue={vehicle?.leilao ?? ""}>
+                <option value="">—</option>
+                {Object.entries(VEHICLE_LEILAO).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
             </Field>
             <Field label="Foto" className="md:col-span-2">
               <div className="flex items-center gap-3">

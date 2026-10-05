@@ -6,11 +6,15 @@ import { LinkButton } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LinkTabs } from "@/components/ui/tabs";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
+import { AddExpenseButton } from "@/components/vehicles/add-expense-button";
+import { QuickSaleButton } from "@/components/vehicles/quick-sale-button";
+import { customerOptions } from "@/lib/queries/customers";
+import { sellerOptions } from "@/lib/queries/sellers";
 import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
 import { VehicleRowActions } from "@/components/vehicles/vehicle-row-actions";
 import { brl, fmtKm, pct } from "@/lib/format";
 import { vehicleMetrics, vehicleLabel } from "@/lib/metrics";
-import { listVehicles, vehicleCounts, type VehicleFilter } from "@/lib/queries/vehicles";
+import { listVehicles, vehicleCounts, vehicleOptions, type VehicleFilter } from "@/lib/queries/vehicles";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Veículos" };
@@ -18,9 +22,7 @@ export const metadata = { title: "Veículos" };
 const TABS: { key: VehicleFilter; label: string }[] = [
   { key: "todos", label: "Todos" },
   { key: "disponivel", label: "Disponíveis" },
-  { key: "preparacao", label: "Em preparação" },
   { key: "anunciado", label: "Anunciados" },
-  { key: "reservado", label: "Reservados" },
   { key: "vendido", label: "Vendidos" },
 ];
 
@@ -30,7 +32,9 @@ export default async function VehiclesPage({
   searchParams: Promise<{ filtro?: string }>;
 }) {
   const { filtro } = await searchParams;
-  const valid = TABS.some((t) => t.key === filtro) || filtro === "parados";
+  // "preparacao" e "reservado" não têm aba, mas seguem acessíveis por link (ex.: dashboard)
+  const valid =
+    TABS.some((t) => t.key === filtro) || filtro === "parados" || filtro === "preparacao" || filtro === "reservado";
   const filter = (valid ? filtro : "todos") as VehicleFilter;
   const rows = listVehicles(filter);
   const counts = vehicleCounts();
@@ -41,10 +45,14 @@ export default async function VehiclesPage({
         title="Veículos"
         description="Seu estoque, do jeito que ele está agora."
         actions={
-          <LinkButton href="/compras/nova" variant="primary">
-            <Plus size={14} />
-            Adicionar veículo
-          </LinkButton>
+          <div className="flex flex-col items-stretch gap-2">
+            <LinkButton href="/compras/nova" variant="primary">
+              <Plus size={14} />
+              Adicionar veículo
+            </LinkButton>
+            <AddExpenseButton vehicles={vehicleOptions()} />
+            <QuickSaleButton vehicles={vehicleOptions()} sellers={sellerOptions()} customers={customerOptions()} />
+          </div>
         }
       />
 
@@ -59,9 +67,13 @@ export default async function VehiclesPage({
         }))}
       />
 
-      {filter === "parados" && (
+      {(filter === "parados" || filter === "preparacao" || filter === "reservado") && (
         <p className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-          Mostrando veículos parados há mais de 60 dias.
+          {filter === "parados"
+            ? "Mostrando veículos parados há mais de 60 dias."
+            : filter === "preparacao"
+              ? "Mostrando veículos em preparação."
+              : "Mostrando veículos reservados."}
           <Link href="/veiculos" className="underline underline-offset-2 hover:text-amber-900">
             Ver todos
           </Link>
@@ -92,6 +104,7 @@ export default async function VehiclesPage({
             <Th>Veículo</Th>
             <Th>Ano</Th>
             <Th>Placa</Th>
+            <Th>Chassi</Th>
             <Th right>KM</Th>
             <Th right>Compra</Th>
             <Th right>Custo total</Th>
@@ -127,6 +140,13 @@ export default async function VehiclesPage({
                       <span className="rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px] text-zinc-600">
                         {v.plate}
                       </span>
+                    ) : (
+                      <span className="text-zinc-300">—</span>
+                    )}
+                  </Td>
+                  <Td>
+                    {v.chassis ? (
+                      <span className="font-mono text-[11px] text-zinc-500">{v.chassis}</span>
                     ) : (
                       <span className="text-zinc-300">—</span>
                     )}

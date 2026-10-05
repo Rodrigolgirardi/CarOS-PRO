@@ -6,6 +6,8 @@ import type {
   EventType,
   TaskGroup,
   TaskType,
+  VehicleLaudo,
+  VehicleLeilao,
   VehicleStatus,
 } from "./types";
 
@@ -29,6 +31,19 @@ export const VEHICLE_STATUS: Record<VehicleStatus, { label: string; tone: Tone }
   anunciado: { label: "Anunciado", tone: "blue" },
   reservado: { label: "Reservado", tone: "violet" },
   vendido: { label: "Vendido", tone: "zinc" },
+};
+
+export const VEHICLE_LAUDO: Record<VehicleLaudo, string> = {
+  aprovado_sem: "Aprovado sem apontamento",
+  aprovado_com: "Aprovado com apontamento",
+};
+
+export const VEHICLE_LEILAO: Record<VehicleLeilao, string> = {
+  nao: "Não",
+  pequena_monta: "Sim — pequena monta",
+  media_monta: "Sim — média monta",
+  financeira: "Sim — financeira",
+  outros: "Sim — outros",
 };
 
 export const DEAL_STAGE: Record<DealStage, { label: string; tone: Tone }> = {

@@ -12,7 +12,7 @@ import { customerOptions } from "@/lib/queries/customers";
 import { sellerOptions } from "@/lib/queries/sellers";
 import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
 import { VehicleRowActions } from "@/components/vehicles/vehicle-row-actions";
-import { brl, fmtKm, pct } from "@/lib/format";
+import { brl, pct } from "@/lib/format";
 import { vehicleMetrics, vehicleLabel } from "@/lib/metrics";
 import { listVehicles, vehicleCounts, vehicleOptions, type VehicleFilter } from "@/lib/queries/vehicles";
 
@@ -110,7 +110,6 @@ export default async function VehiclesPage({
             <Th>Veículo</Th>
             <Th>Ano</Th>
             <Th>Placa</Th>
-            <Th>Chassi</Th>
             <Th right>KM</Th>
             <Th right>Compra</Th>
             <Th right>Custo total</Th>
@@ -127,7 +126,7 @@ export default async function VehiclesPage({
               const label = vehicleLabel(v);
               return (
                 <Tr key={v.id}>
-                  <Td className="max-w-[260px]">
+                  <Td className="max-w-[210px]">
                     <Link href={`/veiculos/${v.id}`} className="flex items-center gap-2.5">
                       <VehiclePhoto photo={v.photo} brand={v.brand} size="sm" />
                       <span className="min-w-0">
@@ -139,7 +138,9 @@ export default async function VehiclesPage({
                     </Link>
                   </Td>
                   <Td className="text-zinc-500">
-                    {v.year_fab ? `${v.year_fab}/${v.year_model ?? v.year_fab}` : "—"}
+                    {v.year_fab
+                      ? `${String(v.year_fab).slice(-2)}/${String(v.year_model ?? v.year_fab).slice(-2)}`
+                      : "—"}
                   </Td>
                   <Td>
                     {v.plate ? (
@@ -150,15 +151,8 @@ export default async function VehiclesPage({
                       <span className="text-zinc-300">—</span>
                     )}
                   </Td>
-                  <Td>
-                    {v.chassis ? (
-                      <span className="font-mono text-[11px] text-zinc-500">{v.chassis}</span>
-                    ) : (
-                      <span className="text-zinc-300">—</span>
-                    )}
-                  </Td>
                   <Td right className="text-zinc-500">
-                    {fmtKm(v.km)}
+                    {v.km != null ? v.km.toLocaleString("pt-BR") : "—"}
                   </Td>
                   <Td right className="text-zinc-500">
                     {brl(v.purchase_price)}

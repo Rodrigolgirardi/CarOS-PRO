@@ -37,7 +37,7 @@ export function Th({
   return (
     <th
       className={cn(
-        "whitespace-nowrap px-3 py-2 text-left text-xs font-medium text-zinc-500",
+        "whitespace-nowrap px-2.5 py-2 text-left text-xs font-medium text-zinc-500",
         right && "text-right",
         className
       )}
@@ -69,7 +69,7 @@ export function Td({
   return (
     <td
       colSpan={colSpan}
-      className={cn("whitespace-nowrap px-3 py-2.5 align-middle", right && "text-right tabular-nums", className)}
+      className={cn("whitespace-nowrap px-2.5 py-2.5 align-middle", right && "text-right tabular-nums", className)}
     >
       {children}
     </td>

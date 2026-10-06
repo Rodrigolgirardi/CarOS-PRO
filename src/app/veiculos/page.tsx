@@ -61,14 +61,14 @@ export default async function VehiclesPage({
           Adicionar veículo
         </LinkButton>
         <AddExpenseButton vehicles={vehicleOptions()} />
+        <AddIncomeButton customers={customerOptions()} sellers={sellerOptions()} rules={listCommissionRules()} />
+        <PlateLookupButton />
         <QuickSaleButton
           vehicles={vehicleOptions()}
           sellers={sellerOptions()}
           customers={customerOptions()}
           defaultCommission={commissionRule("venda_carro")}
         />
-        <AddIncomeButton customers={customerOptions()} sellers={sellerOptions()} rules={listCommissionRules()} />
-        <PlateLookupButton />
       </div>
 
       <LinkTabs

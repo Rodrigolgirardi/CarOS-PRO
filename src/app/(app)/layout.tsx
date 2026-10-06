@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { DemoNotice } from "@/components/layout/demo-notice";
 import { Sidebar } from "@/components/layout/sidebar";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { UserMenu } from "@/components/layout/user-menu";
 import { SESSION_COOKIE, isValidSession } from "@/lib/auth";
 import { getProfile } from "@/lib/queries/profile";
@@ -21,7 +22,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <DemoNotice />
       </Sidebar>
       <main className="flex min-w-0 flex-1 flex-col">
-        <div className="flex h-12 shrink-0 items-center justify-end border-b border-zinc-100 bg-zinc-50/40 px-5">
+        <div className="flex h-12 shrink-0 items-center justify-end gap-2 border-b border-zinc-100 bg-zinc-50/40 px-5">
+          <ThemeToggle />
           <UserMenu
             name={profile.name}
             avatarUrl={profile.avatarUrl}

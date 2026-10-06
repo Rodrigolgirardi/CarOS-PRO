@@ -17,7 +17,7 @@ export function AccessForm({ login, authEnabled }: AccessFormProps) {
   const disable = useAction(disableAuth);
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white">
+    <section>
       <header className="flex items-center justify-between gap-3 border-b border-zinc-100 px-5 py-3">
         <h3 className="flex items-center gap-1.5 text-[13px] font-semibold text-zinc-900">
           <Lock size={13} className="text-zinc-400" />

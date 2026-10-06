@@ -20,7 +20,7 @@ export function ProfileForm({ name, avatarUrl }: ProfileFormProps) {
   const shown = preview ?? avatarUrl;
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white">
+    <section>
       <header className="border-b border-zinc-100 px-5 py-3">
         <h3 className="text-[13px] font-semibold text-zinc-900">Perfil</h3>
       </header>

@@ -16,7 +16,7 @@ export default async function SettingsPage() {
         title="Configurações"
         description="Perfil, login e senha e aparência — tudo num lugar só."
       />
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="max-w-2xl divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white">
         <ProfileForm name={profile.name} avatarUrl={profile.avatarUrl} />
         <AccessForm login={profile.login} authEnabled={profile.authEnabled} />
         <AppearanceForm />

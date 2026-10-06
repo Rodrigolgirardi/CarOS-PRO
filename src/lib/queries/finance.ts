@@ -126,7 +126,7 @@ export interface Cashflow {
 }
 
 /** Fluxo de caixa: entradas = recebimentos; saídas = compras + custos + contas pagas. */
-export function cashflow(fromISO: string | null): Cashflow {
+export function cashflow(fromISO: string | null, toISO?: string | null): Cashflow {
   const received = all<{ date: string; description: string; amount: number; vehicle_id: number | null }>(
     `SELECT re.received_date AS date, re.description, re.amount, d.vehicle_id
      FROM receivables re LEFT JOIN deals d ON d.id = re.deal_id
@@ -182,7 +182,9 @@ export function cashflow(fromISO: string | null): Cashflow {
   ];
 
   const balance = entries.reduce((acc, e) => acc + e.inflow - e.outflow, 0);
-  const inPeriod = fromISO ? entries.filter((e) => e.date >= fromISO) : entries;
+  const inPeriod = entries.filter(
+    (e) => (!fromISO || e.date >= fromISO) && (!toISO || e.date <= toISO)
+  );
   inPeriod.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
   // série mensal (independe do filtro de período)

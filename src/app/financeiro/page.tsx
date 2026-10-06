@@ -3,6 +3,7 @@ import { Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { CashflowChart } from "@/components/finance/cashflow-chart";
 import { NewPayableButton, NewReceivableButton } from "@/components/finance/finance-dialogs";
+import { MonthSelect } from "@/components/finance/month-select";
 import { ActionButton } from "@/components/ui/action-button";
 import { Badge, VehicleStatusBadge } from "@/components/ui/badge";
 import { ConfirmButton } from "@/components/ui/confirm";
@@ -53,11 +54,28 @@ function DueCell({ due, pending }: { due: string; pending: boolean }) {
 export default async function FinancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; periodo?: string; status?: string }>;
+  searchParams: Promise<{ tab?: string; periodo?: string; status?: string; mes?: string }>;
 }) {
   const sp = await searchParams;
   const tab = ["caixa", "dre", "pagar", "receber"].includes(sp.tab ?? "") ? sp.tab! : "caixa";
   const periodo = PERIODS.some((p) => p.key === sp.periodo) ? sp.periodo! : "30";
+
+  // filtro por mês fechado (jan/2026 em diante)
+  const MESES = [
+    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+  ];
+  const monthOptions: { key: string; label: string }[] = [];
+  const cursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  while (cursor.getFullYear() > 2026 || (cursor.getFullYear() === 2026 && cursor.getMonth() >= 0)) {
+    monthOptions.push({
+      key: `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`,
+      label: `${MESES[cursor.getMonth()]}/${cursor.getFullYear()}`,
+    });
+    cursor.setMonth(cursor.getMonth() - 1);
+  }
+  const mes = monthOptions.some((m) => m.key === sp.mes) ? sp.mes! : null;
+  const mesLabel = mes ? monthOptions.find((m) => m.key === mes)!.label : null;
   const statusFilter: FinanceStatusFilter = ["pendentes", "resolvidas", "todas"].includes(sp.status ?? "")
     ? (sp.status as FinanceStatusFilter)
     : "pendentes";
@@ -82,13 +100,19 @@ export default async function FinancePage({
       />
 
       {tab === "caixa" && (() => {
-        const flow = cashflow(periodFrom(periodo));
+        const monthEnd = mes
+          ? `${mes}-${String(new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0).getDate()).padStart(2, "0")}`
+          : null;
+        const flow = mes ? cashflow(`${mes}-01`, monthEnd) : cashflow(periodFrom(periodo));
         return (
           <div className="space-y-4">
-            <Chips
-              activeKey={periodo}
-              items={PERIODS.map((p) => ({ key: p.key, label: p.label, href: `/financeiro?tab=caixa&periodo=${p.key}` }))}
-            />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Chips
+                activeKey={mes ? "" : periodo}
+                items={PERIODS.map((p) => ({ key: p.key, label: p.label, href: `/financeiro?tab=caixa&periodo=${p.key}` }))}
+              />
+              <MonthSelect months={monthOptions} active={mes} />
+            </div>
             <StatGrid className="grid-cols-2 md:grid-cols-4">
               <Stat
                 label="Saldo em caixa"
@@ -96,8 +120,8 @@ export default async function FinancePage({
                 valueClassName={flow.balance >= 0 ? undefined : "text-red-600"}
                 sub="Todo o histórico"
               />
-              <Stat label="Entradas" value={brl(flow.inflow)} valueClassName="text-emerald-600" sub="No período" />
-              <Stat label="Saídas" value={brl(flow.outflow)} valueClassName="text-red-600" sub="No período" />
+              <Stat label="Entradas" value={brl(flow.inflow)} valueClassName="text-emerald-600" sub={mesLabel ?? "No período"} />
+              <Stat label="Saídas" value={brl(flow.outflow)} valueClassName="text-red-600" sub={mesLabel ?? "No período"} />
               <Stat
                 label="Resultado"
                 value={brl(flow.inflow - flow.outflow)}

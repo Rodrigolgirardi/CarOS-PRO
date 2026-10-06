@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { MessageSquarePlus, Pencil, Plus } from "lucide-react";
-import { addContact, saveCustomer, setCustomerStatus } from "@/lib/actions/customers";
+import { MessageSquarePlus, Pencil, Plus, Trash2 } from "lucide-react";
+import { addContact, deleteCustomer, saveCustomer, setCustomerStatus } from "@/lib/actions/customers";
 import { todayISO } from "@/lib/format";
 import { CUSTOMER_STATUS } from "@/lib/labels";
 import type { Customer, CustomerStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { FormError, SubmitButton, useAction } from "@/components/ui/form";
+import { ConfirmButton } from "@/components/ui/confirm";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 
@@ -90,6 +91,48 @@ export function CustomerEditButton({ customer }: { customer: Customer }) {
         </form>
       </Modal>
     </>
+  );
+}
+
+/** Ações da linha na lista de clientes: lápis (editar) + lixeira (excluir). */
+export function CustomerRowActions({ customer }: { customer: Customer }) {
+  const [editOpen, setEditOpen] = useState(false);
+  const { state, formAction } = useAction(saveCustomer.bind(null, customer.id), {
+    onSuccess: () => setEditOpen(false),
+  });
+
+  return (
+    <div className="flex items-center justify-end gap-0.5">
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={`Editar ${customer.name}`}
+        className="size-8 p-0"
+        onClick={() => setEditOpen(true)}
+      >
+        <Pencil size={14} />
+      </Button>
+      <ConfirmButton
+        action={deleteCustomer.bind(null, customer.id)}
+        title={`Excluir ${customer.name}?`}
+        description="O cadastro, as negociações em aberto e os documentos vinculados serão removidos. Clientes com vendas registradas não podem ser excluídos."
+        variant="danger-ghost"
+        className="size-8 p-0"
+      >
+        <Trash2 size={15} />
+      </ConfirmButton>
+
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Editar cliente">
+        <form action={formAction} className="space-y-4">
+          <CustomerFields customer={customer} />
+          <FormError state={state} />
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <SubmitButton>Salvar</SubmitButton>
+          </div>
+        </form>
+      </Modal>
+    </div>
   );
 }
 

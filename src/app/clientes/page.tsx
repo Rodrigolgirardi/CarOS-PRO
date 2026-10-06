@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Users } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { CustomerCreateButton } from "@/components/customers/customer-dialogs";
+import { CustomerCreateButton, CustomerRowActions } from "@/components/customers/customer-dialogs";
 import { CustomerStatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Chips } from "@/components/ui/tabs";
@@ -67,6 +67,7 @@ export default async function CustomersPage({
             <Th>Interesse atual</Th>
             <Th right>Compras</Th>
             <Th right>Última atividade</Th>
+            <Th />
           </THead>
           <TBody>
             {customers.map((c) => (
@@ -99,6 +100,9 @@ export default async function CustomersPage({
                 </Td>
                 <Td right className="text-zinc-500">
                   {c.last_activity ? fmtDateShort(c.last_activity) : "—"}
+                </Td>
+                <Td className="w-20">
+                  <CustomerRowActions customer={c} />
                 </Td>
               </Tr>
             ))}

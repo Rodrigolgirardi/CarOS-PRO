@@ -108,7 +108,8 @@ export interface CashEntry {
   inflow: number;
   outflow: number;
   href: string | null;
-  vehicle_label: string | null; // carro ligado ao lançamento (coluna Carro | Placa)
+  vehicle_id: number | null;
+  vehicle_label: string | null; // carro ligado ao lançamento
   vehicle_plate: string | null;
 }
 
@@ -181,6 +182,7 @@ export function cashflow(fromISO: string | null, toISO?: string | null): Cashflo
       inflow: r.amount,
       outflow: 0,
       href: r.vehicle_id ? `/veiculos/${r.vehicle_id}` : null,
+      vehicle_id: r.vehicle_id,
       vehicle_label: r.label,
       vehicle_plate: r.plate,
     })),
@@ -191,6 +193,7 @@ export function cashflow(fromISO: string | null, toISO?: string | null): Cashflo
       inflow: 0,
       outflow: p.amount,
       href: `/veiculos/${p.vehicle_id}`,
+      vehicle_id: p.vehicle_id,
       vehicle_label: p.label,
       vehicle_plate: p.plate,
     })),
@@ -201,6 +204,7 @@ export function cashflow(fromISO: string | null, toISO?: string | null): Cashflo
       inflow: 0,
       outflow: c.amount,
       href: `/veiculos/${c.vehicle_id}`,
+      vehicle_id: c.vehicle_id,
       vehicle_label: c.label,
       vehicle_plate: c.plate,
     })),
@@ -211,6 +215,7 @@ export function cashflow(fromISO: string | null, toISO?: string | null): Cashflo
       inflow: 0,
       outflow: p.amount,
       href: p.vehicle_id ? `/veiculos/${p.vehicle_id}` : null,
+      vehicle_id: p.vehicle_id,
       vehicle_label: p.label,
       vehicle_plate: p.plate,
     })),

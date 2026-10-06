@@ -5,6 +5,7 @@ import { CashflowChart } from "@/components/finance/cashflow-chart";
 import { NewPayableButton, NewReceivableButton } from "@/components/finance/finance-dialogs";
 import { MonthSelect } from "@/components/finance/month-select";
 import { BrandLogo } from "@/components/vehicles/brand-logo";
+import { ExtractFilters } from "@/components/finance/extract-filters";
 import { ActionButton } from "@/components/ui/action-button";
 import { Badge, VehicleStatusBadge } from "@/components/ui/badge";
 import { ConfirmButton } from "@/components/ui/confirm";
@@ -55,7 +56,15 @@ function DueCell({ due, pending }: { due: string; pending: boolean }) {
 export default async function FinancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; periodo?: string; status?: string; mes?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    periodo?: string;
+    status?: string;
+    mes?: string;
+    data?: string;
+    veiculo?: string;
+    placa?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const tab = ["caixa", "dre", "pagar", "receber"].includes(sp.tab ?? "") ? sp.tab! : "caixa";
@@ -102,12 +111,24 @@ export default async function FinancePage({
         const monthEnd = mes
           ? `${mes}-${String(new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0).getDate()).padStart(2, "0")}`
           : null;
-        const flow = mes ? cashflow(`${mes}-01`, monthEnd) : cashflow(periodFrom(periodo));
+        // data exata ignora os períodos; carro/placa filtram por cima de qualquer recorte
+        const dia = sp.data && /^\d{4}-\d{2}-\d{2}$/.test(sp.data) ? sp.data : null;
+        const veiculoId = sp.veiculo && /^\d+$/.test(sp.veiculo) ? Number(sp.veiculo) : null;
+        const placa = sp.placa ? sp.placa.toUpperCase().replace(/[^A-Z0-9]/g, "") : null;
+        const flow = dia ? cashflow(dia, dia) : mes ? cashflow(`${mes}-01`, monthEnd) : cashflow(periodFrom(periodo));
+        const entries = flow.entries.filter(
+          (e) =>
+            (!veiculoId || e.vehicle_id === veiculoId) &&
+            (!placa || (e.vehicle_plate ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").includes(placa))
+        );
+        const inflow = entries.reduce((s, e) => s + e.inflow, 0);
+        const outflow = entries.reduce((s, e) => s + e.outflow, 0);
+        const periodSub = dia ? fmtDate(dia) : (mesLabel ?? "No período");
         return (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Chips
-                activeKey={mes ? "" : periodo}
+                activeKey={mes || dia ? "" : periodo}
                 items={PERIODS.map((p) => ({ key: p.key, label: p.label, href: `/financeiro?tab=caixa&periodo=${p.key}` }))}
               />
               <MonthSelect years={years} active={mes} />
@@ -119,39 +140,45 @@ export default async function FinancePage({
                 valueClassName={flow.balance >= 0 ? undefined : "text-red-600"}
                 sub="Todo o histórico"
               />
-              <Stat label="Entradas" value={brl(flow.inflow)} valueClassName="text-emerald-600" sub={mesLabel ?? "No período"} />
-              <Stat label="Saídas" value={brl(flow.outflow)} valueClassName="text-red-600" sub={mesLabel ?? "No período"} />
+              <Stat label="Entradas" value={brl(inflow)} valueClassName="text-emerald-600" sub={periodSub} />
+              <Stat label="Saídas" value={brl(outflow)} valueClassName="text-red-600" sub={periodSub} />
               <Stat
                 label="Resultado"
-                value={brl(flow.inflow - flow.outflow)}
-                valueClassName={flow.inflow - flow.outflow >= 0 ? "text-emerald-600" : "text-red-600"}
+                value={brl(inflow - outflow)}
+                valueClassName={inflow - outflow >= 0 ? "text-emerald-600" : "text-red-600"}
                 sub="Entradas − saídas"
               />
             </StatGrid>
 
             <CashflowChart months={flow.monthly} />
 
-            {flow.entries.length === 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-[13px] font-semibold text-zinc-900">Extrato</h2>
+              <ExtractFilters vehicles={vehicles} data={dia} veiculo={veiculoId ? String(veiculoId) : null} placa={sp.placa ?? null} />
+            </div>
+
+            {entries.length === 0 ? (
               <p className="rounded-xl border border-dashed border-zinc-200 px-6 py-10 text-center text-[13px] text-zinc-400">
-                Nenhuma movimentação no período.
+                Nenhuma movimentação para esse filtro.
               </p>
             ) : (
               <Table>
                 <THead>
                   <Th>Data</Th>
-                  <Th>Carro | Placa</Th>
+                  <Th>Carro</Th>
+                  <Th>Placa</Th>
                   <Th>Descrição</Th>
                   <Th>Tipo</Th>
                   <Th right>Entrada</Th>
                   <Th right>Saída</Th>
                 </THead>
                 <TBody>
-                  {flow.entries.map((e, i) => {
+                  {entries.map((e, i) => {
                     const kind = KIND_LABEL[e.kind] ?? KIND_LABEL.conta;
                     return (
                       <Tr key={`${e.kind}-${i}`}>
                         <Td className="text-zinc-500">{fmtDate(e.date)}</Td>
-                        <Td className="max-w-[230px]">
+                        <Td className="max-w-[200px]">
                           {e.vehicle_label ? (
                             <Link
                               href={e.href ?? "#"}
@@ -159,12 +186,16 @@ export default async function FinancePage({
                             >
                               <BrandLogo brand={e.vehicle_label} size={14} />
                               <span className="truncate font-medium text-zinc-800">{e.vehicle_label}</span>
-                              {e.vehicle_plate && (
-                                <span className="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-1 py-px font-mono text-[10px] text-zinc-500">
-                                  {e.vehicle_plate}
-                                </span>
-                              )}
                             </Link>
+                          ) : (
+                            <span className="text-zinc-300">—</span>
+                          )}
+                        </Td>
+                        <Td>
+                          {e.vehicle_plate ? (
+                            <span className="rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px] text-zinc-600">
+                              {e.vehicle_plate}
+                            </span>
                           ) : (
                             <span className="text-zinc-300">—</span>
                           )}

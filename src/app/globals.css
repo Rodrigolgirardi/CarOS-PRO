@@ -39,3 +39,15 @@
     transform: none;
   }
 }
+
+/* ---------------------------------------------------------------- modo escuro
+   Inversão global com correção de matiz: o layout claro vira escuro mantendo
+   as cores aproximadas; fotos, vídeos e logos são re-invertidos para o normal. */
+html.dark {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: #0b0b0d;
+}
+html.dark img,
+html.dark video {
+  filter: invert(1) hue-rotate(180deg);
+}

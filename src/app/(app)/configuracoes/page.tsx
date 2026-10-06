@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { AccessForm } from "@/components/settings/access-form";
+import { AppearanceForm } from "@/components/settings/appearance-form";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { getProfile } from "@/lib/queries/profile";
 
@@ -13,11 +14,12 @@ export default async function SettingsPage() {
     <>
       <PageHeader
         title="Configurações"
-        description="Seu perfil, sua foto e a proteção de acesso do CarOS neste computador."
+        description="Perfil, login e senha e aparência — tudo num lugar só."
       />
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <ProfileForm name={profile.name} avatarUrl={profile.avatarUrl} />
         <AccessForm login={profile.login} authEnabled={profile.authEnabled} />
+        <AppearanceForm />
       </div>
     </>
   );

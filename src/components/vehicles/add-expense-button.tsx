@@ -15,13 +15,15 @@ import { Modal } from "@/components/ui/modal";
 /** Lançamento rápido de gasto a partir da lista: escolhe o veículo no próprio modal. */
 export function AddExpenseButton({ vehicles }: { vehicles: VehicleOption[] }) {
   const [open, setOpen] = useState(false);
+  const [target, setTarget] = useState(""); // "" | "admin" | id do veículo
+  const admin = target === "admin";
   const { state, formAction } = useAction(addCostForVehicle, {
     onSuccess: () => setOpen(false),
   });
 
   return (
     <>
-      <Button variant="warning" onClick={() => setOpen(true)} disabled={vehicles.length === 0}>
+      <Button variant="warning" onClick={() => setOpen(true)}>
         <Receipt size={14} />
         Adicionar gasto
       </Button>
@@ -29,14 +31,19 @@ export function AddExpenseButton({ vehicles }: { vehicles: VehicleOption[] }) {
         open={open}
         onClose={() => setOpen(false)}
         title="Adicionar gasto"
-        description="O gasto entra direto no custo total e no lucro do veículo escolhido."
+        description={
+          admin
+            ? "Gasto da loja (padaria, água, material…) — entra no caixa, mas não no custo de nenhum carro."
+            : "O gasto entra direto no custo total e no lucro do veículo escolhido."
+        }
       >
         <form action={formAction} className="space-y-4">
           <Field label="Veículo" required>
-            <Select name="vehicle_id" required defaultValue="">
+            <Select name="vehicle_id" required value={target} onChange={(e) => setTarget(e.target.value)}>
               <option value="" disabled>
                 Escolha o veículo…
               </option>
+              <option value="admin">Gastos administrativos (sem carro)</option>
               {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.label}
@@ -46,27 +53,40 @@ export function AddExpenseButton({ vehicles }: { vehicles: VehicleOption[] }) {
             </Select>
           </Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Categoria" required>
-              <Select name="category" defaultValue="manutencao" required>
-                {Object.entries(COST_CATEGORY).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+            {!admin && (
+              <Field label="Categoria" required>
+                <Select name="category" defaultValue="manutencao" required>
+                  {Object.entries(COST_CATEGORY).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )}
             <Field label="Valor" required>
               <CurrencyInput name="amount" required />
             </Field>
+            {admin && (
+              <Field label="Data">
+                <Input type="date" name="date" defaultValue={todayISO()} />
+              </Field>
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Data">
-              <Input type="date" name="date" defaultValue={todayISO()} />
+          {admin ? (
+            <Field label="Descrição" required>
+              <Input name="description" required placeholder="Padaria, garrafa de água, material da loja…" />
             </Field>
-            <Field label="Descrição">
-              <Input name="description" placeholder="Troca de óleo e filtros" />
-            </Field>
-          </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Data">
+                <Input type="date" name="date" defaultValue={todayISO()} />
+              </Field>
+              <Field label="Descrição">
+                <Input name="description" placeholder="Troca de óleo e filtros" />
+              </Field>
+            </div>
+          )}
           <FormError state={state} />
           <div className="flex justify-end gap-2">
             <Button onClick={() => setOpen(false)}>Cancelar</Button>

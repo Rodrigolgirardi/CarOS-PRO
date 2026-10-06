@@ -57,11 +57,12 @@ export async function destroySession(token: string | null | undefined): Promise<
 }
 
 /** Só pode ser chamada dentro de Server Actions (cookies de escrita). */
-export async function setSessionCookie(token: string): Promise<Promise<void>> {
+export async function setSessionCookie(token: string, remember = true): Promise<void> {
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 90, // 90 dias
+    // lembrado: 90 dias sem digitar senha; senão, a sessão morre ao fechar o navegador
+    ...(remember ? { maxAge: 60 * 60 * 24 * 90 } : {}),
   });
 }

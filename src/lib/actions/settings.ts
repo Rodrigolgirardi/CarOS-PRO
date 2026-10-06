@@ -91,7 +91,7 @@ export async function login(prev: ActionState, formData: FormData): Promise<Acti
     return err("Usuário ou senha incorretos.");
   }
 
-  await setSessionCookie(await createSession());
+  await setSessionCookie(await createSession(), f.s("remember") === "1");
   revalidate();
   return ok("Bem-vindo de volta!");
 }

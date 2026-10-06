@@ -85,15 +85,27 @@ export function LoginScreen({ avatarUrl }: LoginScreenProps) {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() =>
-              toast("A senha é definida em Configurações por quem já está logado — fale com o administrador da loja.")
-            }
-            className="text-base font-medium text-zinc-800 underline-offset-2 hover:underline"
-          >
-            Esqueci minha senha
-          </button>
+          <div className="flex items-center justify-between gap-3">
+            <label className="flex cursor-pointer items-center gap-2.5 text-base font-medium text-zinc-800">
+              <input
+                type="checkbox"
+                name="remember"
+                value="1"
+                defaultChecked
+                className="size-5 cursor-pointer rounded border-zinc-300 accent-lime-500"
+              />
+              Manter conectado
+            </label>
+            <button
+              type="button"
+              onClick={() =>
+                toast("A senha é definida em Configurações por quem já está logado — fale com o administrador da loja.")
+              }
+              className="text-base font-medium text-zinc-800 underline-offset-2 hover:underline"
+            >
+              Esqueci minha senha
+            </button>
+          </div>
 
           <FormError state={state} />
           <EntrarButton />

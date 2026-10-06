@@ -15,15 +15,18 @@ export async function saveCustomer(id: number | null, prev: ActionState, formDat
   const name = f.s("name");
   if (!name) return err("Informe o nome do cliente.");
 
+  const kind = f.s("kind") === "consignante" ? "consignante" : "comprador";
+
   if (id == null) {
     run(
-      "INSERT INTO customers (name, cpf_cnpj, phone, email, city, notes) VALUES (?,?,?,?,?,?)",
+      "INSERT INTO customers (name, cpf_cnpj, phone, email, city, notes, kind) VALUES (?,?,?,?,?,?,?)",
       name,
       f.s("cpf_cnpj"),
       f.s("phone"),
       f.s("email"),
       f.s("city"),
-      f.s("notes")
+      f.s("notes"),
+      kind
     );
     revalidate();
     return ok("Cliente cadastrado.");
@@ -32,13 +35,14 @@ export async function saveCustomer(id: number | null, prev: ActionState, formDat
   const current = get<Customer>("SELECT * FROM customers WHERE id = ?", id);
   if (!current) return err("Cliente não encontrado.");
   run(
-    "UPDATE customers SET name=?, cpf_cnpj=?, phone=?, email=?, city=?, notes=? WHERE id=?",
+    "UPDATE customers SET name=?, cpf_cnpj=?, phone=?, email=?, city=?, notes=?, kind=? WHERE id=?",
     name,
     f.s("cpf_cnpj"),
     f.s("phone"),
     f.s("email"),
     f.s("city"),
     f.s("notes"),
+    kind,
     id
   );
   revalidate();

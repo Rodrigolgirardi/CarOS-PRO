@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS customers (
   email      TEXT,
   city       TEXT,
   notes      TEXT,
+  kind       TEXT NOT NULL DEFAULT 'comprador',
   status     TEXT NOT NULL DEFAULT 'novo',
   is_demo    INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -230,6 +231,8 @@ export function getDb(): DatabaseSync {
   seedRule.run("outros", "Outros", null, 6);
   const sellerCols = (db.prepare("PRAGMA table_info(sellers)").all() as { name: string }[]).map((c) => c.name);
   if (!sellerCols.includes("commission_fixed")) db.exec("ALTER TABLE sellers ADD COLUMN commission_fixed INTEGER");
+  const customerCols = (db.prepare("PRAGMA table_info(customers)").all() as { name: string }[]).map((c) => c.name);
+  if (!customerCols.includes("kind")) db.exec("ALTER TABLE customers ADD COLUMN kind TEXT NOT NULL DEFAULT 'comprador'");
 
   // status antigos → novos (idempotente; roda em toda subida)
   db.exec(`

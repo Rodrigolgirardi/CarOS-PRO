@@ -106,6 +106,8 @@ export interface Cost {
   created_at: string;
 }
 
+export type CustomerKind = "comprador" | "consignante";
+
 export interface Customer {
   id: number;
   name: string;
@@ -114,6 +116,7 @@ export interface Customer {
   email: string | null;
   city: string | null;
   notes: string | null;
+  kind: CustomerKind; // comprador (compra carro) ou consignante (deixou carro na loja)
   status: CustomerStatus;
   is_demo: number;
   created_at: string;

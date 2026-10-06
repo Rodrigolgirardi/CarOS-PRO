@@ -15,9 +15,17 @@ import { useToast } from "@/components/ui/toast";
 function CustomerFields({ customer }: { customer?: Customer }) {
   return (
     <>
-      <Field label="Nome" required>
-        <Input name="name" defaultValue={customer?.name} placeholder="João Pereira" required autoFocus />
-      </Field>
+      <div className="grid grid-cols-[1fr_170px] gap-4">
+        <Field label="Nome" required>
+          <Input name="name" defaultValue={customer?.name} placeholder="João Pereira" required autoFocus />
+        </Field>
+        <Field label="Tipo" hint="Consignante = deixou carro na loja.">
+          <Select name="kind" defaultValue={customer?.kind ?? "comprador"}>
+            <option value="comprador">Comprador</option>
+            <option value="consignante">Consignante</option>
+          </Select>
+        </Field>
+      </div>
       <div className="grid grid-cols-2 gap-4">
         <Field label="CPF/CNPJ">
           <Input name="cpf_cnpj" defaultValue={customer?.cpf_cnpj ?? ""} inputMode="numeric" />

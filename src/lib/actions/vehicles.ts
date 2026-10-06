@@ -80,10 +80,23 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
     // checklist padrão de preparação (vira o módulo Operações)
     for (const t of DEFAULT_CHECKLIST) run("INSERT INTO tasks (vehicle_id, type) VALUES (?, ?)", vid, t);
     if (consigned) {
+      // o dono vira cliente "consignante" automaticamente (se ainda não existir)
+      const [namePart, ...phonePart] = consignor!.split("—");
+      const ownerName = namePart.trim() || consignor!;
+      const ownerPhone = phonePart.join("—").trim() || null;
+      const existing = get<{ id: number }>("SELECT id FROM customers WHERE name = ? COLLATE NOCASE", ownerName);
+      const ownerId =
+        existing?.id ??
+        run(
+          "INSERT INTO customers (name, phone, kind, notes) VALUES (?,?,'consignante','Criado automaticamente ao receber um carro em consignação.')",
+          ownerName,
+          ownerPhone
+        ).lastId;
       logEvent({
         type: "outro",
-        description: `Consignado recebido — dono: ${consignor}${consignorValue != null ? ` (repasse ${brl(consignorValue)})` : ""}`,
+        description: `Deixou o ${brand} ${model} em consignação${consignorValue != null ? ` (repasse ${brl(consignorValue)})` : ""}`,
         vehicle: vid,
+        customer: ownerId,
         date,
       });
     } else {

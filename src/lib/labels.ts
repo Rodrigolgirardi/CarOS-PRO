@@ -1,5 +1,6 @@
 import type {
   CostCategory,
+  CustomerKind,
   CustomerStatus,
   DealStage,
   DocumentType,
@@ -52,6 +53,11 @@ export const DEAL_STAGE: Record<DealStage, { label: string; tone: Tone }> = {
   vendido: { label: "Vendido", tone: "emerald" },
   entregue: { label: "Entregue", tone: "teal" },
   perdido: { label: "Perdida", tone: "red" },
+};
+
+export const CUSTOMER_KIND: Record<CustomerKind, { label: string; tone: Tone }> = {
+  comprador: { label: "Comprador", tone: "emerald" },
+  consignante: { label: "Consignante", tone: "violet" },
 };
 
 export const CUSTOMER_STATUS: Record<CustomerStatus, { label: string; tone: Tone }> = {

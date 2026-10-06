@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Chips } from "@/components/ui/tabs";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
 import { fmtDateShort } from "@/lib/format";
-import { CUSTOMER_STATUS } from "@/lib/labels";
+import { CUSTOMER_KIND, CUSTOMER_STATUS } from "@/lib/labels";
 import { customerCounts, listCustomers } from "@/lib/queries/customers";
 import type { CustomerStatus } from "@/lib/types";
 
@@ -20,9 +20,12 @@ export default async function CustomersPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status } = await searchParams;
-  const filter = status && status in CUSTOMER_STATUS ? (status as CustomerStatus) : "todos";
-  const customers = listCustomers(filter === "todos" ? undefined : filter);
+  const filter =
+    status === "consignantes" ? "consignantes" : status && status in CUSTOMER_STATUS ? (status as CustomerStatus) : "todos";
+  const all = listCustomers(filter === "todos" || filter === "consignantes" ? undefined : filter);
+  const customers = filter === "consignantes" ? all.filter((c) => c.kind === "consignante") : all;
   const counts = customerCounts();
+  const consignantesCount = listCustomers(undefined).filter((c) => c.kind === "consignante").length;
 
   return (
     <>
@@ -43,6 +46,7 @@ export default async function CustomersPage({
             count: counts[s] ?? 0,
             href: `/clientes?status=${s}`,
           })),
+          { key: "consignantes", label: "Consignantes", count: consignantesCount, href: "/clientes?status=consignantes" },
         ]}
       />
 
@@ -69,8 +73,17 @@ export default async function CustomersPage({
               <Tr key={c.id}>
                 <Td className="max-w-[220px]">
                   <Link href={`/clientes/${c.id}`} className="block min-w-0">
-                    <span className="block truncate font-medium text-zinc-900 group-hover:underline group-hover:underline-offset-2">
-                      {c.name}
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate font-medium text-zinc-900 group-hover:underline group-hover:underline-offset-2">
+                        {c.name}
+                      </span>
+                      <span
+                        className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                          c.kind === "consignante" ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700"
+                        }`}
+                      >
+                        {CUSTOMER_KIND[c.kind].label}
+                      </span>
                     </span>
                     <span className="block truncate text-xs text-zinc-400">{c.city ?? "—"}</span>
                   </Link>

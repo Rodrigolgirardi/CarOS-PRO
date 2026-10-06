@@ -215,6 +215,21 @@ export function getDb(): DatabaseSync {
   if (!dealCols.includes("seller_id")) db.exec("ALTER TABLE deals ADD COLUMN seller_id INTEGER REFERENCES sellers(id)");
   if (!dealCols.includes("channel")) db.exec("ALTER TABLE deals ADD COLUMN channel TEXT");
 
+  // cache local de consultas de placa: cada placa pesquisada fica salva com tudo
+  // que a API retornou — repetir a busca não gera nova cobrança
+  db.exec(`CREATE TABLE IF NOT EXISTS plate_lookups (
+    plate      TEXT PRIMARY KEY,
+    data       TEXT NOT NULL,
+    brand      TEXT,
+    model      TEXT,
+    version    TEXT,
+    year_fab   INTEGER,
+    year_model INTEGER,
+    color      TEXT,
+    fuel       TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
+
   // tabela de comissões padrão por tipo de operação (valores editáveis na aba Comissões)
   db.exec(`CREATE TABLE IF NOT EXISTS commission_rules (
     key    TEXT PRIMARY KEY,

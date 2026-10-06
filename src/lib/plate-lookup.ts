@@ -32,7 +32,7 @@ export interface PlateData {
 }
 
 export type PlateLookupResult =
-  | { ok: true; data: PlateData }
+  | { ok: true; data: PlateData; cached?: boolean }
   | { ok: false; error: string; needsToken?: boolean };
 
 /** ABC1234 (antiga) ou ABC1D23 (Mercosul). */

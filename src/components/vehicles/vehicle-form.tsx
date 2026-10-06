@@ -85,7 +85,11 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
       set("chassis", d.chassis);
       setInfo(d);
       if (d.fipe[0]?.valueCents != null) setFipePrice(d.fipe[0].valueCents);
-      toast(`Encontrado: ${[d.brand, d.model, d.version].filter(Boolean).join(" ")}`);
+      toast(
+        `${r.cached ? "Da sua base (sem custo)" : "Encontrado"}: ${[d.brand, d.model, d.version]
+          .filter(Boolean)
+          .join(" ")}`
+      );
     });
 
   const tokenForm = useAction(savePlateApiToken, {

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Trash2 } from "lucide-react";
-import { deletePlateCache } from "@/lib/actions/plate";
+import { Check, Eye, Trash2 } from "lucide-react";
+import { choosePlateFipe, deletePlateCache } from "@/lib/actions/plate";
 import { brl } from "@/lib/format";
 import type { PlateData } from "@/lib/plate-lookup";
+import { ActionButton } from "@/components/ui/action-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/confirm";
@@ -57,17 +58,45 @@ export function PlateCacheActions({ plate, data }: PlateCacheActionsProps) {
 
           {data.fipe.length > 0 && (
             <section>
-              <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-400">FIPE</h3>
+              <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                FIPE {data.fipe.length > 1 && !data.chosenFipe && "— qual é a versão deste carro?"}
+              </h3>
               <ul className="divide-y divide-zinc-100 rounded-lg border border-zinc-200">
-                {data.fipe.map((f) => (
-                  <li key={f.code} className="flex items-baseline justify-between gap-3 px-3 py-2">
-                    <span className="min-w-0 truncate text-[13px] text-zinc-700">{f.model}</span>
-                    <span className="shrink-0 text-[13px] font-semibold tabular-nums text-zinc-900">
-                      {f.valueCents != null ? brl(f.valueCents) : f.valueText}
-                    </span>
-                  </li>
-                ))}
+                {data.fipe.map((f) => {
+                  const chosen = data.chosenFipe === f.code;
+                  return (
+                    <li
+                      key={f.code}
+                      className={`flex items-center justify-between gap-3 px-3 py-2 ${chosen ? "bg-emerald-50/50" : ""}`}
+                    >
+                      <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-700">{f.model}</span>
+                      <span className="shrink-0 text-[13px] font-semibold tabular-nums text-zinc-900">
+                        {f.valueCents != null ? brl(f.valueCents) : f.valueText}
+                      </span>
+                      {chosen ? (
+                        <Badge tone="emerald" className="shrink-0">
+                          <Check size={11} strokeWidth={3} />
+                          Versão do carro
+                        </Badge>
+                      ) : (
+                        <ActionButton
+                          action={choosePlateFipe.bind(null, plate, f.code)}
+                          variant="secondary"
+                          size="sm"
+                          className="shrink-0"
+                        >
+                          Usar esta
+                        </ActionButton>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
+              {data.chosenFipe && (
+                <p className="mt-1.5 text-xs text-zinc-400">
+                  A versão escolhida fica salva e preenche o formulário quando você buscar esta placa.
+                </p>
+              )}
             </section>
           )}
 

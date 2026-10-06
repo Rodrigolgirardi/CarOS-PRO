@@ -24,7 +24,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   let locked = false;
   if (profile.authEnabled) {
     const token = (await cookies()).get(SESSION_COOKIE)?.value;
-    locked = !isValidSession(token);
+    locked = !(await isValidSession(token));
   }
 
   return (

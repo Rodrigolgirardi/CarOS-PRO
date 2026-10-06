@@ -77,10 +77,6 @@ export default function SellersPage() {
             <CommissionRuleRow key={rule.key} rule={rule} />
           ))}
         </div>
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-zinc-400">
-          <Percent size={12} />
-          A venda rápida sugere a comissão “Venda de carro”; vendedores com comissão própria têm prioridade.
-        </p>
       </section>
     </>
   );

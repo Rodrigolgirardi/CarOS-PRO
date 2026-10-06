@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { CashflowChart } from "@/components/finance/cashflow-chart";
 import { NewPayableButton, NewReceivableButton } from "@/components/finance/finance-dialogs";
 import { MonthSelect } from "@/components/finance/month-select";
+import { BrandLogo } from "@/components/vehicles/brand-logo";
 import { ActionButton } from "@/components/ui/action-button";
 import { Badge, VehicleStatusBadge } from "@/components/ui/badge";
 import { ConfirmButton } from "@/components/ui/confirm";
@@ -138,6 +139,7 @@ export default async function FinancePage({
               <Table>
                 <THead>
                   <Th>Data</Th>
+                  <Th>Carro | Placa</Th>
                   <Th>Descrição</Th>
                   <Th>Tipo</Th>
                   <Th right>Entrada</Th>
@@ -149,14 +151,26 @@ export default async function FinancePage({
                     return (
                       <Tr key={`${e.kind}-${i}`}>
                         <Td className="text-zinc-500">{fmtDate(e.date)}</Td>
-                        <Td className="max-w-[380px]">
-                          {e.href ? (
-                            <Link href={e.href} className="block truncate font-medium text-zinc-800 underline-offset-2 hover:underline">
-                              {e.description}
+                        <Td className="max-w-[230px]">
+                          {e.vehicle_label ? (
+                            <Link
+                              href={e.href ?? "#"}
+                              className="flex items-center gap-1.5 underline-offset-2 hover:underline"
+                            >
+                              <BrandLogo brand={e.vehicle_label} size={14} />
+                              <span className="truncate font-medium text-zinc-800">{e.vehicle_label}</span>
+                              {e.vehicle_plate && (
+                                <span className="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-1 py-px font-mono text-[10px] text-zinc-500">
+                                  {e.vehicle_plate}
+                                </span>
+                              )}
                             </Link>
                           ) : (
-                            <span className="block truncate text-zinc-800">{e.description}</span>
+                            <span className="text-zinc-300">—</span>
                           )}
+                        </Td>
+                        <Td className="max-w-[280px]">
+                          <span className="block truncate text-zinc-800">{e.description}</span>
                         </Td>
                         <Td>
                           <Badge tone={kind.tone}>{kind.label}</Badge>

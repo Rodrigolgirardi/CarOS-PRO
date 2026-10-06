@@ -55,8 +55,8 @@ export default async function DocumentsPage({
       {docs.length === 0 ? (
         <EmptyState
           icon={Files}
-          title="Nenhum documento"
-          description="Envie arquivos e vincule a veículos e clientes para achar tudo na hora."
+          title="Nenhum termo ou contrato ainda"
+          description="Envie o termo de consignação assinado, contratos e outros documentos — vinculados ao carro consignado para achar tudo na hora."
         />
       ) : (
         <Table>

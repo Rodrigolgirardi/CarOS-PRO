@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   BadgePercent,
   Car,
-  KeyRound,
   FileText,
   Handshake,
   LayoutDashboard,
@@ -18,7 +17,6 @@ import { cn } from "@/lib/cn";
 const MAIN = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/veiculos", label: "Veículos", icon: Car },
-  { href: "/consignados", label: "Consignados", icon: KeyRound },
   { href: "/compras", label: "Compras", icon: ShoppingCart },
   { href: "/vendas", label: "Vendas", icon: Handshake },
   { href: "/clientes", label: "Clientes", icon: Users },

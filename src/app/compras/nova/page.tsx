@@ -14,8 +14,8 @@ export default async function NewPurchasePage({
   return (
     <>
       <PageHeader
-        backHref={consigned ? "/consignados" : "/compras"}
-        backLabel={consigned ? "Consignados" : "Compras"}
+        backHref={consigned ? "/veiculos" : "/compras"}
+        backLabel={consigned ? "Veículos" : "Compras"}
         title={consigned ? "Novo consignado" : "Nova compra"}
         description={
           consigned

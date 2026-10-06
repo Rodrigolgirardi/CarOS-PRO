@@ -35,9 +35,8 @@ export async function createCommissionRule(prev: ActionState, formData: FormData
   return ok("Tipo de comissão criado.");
 }
 
-/** Remove um tipo de comissão ("Venda de carro" fica, é o padrão da venda rápida). */
+/** Remove um tipo de comissão (sem "Venda de carro", a venda rápida só deixa de sugerir valor). */
 export async function deleteCommissionRule(key: string): Promise<{ ok: boolean; error?: string }> {
-  if (key === "venda_carro") return err("“Venda de carro” é usada pela venda rápida e não pode ser removida.");
   const rule = get<{ key: string }>("SELECT key FROM commission_rules WHERE key = ?", key);
   if (!rule) return err("Tipo de comissão não encontrado.");
   run("DELETE FROM commission_rules WHERE key = ?", key);

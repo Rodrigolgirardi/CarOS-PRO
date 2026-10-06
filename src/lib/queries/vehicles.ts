@@ -68,6 +68,13 @@ export function vehicleCosts(vehicleId: number): Cost[] {
   return all<Cost>("SELECT * FROM costs WHERE vehicle_id = ? ORDER BY date DESC, id DESC", vehicleId);
 }
 
+/** Plataformas onde o veículo já foi anunciado. */
+export function vehiclePlatforms(vehicleId: number): string[] {
+  return all<{ platform: string }>("SELECT platform FROM vehicle_platforms WHERE vehicle_id = ?", vehicleId).map(
+    (r) => r.platform
+  );
+}
+
 /** Opções para selects (negociações, tarefas, documentos…). */
 export interface VehicleOption {
   id: number;

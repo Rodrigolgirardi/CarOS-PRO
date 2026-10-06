@@ -215,6 +215,14 @@ export function getDb(): DatabaseSync {
   if (!dealCols.includes("seller_id")) db.exec("ALTER TABLE deals ADD COLUMN seller_id INTEGER REFERENCES sellers(id)");
   if (!dealCols.includes("channel")) db.exec("ALTER TABLE deals ADD COLUMN channel TEXT");
 
+  // plataformas onde cada veículo já foi anunciado (checklist da ficha)
+  db.exec(`CREATE TABLE IF NOT EXISTS vehicle_platforms (
+    vehicle_id INTEGER NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+    platform   TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (vehicle_id, platform)
+  )`);
+
   // cache local de consultas de placa: cada placa pesquisada fica salva com tudo
   // que a API retornou — repetir a busca não gera nova cobrança
   db.exec(`CREATE TABLE IF NOT EXISTS plate_lookups (

@@ -37,21 +37,27 @@ declare global {
   var __carosBucketReady: Promise<void> | undefined;
 }
 
-/** Garante que o bucket privado existe (roda uma vez por processo). */
+/** Garante que o bucket privado existe (roda uma vez por processo; falha transitória tenta de novo). */
 function ensureBucket(): Promise<void> {
-  return (globalThis.__carosBucketReady ??= (async () => {
-    const { url, key } = storageEnv();
-    const res = await fetch(`${url}/storage/v1/bucket`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ id: BUCKET, name: BUCKET, public: false }),
+  if (!globalThis.__carosBucketReady) {
+    globalThis.__carosBucketReady = (async () => {
+      const { url, key } = storageEnv();
+      const res = await fetch(`${url}/storage/v1/bucket`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ id: BUCKET, name: BUCKET, public: false }),
+      });
+      // 409 = já existe — ok
+      if (!res.ok && res.status !== 409) {
+        const body = await res.text();
+        if (!/already exists/i.test(body)) throw new Error(`Falha ao preparar o bucket de uploads: ${body}`);
+      }
+    })().catch((e) => {
+      globalThis.__carosBucketReady = undefined; // não envenena o processo
+      throw e;
     });
-    // 409 = já existe — ok
-    if (!res.ok && res.status !== 409) {
-      const body = await res.text();
-      if (!/already exists/i.test(body)) throw new Error(`Falha ao preparar o bucket de uploads: ${body}`);
-    }
-  })());
+  }
+  return globalThis.__carosBucketReady;
 }
 
 /** Envia um arquivo para a nuvem com nome único e seguro. */

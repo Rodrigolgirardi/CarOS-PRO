@@ -256,17 +256,26 @@ function getPool(): Pool {
       ssl: { rejectUnauthorized: false },
       max: 5,
     });
+    // conexão ociosa que cair (comum em serverless) é descartada sem derrubar o processo
+    globalThis.__carosPool.on("error", (e) => console.error("[db] conexão ociosa caiu:", e.message));
   }
   return globalThis.__carosPool;
 }
 
 const txStore = (globalThis.__carosTxStore ??= new AsyncLocalStorage<PoolClient>());
 
-/** Garante que o schema existe (roda uma vez por processo). */
+/** Garante que o schema existe (roda uma vez por processo; falha transitória tenta de novo). */
 function ensureReady(): Promise<void> {
-  return (globalThis.__carosReady ??= getPool()
-    .query(SCHEMA)
-    .then(() => undefined));
+  if (!globalThis.__carosReady) {
+    globalThis.__carosReady = getPool()
+      .query(SCHEMA)
+      .then(() => undefined)
+      .catch((e) => {
+        globalThis.__carosReady = undefined; // não envenena o processo: próxima requisição tenta de novo
+        throw e;
+      });
+  }
+  return globalThis.__carosReady;
 }
 
 type Param = string | number | null;

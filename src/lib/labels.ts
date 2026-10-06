@@ -191,5 +191,16 @@ export const SALE_CHANNELS = [
   "Outros",
 ];
 
+/** Plataformas de anúncio (checklist "Plataformas" da ficha do veículo). */
+export const AD_PLATFORMS = [
+  "Facebook",
+  "OLX",
+  "Webmotors",
+  "Mercado Livre",
+  "GoGarage",
+  "Site Próprio",
+  "Outros",
+];
+
 export const FUEL_OPTIONS = ["Flex", "Gasolina", "Diesel", "Híbrido", "Elétrico"];
 export const TRANSMISSION_OPTIONS = ["Automático", "Manual", "CVT", "Automatizado"];

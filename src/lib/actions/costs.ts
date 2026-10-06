@@ -38,6 +38,28 @@ export async function addCost(vehicleId: number, prev: ActionState, formData: Fo
 /** Variante do addCost em que o veículo vem do próprio formulário (lançamento rápido). */
 export async function addCostForVehicle(prev: ActionState, formData: FormData): Promise<ActionState> {
   const f = fields(formData);
+
+  // Gasto administrativo (padaria, água, loja…): vira conta paga no caixa,
+  // sem entrar no custo/lucro de nenhum veículo.
+  if (f.s("vehicle_id") === "admin") {
+    const amount = f.cents("amount");
+    const date = f.s("date") ?? todayISO();
+    const description = f.s("description");
+    if (!description) return err("Descreva o gasto (ex.: padaria, água, material da loja).");
+    if (amount == null || amount <= 0) return err("Informe o valor do gasto.");
+    run(
+      "INSERT INTO payables (description, category, amount, due_date, status, paid_date) VALUES (?,?,?,?,'pago',?)",
+      `Administrativo — ${description}`,
+      "Gastos administrativos",
+      amount,
+      date,
+      date
+    );
+    logEvent({ type: "custo", description: `Gasto administrativo — ${description}`, amount, date });
+    revalidatePath("/", "layout");
+    return ok("Gasto administrativo lançado.");
+  }
+
   const vehicleId = f.int("vehicle_id");
   if (vehicleId == null) return err("Escolha o veículo.");
   const vehicle = get<{ id: number }>("SELECT id FROM vehicles WHERE id = ?", vehicleId);

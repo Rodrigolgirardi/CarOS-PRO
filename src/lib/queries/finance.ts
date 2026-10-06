@@ -105,9 +105,13 @@ export interface CashEntry {
   date: string;
   description: string;
   kind: "recebimento" | "compra" | "custo" | "conta";
+  source_id: number; // id na tabela de origem (receivables/purchases/costs/payables)
   inflow: number;
   outflow: number;
   href: string | null;
+  vehicle_id: number | null;
+  vehicle_label: string | null; // carro ligado ao lançamento
+  vehicle_plate: string | null;
 }
 
 export interface CashMonth {
@@ -126,24 +130,52 @@ export interface Cashflow {
 }
 
 /** Fluxo de caixa: entradas = recebimentos; saídas = compras + custos + contas pagas. */
-export function cashflow(fromISO: string | null): Cashflow {
-  const received = all<{ date: string; description: string; amount: number; vehicle_id: number | null }>(
-    `SELECT re.received_date AS date, re.description, re.amount, d.vehicle_id
-     FROM receivables re LEFT JOIN deals d ON d.id = re.deal_id
+export function cashflow(fromISO: string | null, toISO?: string | null): Cashflow {
+  const VLABEL = "TRIM(v.brand || ' ' || v.model || ' ' || COALESCE(v.version, ''))";
+  const received = all<{
+    id: number;
+    date: string;
+    description: string;
+    amount: number;
+    vehicle_id: number | null;
+    label: string | null;
+    plate: string | null;
+  }>(
+    `SELECT re.id, re.received_date AS date, re.description, re.amount, d.vehicle_id, ${VLABEL} AS label, v.plate
+     FROM receivables re
+     LEFT JOIN deals d ON d.id = re.deal_id
+     LEFT JOIN vehicles v ON v.id = d.vehicle_id
      WHERE re.status = 'recebido'`
   );
-  const purchases = all<{ date: string; amount: number; vehicle_id: number; label: string }>(
-    `SELECT p.date, p.price AS amount, p.vehicle_id,
-       TRIM(v.brand || ' ' || v.model || ' ' || COALESCE(v.version, '')) AS label
+  const purchases = all<{ id: number; date: string; amount: number; vehicle_id: number; label: string; plate: string | null }>(
+    `SELECT p.id, p.date, p.price AS amount, p.vehicle_id, ${VLABEL} AS label, v.plate
      FROM purchases p JOIN vehicles v ON v.id = p.vehicle_id`
   );
-  const costs = all<{ date: string; amount: number; vehicle_id: number; category: string; label: string }>(
-    `SELECT c.date, c.amount, c.vehicle_id, c.category,
-       TRIM(v.brand || ' ' || v.model || ' ' || COALESCE(v.version, '')) AS label
+  const costs = all<{
+    id: number;
+    date: string;
+    amount: number;
+    vehicle_id: number;
+    category: string;
+    description: string | null;
+    label: string;
+    plate: string | null;
+  }>(
+    `SELECT c.id, c.date, c.amount, c.vehicle_id, c.category, c.description, ${VLABEL} AS label, v.plate
      FROM costs c JOIN vehicles v ON v.id = c.vehicle_id`
   );
-  const paid = all<{ date: string; description: string; amount: number; vehicle_id: number | null }>(
-    `SELECT paid_date AS date, description, amount, vehicle_id FROM payables WHERE status = 'pago' AND paid_date IS NOT NULL`
+  const paid = all<{
+    id: number;
+    date: string;
+    description: string;
+    amount: number;
+    vehicle_id: number | null;
+    label: string | null;
+    plate: string | null;
+  }>(
+    `SELECT pa.id, pa.paid_date AS date, pa.description, pa.amount, pa.vehicle_id, ${VLABEL} AS label, v.plate
+     FROM payables pa LEFT JOIN vehicles v ON v.id = pa.vehicle_id
+     WHERE pa.status = 'pago' AND pa.paid_date IS NOT NULL`
   );
 
   const entries: CashEntry[] = [
@@ -151,38 +183,56 @@ export function cashflow(fromISO: string | null): Cashflow {
       date: r.date,
       description: r.description,
       kind: "recebimento" as const,
+      source_id: r.id,
       inflow: r.amount,
       outflow: 0,
       href: r.vehicle_id ? `/veiculos/${r.vehicle_id}` : null,
+      vehicle_id: r.vehicle_id,
+      vehicle_label: r.label,
+      vehicle_plate: r.plate,
     })),
     ...purchases.map((p) => ({
       date: p.date,
-      description: `Compra — ${p.label}`,
+      description: "Compra do veículo",
       kind: "compra" as const,
+      source_id: p.id,
       inflow: 0,
       outflow: p.amount,
       href: `/veiculos/${p.vehicle_id}`,
+      vehicle_id: p.vehicle_id,
+      vehicle_label: p.label,
+      vehicle_plate: p.plate,
     })),
     ...costs.map((c) => ({
       date: c.date,
-      description: `${COST_CATEGORY[c.category as CostCategory] ?? "Custo"} — ${c.label}`,
+      description: `${COST_CATEGORY[c.category as CostCategory] ?? "Custo"}${c.description ? ` — ${c.description}` : ""}`,
       kind: "custo" as const,
+      source_id: c.id,
       inflow: 0,
       outflow: c.amount,
       href: `/veiculos/${c.vehicle_id}`,
+      vehicle_id: c.vehicle_id,
+      vehicle_label: c.label,
+      vehicle_plate: c.plate,
     })),
     ...paid.map((p) => ({
       date: p.date,
       description: p.description,
       kind: "conta" as const,
+      source_id: p.id,
       inflow: 0,
       outflow: p.amount,
       href: p.vehicle_id ? `/veiculos/${p.vehicle_id}` : null,
+      vehicle_id: p.vehicle_id,
+      vehicle_label: p.label,
+      vehicle_plate: p.plate,
     })),
   ];
 
   const balance = entries.reduce((acc, e) => acc + e.inflow - e.outflow, 0);
-  const inPeriod = fromISO ? entries.filter((e) => e.date >= fromISO) : entries;
+  const inPeriod = entries.filter(
+    (e) => (!fromISO || e.date >= fromISO) && (!toISO || e.date <= toISO)
+  );
   inPeriod.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
   // série mensal (independe do filtro de período)

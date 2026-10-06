@@ -9,7 +9,8 @@ export type ButtonVariant =
   | "danger-ghost"
   | "success"
   | "warning"
-  | "info";
+  | "info"
+  | "danger-solid";
 export type ButtonSize = "sm" | "md";
 
 const BASE =
@@ -24,6 +25,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
   success: "border-transparent bg-emerald-600 text-white hover:bg-emerald-500",
   warning: "border-transparent bg-orange-500 text-white hover:bg-orange-400",
   info: "border-transparent bg-blue-600 text-white hover:bg-blue-500",
+  "danger-solid": "border-transparent bg-red-600 text-white hover:bg-red-500",
 };
 
 const SIZES: Record<ButtonSize, string> = {

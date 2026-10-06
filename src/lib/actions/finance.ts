@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { get, run, tx } from "../db";
 import { todayISO } from "../format";
 import type { ActionState, Payable, Receivable } from "../types";
+import { deleteCost } from "./costs";
 import { err, fields, logEvent, ok } from "./util";
 
 const revalidate = () => revalidatePath("/", "layout");
@@ -180,4 +181,36 @@ export async function deleteReceivable(id: number): Promise<{ ok: boolean; error
   run("DELETE FROM receivables WHERE id = ?", id);
   revalidate();
   return ok();
+}
+
+// ------------------------------------------------------------------- extrato
+
+/** Exclui uma transação do extrato apagando a linha na tabela de origem. */
+export async function deleteCashEntry(
+  kind: "recebimento" | "custo" | "conta",
+  id: number
+): Promise<{ ok: boolean; error?: string; message?: string }> {
+  if (kind === "custo") {
+    const result = await deleteCost(id);
+    return result.ok ? ok("Transação excluída.") : result;
+  }
+  if (kind === "recebimento") {
+    const r = get<Receivable>("SELECT * FROM receivables WHERE id = ?", id);
+    if (!r) return err("Transação não encontrada.");
+    run("DELETE FROM receivables WHERE id = ?", id);
+    logEvent({ type: "recebimento", description: `Recebimento excluído do caixa — ${r.description}`, amount: r.amount });
+    revalidate();
+    return ok("Transação excluída.");
+  }
+  const p = get<Payable>("SELECT * FROM payables WHERE id = ?", id);
+  if (!p) return err("Transação não encontrada.");
+  run("DELETE FROM payables WHERE id = ?", id);
+  logEvent({
+    type: "pagamento",
+    description: `Conta excluída do caixa — ${p.description}`,
+    vehicle: p.vehicle_id,
+    amount: p.amount,
+  });
+  revalidate();
+  return ok("Transação excluída.");
 }

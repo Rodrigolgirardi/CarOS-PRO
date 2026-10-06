@@ -29,10 +29,12 @@ export interface PlateData {
   restrictions: string[]; // restrições ativas (vazio = nada consta)
   fipe: FipeOption[]; // versões FIPE possíveis, da mais provável para a menos
   details: { label: string; value: string }[]; // ficha técnica/registro (só campos preenchidos)
+  /** código FIPE escolhido pelo usuário como a versão correta (Banco de dados) */
+  chosenFipe?: string | null;
 }
 
 export type PlateLookupResult =
-  | { ok: true; data: PlateData }
+  | { ok: true; data: PlateData; cached?: boolean }
   | { ok: false; error: string; needsToken?: boolean };
 
 /** ABC1234 (antiga) ou ABC1D23 (Mercosul). */

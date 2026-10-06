@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BadgePercent,
   Car,
+  Database,
   FileText,
   Handshake,
   LayoutDashboard,
@@ -26,6 +27,7 @@ const MAIN = [
 const MANAGE = [
   { href: "/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/documentos", label: "Documentos", icon: FileText },
+  { href: "/banco-de-dados", label: "Banco de dados", icon: Database },
 ];
 
 function NavItem({ href, label, icon: Icon }: (typeof MAIN)[number]) {

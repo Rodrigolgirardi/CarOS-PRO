@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { all, get, run, tx } from "../db";
 import { brl, todayISO } from "../format";
-import { DEFAULT_CHECKLIST, VEHICLE_LAUDO, VEHICLE_LEILAO, VEHICLE_STATUS } from "../labels";
+import { AD_PLATFORMS, DEFAULT_CHECKLIST, VEHICLE_LAUDO, VEHICLE_LEILAO, VEHICLE_STATUS } from "../labels";
 import { deleteUpload, saveUpload } from "../uploads";
 import type { ActionState, Vehicle, VehicleStatus } from "../types";
 import { err, fields, logEvent, ok } from "./util";
@@ -276,6 +276,31 @@ export async function setVehicleStatus(id: number, status: string): Promise<{ ok
   });
   revalidate();
   return ok("Status atualizado.");
+}
+
+/** Marca/desmarca uma plataforma onde o veículo está anunciado (aba Plataformas). */
+export async function toggleVehiclePlatform(
+  vehicleId: number,
+  platform: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!AD_PLATFORMS.includes(platform)) return err("Plataforma inválida.");
+  const vehicle = get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", vehicleId);
+  if (!vehicle) return err("Veículo não encontrado.");
+
+  const existing = get<{ platform: string }>(
+    "SELECT platform FROM vehicle_platforms WHERE vehicle_id = ? AND platform = ?",
+    vehicleId,
+    platform
+  );
+  if (existing) {
+    run("DELETE FROM vehicle_platforms WHERE vehicle_id = ? AND platform = ?", vehicleId, platform);
+    logEvent({ type: "status", description: `Anúncio removido: ${platform}`, vehicle: vehicleId });
+  } else {
+    run("INSERT INTO vehicle_platforms (vehicle_id, platform) VALUES (?, ?)", vehicleId, platform);
+    logEvent({ type: "status", description: `Anunciado em: ${platform}`, vehicle: vehicleId });
+  }
+  revalidate();
+  return ok();
 }
 
 export async function setSalePrice(id: number, prev: ActionState, formData: FormData): Promise<ActionState> {

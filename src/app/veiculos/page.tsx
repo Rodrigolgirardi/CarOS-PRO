@@ -8,6 +8,7 @@ import { LinkTabs } from "@/components/ui/tabs";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
 import { AddExpenseButton } from "@/components/vehicles/add-expense-button";
 import { AddIncomeButton } from "@/components/finance/add-income-button";
+import { PlateLookupButton } from "@/components/plate-cache/plate-lookup-button";
 import { QuickSaleButton } from "@/components/vehicles/quick-sale-button";
 import { customerOptions } from "@/lib/queries/customers";
 import { sellerOptions } from "@/lib/queries/sellers";
@@ -51,26 +52,24 @@ export default async function VehiclesPage({
 
   return (
     <>
-      <PageHeader
-        title="Veículos"
-        description="Seu estoque, do jeito que ele está agora."
-        actions={
-          <div className="flex flex-col items-stretch gap-2">
-            <LinkButton href="/compras/nova" variant="primary">
-              <Plus size={14} />
-              Adicionar veículo
-            </LinkButton>
-            <AddExpenseButton vehicles={vehicleOptions()} />
-            <QuickSaleButton
-              vehicles={vehicleOptions()}
-              sellers={sellerOptions()}
-              customers={customerOptions()}
-              defaultCommission={commissionRule("venda_carro")}
-            />
-            <AddIncomeButton customers={customerOptions()} sellers={sellerOptions()} rules={listCommissionRules()} />
-          </div>
-        }
-      />
+      <PageHeader title="Veículos" description="Seu estoque, do jeito que ele está agora." />
+
+      {/* ações principais, na horizontal, acima dos filtros */}
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <LinkButton href="/compras/nova" variant="primary">
+          <Plus size={14} />
+          Adicionar veículo
+        </LinkButton>
+        <AddExpenseButton vehicles={vehicleOptions()} />
+        <AddIncomeButton customers={customerOptions()} sellers={sellerOptions()} rules={listCommissionRules()} />
+        <PlateLookupButton />
+        <QuickSaleButton
+          vehicles={vehicleOptions()}
+          sellers={sellerOptions()}
+          customers={customerOptions()}
+          defaultCommission={commissionRule("venda_carro")}
+        />
+      </div>
 
       <LinkTabs
         className="mb-4"

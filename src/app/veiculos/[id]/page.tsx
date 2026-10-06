@@ -8,6 +8,7 @@ import { StatusSelect } from "@/components/vehicles/status-select";
 import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
 import { VehicleRowActions } from "@/components/vehicles/vehicle-row-actions";
 import { NewDealButton } from "@/components/deals/new-deal-button";
+import { QuickSaleButton } from "@/components/vehicles/quick-sale-button";
 import { UploadDocButton } from "@/components/documents/upload-doc-button";
 import { TaskCheck } from "@/components/tasks/task-check";
 import { TaskCreateButton, TaskEditButton } from "@/components/tasks/task-dialogs";
@@ -30,12 +31,15 @@ import {
   VEHICLE_LEILAO,
 } from "@/lib/labels";
 import { vehicleLabel, vehicleMetrics } from "@/lib/metrics";
+import { commissionRule } from "@/lib/queries/commissions";
 import { customerOptions } from "@/lib/queries/customers";
+import { sellerOptions } from "@/lib/queries/sellers";
 import { dealsForVehicle } from "@/lib/queries/deals";
 import { docsForVehicle } from "@/lib/queries/documents";
 import { eventsForVehicle } from "@/lib/queries/events";
 import { tasksForVehicle } from "@/lib/queries/tasks";
-import { getVehicle, vehicleCosts, vehicleOptions } from "@/lib/queries/vehicles";
+import { getVehicle, vehicleCosts, vehicleOptions, vehiclePlatforms } from "@/lib/queries/vehicles";
+import { PlatformsChecklist } from "@/components/vehicles/platforms-checklist";
 import type { Task } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -67,7 +71,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-const TABS = ["resumo", "custos", "operacoes", "documentos", "historico"] as const;
+const TABS = ["resumo", "plataformas", "custos", "operacoes", "documentos", "historico"] as const;
 type Tab = (typeof TABS)[number];
 
 export default async function VehiclePage({
@@ -98,7 +102,7 @@ export default async function VehiclePage({
 
   const pendingTasks = tasks.filter((t) => t.status === "pendente").length;
   const soldDeal = deals.find((d) => d.stage === "vendido" || d.stage === "entregue");
-  const activeDeals = deals.filter((d) => ["interessado", "proposta", "reservado"].includes(d.stage));
+  const platforms = vehiclePlatforms(id);
 
   const sortedTasks = [...tasks].sort((a, b) => {
     const ia = DEFAULT_CHECKLIST.indexOf(a.type);
@@ -166,6 +170,15 @@ export default async function VehiclePage({
             {!sold && (
               <NewDealButton vehicles={vehicles} customers={customers} vehicleId={id} />
             )}
+            {!sold && (
+              <QuickSaleButton
+                vehicles={vehicles}
+                sellers={sellerOptions()}
+                customers={customers}
+                defaultCommission={commissionRule("venda_carro")}
+                fixedVehicleId={id}
+              />
+            )}
             <LinkButton href={`/veiculos/${id}/editar`}>Editar</LinkButton>
             <VehicleRowActions id={id} label={label} redirectAfterDelete="/veiculos" />
           </div>
@@ -208,6 +221,7 @@ export default async function VehiclePage({
         activeKey={tab}
         tabs={[
           { key: "resumo", label: "Resumo", href: `/veiculos/${id}` },
+          { key: "plataformas", label: "Plataformas", count: platforms.length, href: `/veiculos/${id}?tab=plataformas` },
           { key: "custos", label: "Custos", count: costs.length, href: `/veiculos/${id}?tab=custos` },
           { key: "documentos", label: "Documentos", count: docs.length, href: `/veiculos/${id}?tab=documentos` },
           { key: "historico", label: "Histórico", href: `/veiculos/${id}?tab=historico` },
@@ -307,36 +321,11 @@ export default async function VehiclePage({
               </InfoCard>
             )}
 
-            {!sold && (
-              <InfoCard title="Negociações">
-                {activeDeals.length === 0 ? (
-                  <p className="text-[13px] text-zinc-400">Nenhuma negociação ativa para este veículo.</p>
-                ) : (
-                  <ul className="divide-y divide-zinc-100">
-                    {activeDeals.map((d) => (
-                      <li key={d.id} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <User size={14} className="shrink-0 text-zinc-300" />
-                          <Link
-                            href={`/clientes/${d.customer_id}`}
-                            className="truncate text-[13px] font-medium text-zinc-800 underline-offset-2 hover:underline"
-                          >
-                            {d.customer_name}
-                          </Link>
-                          <DealStageBadge stage={d.stage} />
-                        </div>
-                        <span className="shrink-0 text-[13px] tabular-nums text-zinc-500">
-                          {d.proposed_price != null ? brl(d.proposed_price) : ""}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </InfoCard>
-            )}
           </div>
         </div>
       )}
+
+      {tab === "plataformas" && <PlatformsChecklist vehicleId={id} marked={platforms} />}
 
       {tab === "custos" && (
         <div className="space-y-3">

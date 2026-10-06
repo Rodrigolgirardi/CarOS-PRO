@@ -33,6 +33,8 @@ export default function SellersPage() {
           action={<SellerCreateButton />}
         />
       ) : (
+        // mesma largura do bloco de comissões logo abaixo
+        <div className="max-w-xl">
         <Table>
           <THead>
             <Th>Vendedor</Th>
@@ -65,6 +67,7 @@ export default function SellersPage() {
             ))}
           </TBody>
         </Table>
+        </div>
       )}
 
       <section className="mt-8 max-w-xl">

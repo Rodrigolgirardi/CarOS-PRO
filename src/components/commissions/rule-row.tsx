@@ -19,17 +19,15 @@ export function CommissionRuleRow({ rule }: { rule: CommissionRule }) {
         <CurrencyInput name="amount" defaultCents={rule.amount} placeholder="em branco" className="w-36" />
         <SubmitButton variant="secondary">Salvar</SubmitButton>
       </form>
-      {rule.key !== "venda_carro" && (
-        <ConfirmButton
-          action={deleteCommissionRule.bind(null, rule.key)}
-          title={`Remover "${rule.label}"?`}
-          description="O tipo some das sugestões de comissão. Comissões já pagas não mudam."
-          variant="danger-ghost"
-          className="size-8 shrink-0 p-0"
-        >
-          <Trash2 size={15} />
-        </ConfirmButton>
-      )}
+      <ConfirmButton
+        action={deleteCommissionRule.bind(null, rule.key)}
+        title={`Remover "${rule.label}"?`}
+        description="O tipo some das sugestões de comissão. Comissões já pagas não mudam."
+        variant="danger-ghost"
+        className="size-8 shrink-0 p-0"
+      >
+        <Trash2 size={15} />
+      </ConfirmButton>
     </div>
   );
 }

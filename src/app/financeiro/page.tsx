@@ -60,22 +60,20 @@ export default async function FinancePage({
   const tab = ["caixa", "dre", "pagar", "receber"].includes(sp.tab ?? "") ? sp.tab! : "caixa";
   const periodo = PERIODS.some((p) => p.key === sp.periodo) ? sp.periodo! : "30";
 
-  // filtro por mês fechado (jan/2026 em diante)
+  // filtro por mês fechado: mês + ano (2026 em diante, acompanhando o calendário)
   const MESES = [
     "janeiro", "fevereiro", "março", "abril", "maio", "junho",
     "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
   ];
-  const monthOptions: { key: string; label: string }[] = [];
-  const cursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  while (cursor.getFullYear() > 2026 || (cursor.getFullYear() === 2026 && cursor.getMonth() >= 0)) {
-    monthOptions.push({
-      key: `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`,
-      label: `${MESES[cursor.getMonth()]}/${cursor.getFullYear()}`,
-    });
-    cursor.setMonth(cursor.getMonth() - 1);
-  }
-  const mes = monthOptions.some((m) => m.key === sp.mes) ? sp.mes! : null;
-  const mesLabel = mes ? monthOptions.find((m) => m.key === mes)!.label : null;
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: Math.max(1, currentYear - 2026 + 1) }, (_, i) => 2026 + i);
+  const mesValido =
+    !!sp.mes &&
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(sp.mes) &&
+    Number(sp.mes.slice(0, 4)) >= 2026 &&
+    Number(sp.mes.slice(0, 4)) <= currentYear;
+  const mes = mesValido ? sp.mes! : null;
+  const mesLabel = mes ? `${MESES[Number(mes.slice(5, 7)) - 1]}/${mes.slice(0, 4)}` : null;
   const statusFilter: FinanceStatusFilter = ["pendentes", "resolvidas", "todas"].includes(sp.status ?? "")
     ? (sp.status as FinanceStatusFilter)
     : "pendentes";
@@ -111,7 +109,7 @@ export default async function FinancePage({
                 activeKey={mes ? "" : periodo}
                 items={PERIODS.map((p) => ({ key: p.key, label: p.label, href: `/financeiro?tab=caixa&periodo=${p.key}` }))}
               />
-              <MonthSelect months={monthOptions} active={mes} />
+              <MonthSelect years={years} active={mes} />
             </div>
             <StatGrid className="grid-cols-2 md:grid-cols-4">
               <Stat

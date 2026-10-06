@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import type { VehicleOption } from "@/lib/queries/vehicles";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
@@ -11,11 +11,11 @@ interface ExtractFiltersProps {
   vehicles: VehicleOption[]; // inclui vendidos
   data: string | null;
   veiculo: string | null;
-  placa: string | null;
+  busca: string | null;
 }
 
-/** Filtros do extrato: dia exato, carro e placa (combináveis). */
-export function ExtractFilters({ vehicles, data, veiculo, placa }: ExtractFiltersProps) {
+/** Filtros do extrato: dia exato, carro e busca por placa/descrição (combináveis). */
+export function ExtractFilters({ vehicles, data, veiculo, busca }: ExtractFiltersProps) {
   const router = useRouter();
   const params = useSearchParams();
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -30,7 +30,7 @@ export function ExtractFilters({ vehicles, data, veiculo, placa }: ExtractFilter
     router.push(`/financeiro?${next.toString()}`);
   };
 
-  const active = data || veiculo || placa;
+  const active = data || veiculo || busca;
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -47,7 +47,7 @@ export function ExtractFilters({ vehicles, data, veiculo, placa }: ExtractFilter
         <Select
           aria-label="Filtrar por carro"
           value={veiculo ?? ""}
-          onChange={(e) => apply({ veiculo: e.target.value || null, placa: null })}
+          onChange={(e) => apply({ veiculo: e.target.value || null })}
           className="h-7 text-xs"
         >
           <option value="">Todos os carros</option>
@@ -58,17 +58,18 @@ export function ExtractFilters({ vehicles, data, veiculo, placa }: ExtractFilter
           ))}
         </Select>
       </div>
-      <div className="w-28">
+      <div className="relative w-56">
+        <Search size={13} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-zinc-400" />
         <Input
-          aria-label="Filtrar por placa"
-          placeholder="Placa…"
-          defaultValue={placa ?? ""}
+          aria-label="Buscar por placa ou descrição"
+          placeholder="Buscar placa ou descrição…"
+          defaultValue={busca ?? ""}
           onChange={(e) => {
             if (debounce.current) clearTimeout(debounce.current);
             const value = e.target.value;
-            debounce.current = setTimeout(() => apply({ placa: value.trim() || null, veiculo: null }), 400);
+            debounce.current = setTimeout(() => apply({ busca: value.trim() || null }), 400);
           }}
-          className="h-7 font-mono text-xs uppercase"
+          className="h-7 pl-7 text-xs"
         />
       </div>
       {active && (
@@ -76,7 +77,7 @@ export function ExtractFilters({ vehicles, data, veiculo, placa }: ExtractFilter
           variant="ghost"
           size="sm"
           className="h-7 px-2 text-xs"
-          onClick={() => apply({ data: null, veiculo: null, placa: null })}
+          onClick={() => apply({ data: null, veiculo: null, busca: null })}
         >
           <X size={12} />
           Limpar

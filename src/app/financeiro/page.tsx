@@ -63,7 +63,7 @@ export default async function FinancePage({
     mes?: string;
     data?: string;
     veiculo?: string;
-    placa?: string;
+    busca?: string;
   }>;
 }) {
   const sp = await searchParams;
@@ -114,13 +114,21 @@ export default async function FinancePage({
         // data exata ignora os períodos; carro/placa filtram por cima de qualquer recorte
         const dia = sp.data && /^\d{4}-\d{2}-\d{2}$/.test(sp.data) ? sp.data : null;
         const veiculoId = sp.veiculo && /^\d+$/.test(sp.veiculo) ? Number(sp.veiculo) : null;
-        const placa = sp.placa ? sp.placa.toUpperCase().replace(/[^A-Z0-9]/g, "") : null;
+        const norm = (s: string) =>
+          s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+        const busca = sp.busca?.trim() ? norm(sp.busca.trim()) : null;
+        const buscaPlaca = busca ? busca.replace(/[^a-z0-9]/g, "") : null;
         const flow = dia ? cashflow(dia, dia) : mes ? cashflow(`${mes}-01`, monthEnd) : cashflow(periodFrom(periodo));
-        const entries = flow.entries.filter(
-          (e) =>
-            (!veiculoId || e.vehicle_id === veiculoId) &&
-            (!placa || (e.vehicle_plate ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").includes(placa))
-        );
+        const entries = flow.entries.filter((e) => {
+          if (veiculoId && e.vehicle_id !== veiculoId) return false;
+          if (!busca) return true;
+          const plate = (e.vehicle_plate ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          return (
+            norm(e.description).includes(busca) ||
+            norm(e.vehicle_label ?? "").includes(busca) ||
+            (!!buscaPlaca && plate.includes(buscaPlaca))
+          );
+        });
         const inflow = entries.reduce((s, e) => s + e.inflow, 0);
         const outflow = entries.reduce((s, e) => s + e.outflow, 0);
         const periodSub = dia ? fmtDate(dia) : (mesLabel ?? "No período");
@@ -154,7 +162,7 @@ export default async function FinancePage({
 
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-[13px] font-semibold text-zinc-900">Extrato</h2>
-              <ExtractFilters vehicles={vehicles} data={dia} veiculo={veiculoId ? String(veiculoId) : null} placa={sp.placa ?? null} />
+              <ExtractFilters vehicles={vehicles} data={dia} veiculo={veiculoId ? String(veiculoId) : null} busca={sp.busca ?? null} />
             </div>
 
             {entries.length === 0 ? (

@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import {
   SESSION_COOKIE,
   createSession,
+  destroySession,
   hashPassword,
   isAuthEnabled,
   setSessionCookie,
@@ -96,7 +97,8 @@ export async function login(prev: ActionState, formData: FormData): Promise<Acti
 }
 
 export async function logout(): Promise<void> {
-  (await cookies()).delete(SESSION_COOKIE);
-  await setMeta("auth_session", null);
+  const jar = await cookies();
+  await destroySession(jar.get(SESSION_COOKIE)?.value); // encerra só a sessão deste navegador
+  jar.delete(SESSION_COOKIE);
   revalidate();
 }

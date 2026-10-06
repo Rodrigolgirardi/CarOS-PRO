@@ -206,6 +206,11 @@ CREATE TABLE IF NOT EXISTS plate_lookups (
   created_at TEXT NOT NULL DEFAULT to_char(now() AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD HH24:MI:SS')
 );
 
+CREATE TABLE IF NOT EXISTS auth_sessions (
+  token_hash TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL DEFAULT to_char(now() AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD HH24:MI:SS')
+);
+
 CREATE TABLE IF NOT EXISTS commission_rules (
   key    TEXT PRIMARY KEY,
   label  TEXT NOT NULL,

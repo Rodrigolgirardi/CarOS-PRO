@@ -1,56 +1,108 @@
 "use client";
 
-import { Lock } from "lucide-react";
+import { useState } from "react";
+import { useFormStatus } from "react-dom";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { login } from "@/lib/actions/settings";
-import { Field, Input } from "@/components/ui/field";
-import { FormError, SubmitButton, useAction } from "@/components/ui/form";
+import { FormError, useAction } from "@/components/ui/form";
+import { useToast } from "@/components/ui/toast";
 
 interface LoginScreenProps {
   name: string;
   avatarUrl: string | null;
 }
 
+function EntrarButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-lime-300 text-lg font-bold text-zinc-900 transition-colors hover:bg-lime-400 disabled:pointer-events-none disabled:opacity-60"
+    >
+      {pending && <Loader2 size={18} className="animate-spin" />}
+      Entrar
+    </button>
+  );
+}
+
 /** Tela cheia de entrada: aparece no lugar do app quando a senha está ativa. */
-export function LoginScreen({ name, avatarUrl }: LoginScreenProps) {
+export function LoginScreen({ avatarUrl }: LoginScreenProps) {
   const { state, formAction } = useAction(login);
+  const [showPassword, setShowPassword] = useState(false);
+  const toast = useToast();
 
   return (
-    <div className="grid h-dvh place-items-center bg-zinc-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-10 shadow-sm">
-          <div className="mb-8 flex flex-col items-center text-center">
-            {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt="" className="size-20 rounded-full border border-zinc-200 object-cover" />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src="/brand/caros-mark.png" alt="" className="size-20 rounded-xl object-cover" />
-            )}
-            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-zinc-900">CarOS PRO</h1>
-            <p className="mt-1.5 flex items-center gap-1.5 text-sm text-zinc-400">
-              <Lock size={13} />
-              Entre para abrir o CarOS
-            </p>
+    <div className="flex h-dvh flex-col items-center justify-center overflow-y-auto bg-zinc-100 px-4 py-8">
+      {/* marca acima do cartão */}
+      <div className="mb-6 flex items-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={avatarUrl ?? "/brand/caros-mark.png"} alt="" className="size-12 rounded-xl object-cover" />
+        <span className="text-4xl font-extrabold tracking-tight text-zinc-900">CarOS PRO</span>
+      </div>
+
+      <div className="w-full max-w-lg rounded-[2rem] bg-white px-8 py-10 shadow-sm sm:px-12">
+        <h1 className="mb-8 text-center text-3xl font-extrabold tracking-tight text-zinc-900">Acesse sua conta</h1>
+
+        <form action={formAction} className="space-y-5">
+          <div>
+            <label className="mb-2 block text-base font-medium text-zinc-800" htmlFor="login-user">
+              Usuário
+            </label>
+            <input
+              id="login-user"
+              name="login"
+              autoComplete="username"
+              autoFocus
+              required
+              placeholder="Insira o nome do seu usuário"
+              className="h-14 w-full rounded-xl border border-zinc-300 px-4 text-base text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/10"
+            />
           </div>
-          <form action={formAction} className="space-y-5">
-            <Field label="Usuário" required>
-              <Input name="login" autoComplete="username" autoFocus required className="h-12 px-4 text-base" />
-            </Field>
-            <Field label="Senha" required>
-              <Input
-                type="password"
+
+          <div>
+            <label className="mb-2 block text-base font-medium text-zinc-800" htmlFor="login-pass">
+              Senha
+            </label>
+            <div className="relative">
+              <input
+                id="login-pass"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 autoComplete="current-password"
                 required
-                className="h-12 px-4 text-base"
+                placeholder="Insira sua senha"
+                className="h-14 w-full rounded-xl border border-zinc-300 px-4 pr-12 text-base text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/10"
               />
-            </Field>
-            <FormError state={state} />
-            <SubmitButton className="h-12 w-full text-base">Entrar</SubmitButton>
-          </form>
-        </div>
-        <p className="mt-4 text-center text-[11px] text-zinc-400">CarOS — o sistema operacional da sua revenda</p>
+              <button
+                type="button"
+                aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              toast("A senha é definida em Configurações por quem já está logado — fale com o administrador da loja.")
+            }
+            className="text-base font-medium text-zinc-800 underline-offset-2 hover:underline"
+          >
+            Esqueci minha senha
+          </button>
+
+          <FormError state={state} />
+          <EntrarButton />
+        </form>
       </div>
+
+      <p className="mt-6 text-sm text-zinc-500">
+        <span className="font-semibold text-zinc-700">CarOS PRO</span> — 2026 — © Todos os direitos reservados
+      </p>
     </div>
   );
 }

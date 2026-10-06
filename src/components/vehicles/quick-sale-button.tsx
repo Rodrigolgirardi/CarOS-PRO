@@ -20,12 +20,14 @@ interface QuickSaleButtonProps {
   customers: CustomerOption[];
   /** regra "Venda de carro" da aba Comissões — usada quando o vendedor não tem comissão própria */
   defaultCommission?: number | null;
+  /** na ficha do veículo: carro já definido, o modal não pergunta qual foi vendido */
+  fixedVehicleId?: number;
 }
 
 /** Botão verde "Vendido": registra a venda escolhendo o carro no modal. */
-export function QuickSaleButton({ vehicles, sellers, customers, defaultCommission }: QuickSaleButtonProps) {
+export function QuickSaleButton({ vehicles, sellers, customers, defaultCommission, fixedVehicleId }: QuickSaleButtonProps) {
   const [open, setOpen] = useState(false);
-  const [vehicleId, setVehicleId] = useState("");
+  const [vehicleId, setVehicleId] = useState(fixedVehicleId != null ? String(fixedVehicleId) : "");
   const [sellerId, setSellerId] = useState("");
   const [price, setPrice] = useState<number | null>(null);
   const { state, formAction } = useAction(quickSale, {
@@ -53,31 +55,35 @@ export function QuickSaleButton({ vehicles, sellers, customers, defaultCommissio
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Registrar venda"
+        title={fixedVehicleId != null && vehicle ? `Registrar venda — ${vehicle.label}` : "Registrar venda"}
         description="O carro sai do estoque, a comissão vira custo e o valor entra no caixa na data da venda."
       >
         <form action={formAction} className="space-y-4">
-          <Field label="Qual carro você vendeu?" required>
-            <Select
-              name="vehicle_id"
-              required
-              value={vehicleId}
-              onChange={(e) => {
-                setVehicleId(e.target.value);
-                setPrice(null);
-              }}
-            >
-              <option value="" disabled>
-                Escolha o veículo…
-              </option>
-              {vehicles.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.label}
-                  {v.plate ? ` — ${v.plate}` : ""}
+          {fixedVehicleId != null ? (
+            <input type="hidden" name="vehicle_id" value={fixedVehicleId} />
+          ) : (
+            <Field label="Qual carro você vendeu?" required>
+              <Select
+                name="vehicle_id"
+                required
+                value={vehicleId}
+                onChange={(e) => {
+                  setVehicleId(e.target.value);
+                  setPrice(null);
+                }}
+              >
+                <option value="" disabled>
+                  Escolha o veículo…
                 </option>
-              ))}
-            </Select>
-          </Field>
+                {vehicles.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.label}
+                    {v.plate ? ` — ${v.plate}` : ""}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <Field label="Valor da venda" required hint={vehicle?.sale_price != null ? "Preenchido com o preço anunciado." : undefined}>
               <CurrencyInput

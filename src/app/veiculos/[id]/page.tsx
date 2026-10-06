@@ -8,6 +8,7 @@ import { StatusSelect } from "@/components/vehicles/status-select";
 import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
 import { VehicleRowActions } from "@/components/vehicles/vehicle-row-actions";
 import { NewDealButton } from "@/components/deals/new-deal-button";
+import { QuickSaleButton } from "@/components/vehicles/quick-sale-button";
 import { UploadDocButton } from "@/components/documents/upload-doc-button";
 import { TaskCheck } from "@/components/tasks/task-check";
 import { TaskCreateButton, TaskEditButton } from "@/components/tasks/task-dialogs";
@@ -30,7 +31,9 @@ import {
   VEHICLE_LEILAO,
 } from "@/lib/labels";
 import { vehicleLabel, vehicleMetrics } from "@/lib/metrics";
+import { commissionRule } from "@/lib/queries/commissions";
 import { customerOptions } from "@/lib/queries/customers";
+import { sellerOptions } from "@/lib/queries/sellers";
 import { dealsForVehicle } from "@/lib/queries/deals";
 import { docsForVehicle } from "@/lib/queries/documents";
 import { eventsForVehicle } from "@/lib/queries/events";
@@ -166,6 +169,15 @@ export default async function VehiclePage({
           <div className="flex shrink-0 items-center gap-2">
             {!sold && (
               <NewDealButton vehicles={vehicles} customers={customers} vehicleId={id} />
+            )}
+            {!sold && (
+              <QuickSaleButton
+                vehicles={vehicles}
+                sellers={sellerOptions()}
+                customers={customers}
+                defaultCommission={commissionRule("venda_carro")}
+                fixedVehicleId={id}
+              />
             )}
             <LinkButton href={`/veiculos/${id}/editar`}>Editar</LinkButton>
             <VehicleRowActions id={id} label={label} redirectAfterDelete="/veiculos" />

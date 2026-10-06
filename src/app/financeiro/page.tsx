@@ -12,7 +12,7 @@ import { ConfirmButton } from "@/components/ui/confirm";
 import { Stat, StatGrid } from "@/components/ui/stat";
 import { Chips, LinkTabs } from "@/components/ui/tabs";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
-import { deletePayable, deleteReceivable, togglePayable, toggleReceivable } from "@/lib/actions/finance";
+import { deleteCashEntry, deletePayable, deleteReceivable, togglePayable, toggleReceivable } from "@/lib/actions/finance";
 import { addDaysISO, brl, daysUntil, fmtDate, monthStartISO, todayISO } from "@/lib/format";
 import { customerOptions } from "@/lib/queries/customers";
 import { cashflow, dreData, listPayables, listReceivables, openTotals, type FinanceStatusFilter } from "@/lib/queries/finance";
@@ -179,6 +179,7 @@ export default async function FinancePage({
                   <Th>Tipo</Th>
                   <Th right>Entrada</Th>
                   <Th right>Saída</Th>
+                  <Th />
                 </THead>
                 <TBody>
                   {entries.map((e, i) => {
@@ -219,6 +220,19 @@ export default async function FinancePage({
                         </Td>
                         <Td right className="font-medium text-red-600">
                           {e.outflow > 0 ? `− ${brl(e.outflow)}` : ""}
+                        </Td>
+                        <Td right className="w-10">
+                          {e.kind !== "compra" && (
+                            <ConfirmButton
+                              action={deleteCashEntry.bind(null, e.kind, e.source_id)}
+                              title="Excluir transação?"
+                              description={`"${e.description}" (${brl(e.inflow || e.outflow)}) será apagada do caixa e de onde estiver ligada. Não dá para desfazer.`}
+                              variant="danger-ghost"
+                              className="size-9 p-0"
+                            >
+                              <Trash2 size={21} />
+                            </ConfirmButton>
+                          )}
                         </Td>
                       </Tr>
                     );

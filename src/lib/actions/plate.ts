@@ -32,6 +32,25 @@ export async function lookupPlate(input: string): Promise<PlateLookupResult> {
   return result;
 }
 
+export interface PlateCheck {
+  plate: string | null; // null = placa ainda inválida/incompleta
+  inBank: boolean; // já consultada antes (busca grátis)
+  vehicle: { id: number; label: string } | null; // já é um veículo cadastrado no app
+}
+
+/** Checagem instantânea (sem custo): a placa já existe no banco local ou no estoque? */
+export async function checkPlate(input: string): Promise<PlateCheck> {
+  const plate = normalizePlate(input ?? "");
+  if (!plate) return { plate: null, inBank: false, vehicle: null };
+  const inBank = getPlateCache(plate) != null;
+  const vehicle =
+    get<{ id: number; label: string }>(
+      "SELECT id, TRIM(brand || ' ' || model || ' ' || COALESCE(version, '')) AS label FROM vehicles WHERE UPPER(REPLACE(plate, '-', '')) = ?",
+      plate
+    ) ?? null;
+  return { plate, inBank, vehicle };
+}
+
 /**
  * Marca uma opção FIPE como a versão correta do veículo: ela vai para o topo,
  * vira a versão salva da placa e passa a preencher o formulário de compra.

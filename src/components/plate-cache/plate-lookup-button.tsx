@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Loader2, ScanSearch } from "lucide-react";
-import { lookupPlate, savePlateApiToken } from "@/lib/actions/plate";
+import Link from "next/link";
+import { CheckCircle2, Loader2, ScanSearch } from "lucide-react";
+import { checkPlate, lookupPlate, savePlateApiToken, type PlateCheck } from "@/lib/actions/plate";
 import { brl } from "@/lib/format";
 import type { PlateData } from "@/lib/plate-lookup";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +19,21 @@ export function PlateLookupButton() {
   const [open, setOpen] = useState(false);
   const [result, setResult] = useState<{ data: PlateData; cached: boolean } | null>(null);
   const [needsToken, setNeedsToken] = useState(false);
+  const [check, setCheck] = useState<PlateCheck | null>(null);
   const [pending, startLookup] = useTransition();
   const plateRef = useRef<HTMLInputElement>(null);
+  const checkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useToast();
+
+  /** enquanto digita: avisa se a placa já existe no app (sem gastar consulta) */
+  const scheduleCheck = (value: string) => {
+    if (checkTimer.current) clearTimeout(checkTimer.current);
+    setCheck(null);
+    checkTimer.current = setTimeout(async () => {
+      const r = await checkPlate(value);
+      setCheck(r);
+    }, 350);
+  };
 
   const doLookup = () =>
     startLookup(async () => {
@@ -44,6 +57,7 @@ export function PlateLookupButton() {
     setOpen(false);
     setResult(null);
     setNeedsToken(false);
+    setCheck(null);
   };
 
   const d = result?.data;
@@ -105,6 +119,7 @@ export function PlateLookupButton() {
               <Button
                 onClick={() => {
                   setResult(null);
+                  setCheck(null);
                   setTimeout(() => plateRef.current?.focus(), 0);
                 }}
               >
@@ -124,6 +139,7 @@ export function PlateLookupButton() {
                   placeholder="ABC1D23"
                   autoFocus
                   className="flex-1 uppercase"
+                  onChange={(e) => scheduleCheck(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -133,10 +149,37 @@ export function PlateLookupButton() {
                 />
                 <Button variant="danger-solid" onClick={doLookup} disabled={pending} className="shrink-0">
                   {pending ? <Loader2 size={13} className="animate-spin" /> : <ScanSearch size={13} />}
-                  Consultar
+                  {check?.inBank ? "Consultar (grátis)" : "Consultar"}
                 </Button>
               </div>
             </Field>
+
+            {check?.plate && (
+              <div className="space-y-1.5 text-xs">
+                {check.vehicle && (
+                  <p className="flex flex-wrap items-center gap-1.5 font-medium text-blue-700">
+                    <CheckCircle2 size={13} className="shrink-0" />
+                    Esta placa é do
+                    <Link
+                      href={`/veiculos/${check.vehicle.id}`}
+                      onClick={close}
+                      className="underline underline-offset-2"
+                    >
+                      {check.vehicle.label}
+                    </Link>
+                    — já cadastrado no seu estoque.
+                  </p>
+                )}
+                {check.inBank ? (
+                  <p className="flex items-center gap-1.5 font-medium text-emerald-600">
+                    <CheckCircle2 size={13} className="shrink-0" />
+                    Já está no seu banco de dados — consultar é grátis.
+                  </p>
+                ) : (
+                  <p className="text-zinc-400">Placa nova — a consulta vai usar a API (cobrada).</p>
+                )}
+              </div>
+            )}
 
             {needsToken && (
               <form action={tokenForm.formAction} className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50/60 p-4">

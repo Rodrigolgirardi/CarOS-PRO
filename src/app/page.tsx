@@ -33,8 +33,8 @@ interface AttentionItem {
 const STOCK_SHADES = ["bg-blue-900", "bg-blue-800", "bg-blue-700", "bg-blue-600", "bg-blue-500", "bg-blue-400", "bg-blue-300"];
 const stockShade = (i: number) => STOCK_SHADES[Math.min(i, STOCK_SHADES.length - 1)];
 
-export default function DashboardPage() {
-  const data = dashboardData();
+export default async function DashboardPage() {
+  const data = await dashboardData();
   const { stock, month, attention, recent } = data;
 
   const items: AttentionItem[] = [];

@@ -57,9 +57,9 @@ export interface DashboardData {
   recent: EventRow[];
 }
 
-export function dashboardData(): DashboardData {
-  const stockRows = listVehicles("estoque");
-  const soldRows = listVehicles("vendido");
+export async function dashboardData(): Promise<DashboardData> {
+  const stockRows = await listVehicles("estoque");
+  const soldRows = await listVehicles("vendido");
   const monthStart = monthStartISO();
 
   let invested = 0;
@@ -120,7 +120,8 @@ export function dashboardData(): DashboardData {
     bucket.revenue += m.priceRef ?? 0;
     bucket.profit += m.profit ?? 0;
   }
-  for (const cm of cashflow(null).monthly) {
+  const flowAll = await cashflow(null);
+  for (const cm of flowAll.monthly) {
     const bucket = byMonth.get(cm.key);
     if (bucket) bucket.spend = cm.outflow;
   }
@@ -134,19 +135,19 @@ export function dashboardData(): DashboardData {
     if (m.profit != null) profit += m.profit;
   }
 
-  const docsPending = get<{ n: number }>(
+  const docsPending = (await get<{ n: number }>(
     `SELECT COUNT(DISTINCT vehicle_id) AS n FROM tasks
      WHERE status = 'pendente' AND type IN ('documentacao', 'transferencia')`
-  )!;
-  const payables = get<{ total: number; overdue: number }>(
+  ))!;
+  const payables = (await get<{ total: number; overdue: number }>(
     `SELECT COALESCE(SUM(amount), 0) AS total,
-            COALESCE(SUM(CASE WHEN due_date < date('now', 'localtime') THEN 1 ELSE 0 END), 0) AS overdue
+            COALESCE(SUM(CASE WHEN due_date < to_char(now() AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD') THEN 1 ELSE 0 END), 0) AS overdue
      FROM payables WHERE status = 'pendente'`
-  )!;
-  const receivables = get<{ n: number; total: number }>(
+  ))!;
+  const receivables = (await get<{ n: number; total: number }>(
     `SELECT COUNT(*) AS n, COALESCE(SUM(amount), 0) AS total
      FROM receivables WHERE status = 'pendente' AND deal_id IS NOT NULL`
-  )!;
+  ))!;
 
   return {
     stock: {
@@ -164,7 +165,7 @@ export function dashboardData(): DashboardData {
       revenue,
       profit,
       margin: revenue > 0 ? profit / revenue : null,
-      spend: cashflow(monthStart).outflow,
+      spend: (await cashflow(monthStart)).outflow,
     },
     monthly,
     attention: {
@@ -176,7 +177,7 @@ export function dashboardData(): DashboardData {
       receivablesPending: receivables.n,
       receivablesPendingTotal: receivables.total,
     },
-    recent: recentEvents(9),
+    recent: await recentEvents(9),
   };
 }
 

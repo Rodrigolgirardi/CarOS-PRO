@@ -9,7 +9,7 @@ export const metadata = { title: "Editar veículo" };
 
 export default async function EditVehiclePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const vehicle = getVehicle(Number(id));
+  const vehicle = await getVehicle(Number(id));
   if (!vehicle) notFound();
 
   return (

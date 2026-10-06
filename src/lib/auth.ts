@@ -23,25 +23,25 @@ export function verifyPassword(password: string, stored: string | null): boolean
 const tokenHash = (token: string) => createHash("sha256").update(token).digest("hex");
 
 /** Proteção por senha está ativa? */
-export function isAuthEnabled(): boolean {
-  return getMeta("auth_password") != null;
+export async function isAuthEnabled(): Promise<boolean> {
+  return await getMeta("auth_password") != null;
 }
 
 /** Cria a sessão (grava só o hash do token no banco) e devolve o token do cookie. */
-export function createSession(): string {
+export async function createSession(): Promise<string> {
   const token = randomBytes(32).toString("hex");
-  setMeta("auth_session", tokenHash(token));
+  await setMeta("auth_session", tokenHash(token));
   return token;
 }
 
-export function isValidSession(token: string | null | undefined): boolean {
+export async function isValidSession(token: string | null | undefined): Promise<boolean> {
   if (!token) return false;
-  const stored = getMeta("auth_session");
+  const stored = await getMeta("auth_session");
   return stored != null && stored === tokenHash(token);
 }
 
 /** Só pode ser chamada dentro de Server Actions (cookies de escrita). */
-export async function setSessionCookie(token: string): Promise<void> {
+export async function setSessionCookie(token: string): Promise<Promise<void>> {
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",

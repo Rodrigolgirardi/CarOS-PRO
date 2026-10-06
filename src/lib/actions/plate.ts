@@ -17,10 +17,10 @@ export async function lookupPlate(input: string): Promise<PlateLookupResult> {
   const plate = normalizePlate(input ?? "");
   if (!plate) return { ok: false, error: "Digite uma placa válida (ABC1234 ou ABC1D23)." };
 
-  const cached = getPlateCache(plate);
+  const cached = await getPlateCache(plate);
   if (cached) return { ok: true, data: cached, cached: true };
 
-  const token = getMeta(TOKEN_KEY) ?? process.env.PLACA_API_TOKEN ?? null;
+  const token = await getMeta(TOKEN_KEY) ?? process.env.PLACA_API_TOKEN ?? null;
   if (!token) {
     return { ok: false, needsToken: true, error: "Configure o token do serviço de consulta." };
   }
@@ -42,12 +42,12 @@ export interface PlateCheck {
 export async function checkPlate(input: string): Promise<PlateCheck> {
   const plate = normalizePlate(input ?? "");
   if (!plate) return { plate: null, inBank: false, vehicle: null };
-  const inBank = getPlateCache(plate) != null;
+  const inBank = (await getPlateCache(plate)) != null;
   const vehicle =
-    get<{ id: number; label: string }>(
+    (await get<{ id: number; label: string }>(
       "SELECT id, TRIM(brand || ' ' || model || ' ' || COALESCE(version, '')) AS label FROM vehicles WHERE UPPER(REPLACE(plate, '-', '')) = ?",
       plate
-    ) ?? null;
+    )) ?? null;
   return { plate, inBank, vehicle };
 }
 
@@ -56,7 +56,7 @@ export async function checkPlate(input: string): Promise<PlateCheck> {
  * vira a versão salva da placa e passa a preencher o formulário de compra.
  */
 export async function choosePlateFipe(plate: string, code: string): Promise<{ ok: boolean; error?: string }> {
-  const row = get<{ data: string; model: string | null }>(
+  const row = await get<{ data: string; model: string | null }>(
     "SELECT data, model FROM plate_lookups WHERE plate = ?",
     plate
   );
@@ -82,14 +82,14 @@ export async function choosePlateFipe(plate: string, code: string): Promise<{ ok
   data.version = version;
   data.fipe = [chosen, ...data.fipe.filter((f) => f.code !== code)];
 
-  run("UPDATE plate_lookups SET data = ?, version = ? WHERE plate = ?", JSON.stringify(data), version, plate);
+  await run("UPDATE plate_lookups SET data = ?, version = ? WHERE plate = ?", JSON.stringify(data), version, plate);
   revalidatePath("/", "layout");
   return ok();
 }
 
 /** Remove uma placa do banco local — a próxima busca dela consulta a API de novo. */
 export async function deletePlateCache(plate: string): Promise<{ ok: boolean; error?: string }> {
-  run("DELETE FROM plate_lookups WHERE plate = ?", plate);
+  await run("DELETE FROM plate_lookups WHERE plate = ?", plate);
   revalidatePath("/", "layout");
   return ok();
 }
@@ -97,6 +97,6 @@ export async function deletePlateCache(plate: string): Promise<{ ok: boolean; er
 export async function savePlateApiToken(prev: ActionState, formData: FormData): Promise<ActionState> {
   const token = fields(formData).s("token");
   if (!token) return err("Cole o token do provedor.");
-  setMeta(TOKEN_KEY, token);
+  await setMeta(TOKEN_KEY, token);
   return ok("Token salvo neste computador.");
 }

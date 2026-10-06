@@ -19,12 +19,12 @@ export interface PlateCacheRow {
   created_at: string;
 }
 
-export function listPlateCache(): PlateCacheRow[] {
+export async function listPlateCache(): Promise<PlateCacheRow[]> {
   return all<PlateCacheRow>("SELECT * FROM plate_lookups ORDER BY created_at DESC, plate");
 }
 
-export function getPlateCache(plate: string): PlateData | null {
-  const row = get<{ data: string }>("SELECT data FROM plate_lookups WHERE plate = ?", plate);
+export async function getPlateCache(plate: string): Promise<PlateData | null> {
+  const row = await get<{ data: string }>("SELECT data FROM plate_lookups WHERE plate = ?", plate);
   if (!row) return null;
   try {
     return JSON.parse(row.data) as PlateData;
@@ -33,8 +33,8 @@ export function getPlateCache(plate: string): PlateData | null {
   }
 }
 
-export function savePlateCache(plate: string, data: PlateData): void {
-  run(
+export async function savePlateCache(plate: string, data: PlateData): Promise<void> {
+  await run(
     `INSERT OR REPLACE INTO plate_lookups (plate, data, brand, model, version, year_fab, year_model, color, fuel, created_at)
      VALUES (?,?,?,?,?,?,?,?,?, datetime('now'))`,
     plate,

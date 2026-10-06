@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const customer = getCustomer(Number(id));
+  const customer = await getCustomer(Number(id));
   return { title: customer?.name ?? "Cliente" };
 }
 
@@ -43,14 +43,14 @@ function Card({ title, action, children }: { title: string; action?: React.React
 export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: idParam } = await params;
   const id = Number(idParam);
-  const customer = getCustomer(id);
+  const customer = await getCustomer(id);
   if (!customer) notFound();
 
-  const deals = dealsForCustomer(id);
-  const events = eventsForCustomer(id);
-  const docs = docsForCustomer(id);
-  const vehicles = vehicleOptions();
-  const customers = customerOptions();
+  const deals = await dealsForCustomer(id);
+  const events = await eventsForCustomer(id);
+  const docs = await docsForCustomer(id);
+  const vehicles = await vehicleOptions();
+  const customers = await customerOptions();
 
   const purchases = deals.filter((d) => d.stage === "vendido" || d.stage === "entregue");
   const active = deals.filter((d) => ["interessado", "proposta", "reservado"].includes(d.stage));

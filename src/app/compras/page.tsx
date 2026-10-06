@@ -13,8 +13,8 @@ import { purchasesReport } from "@/lib/queries/reports";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Compras" };
 
-export default function PurchasesPage() {
-  const report = purchasesReport("tudo");
+export default async function PurchasesPage() {
+  const report = await purchasesReport("tudo");
 
   return (
     <>

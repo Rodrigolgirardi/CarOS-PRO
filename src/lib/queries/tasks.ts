@@ -11,13 +11,13 @@ FROM tasks t
 JOIN vehicles v ON v.id = t.vehicle_id
 `;
 
-export function tasksForVehicle(vehicleId: number): Task[] {
+export async function tasksForVehicle(vehicleId: number): Promise<Task[]> {
   return all<Task>("SELECT * FROM tasks WHERE vehicle_id = ? ORDER BY id", vehicleId);
 }
 
 export type TaskFilter = "pendentes" | "concluidas" | "todas";
 
-export function listTasks(filter: TaskFilter = "pendentes"): TaskRow[] {
+export async function listTasks(filter: TaskFilter = "pendentes"): Promise<TaskRow[]> {
   const where =
     filter === "pendentes"
       ? "WHERE t.status = 'pendente'"
@@ -37,8 +37,8 @@ export interface GroupSummary {
 }
 
 /** Resumo de pendências por grupo (Preparação, Documentação…). */
-export function pendingByGroup(): GroupSummary[] {
-  const rows = all<{ type: string; vehicle_id: number }>(
+export async function pendingByGroup(): Promise<GroupSummary[]> {
+  const rows = await all<{ type: string; vehicle_id: number }>(
     "SELECT type, vehicle_id FROM tasks WHERE status = 'pendente'"
   );
   const map = new Map<TaskGroup, { tasks: number; vehicles: Set<number> }>();

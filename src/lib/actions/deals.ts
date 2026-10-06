@@ -18,10 +18,10 @@ const RANK: Record<CustomerStatus, number> = {
 };
 
 /** Sobe o status do cliente conforme a negociação avança (nunca rebaixa). */
-function upgradeCustomer(customerId: number, to: CustomerStatus) {
-  const c = get<Customer>("SELECT * FROM customers WHERE id = ?", customerId);
+async function upgradeCustomer(customerId: number, to: CustomerStatus) {
+  const c = await get<Customer>("SELECT * FROM customers WHERE id = ?", customerId);
   if (!c || c.status === "vendido") return;
-  if (RANK[to] > RANK[c.status]) run("UPDATE customers SET status = ? WHERE id = ?", to, customerId);
+  if (RANK[to] > RANK[c.status]) await run("UPDATE customers SET status = ? WHERE id = ?", to, customerId);
 }
 
 interface DealCtx extends Deal {
@@ -34,7 +34,7 @@ interface DealCtx extends Deal {
   vehicle_consignor_value: number | null;
 }
 
-function dealCtx(id: number): DealCtx | undefined {
+function dealCtx(id: number): Promise<DealCtx | undefined> {
   return get<DealCtx>(
     `SELECT d.*, cu.name AS customer_name,
        TRIM(v.brand || ' ' || v.model || ' ' || COALESCE(v.version, '')) AS vehicle_label,
@@ -59,25 +59,25 @@ export async function createDeal(prev: ActionState, formData: FormData): Promise
   if (!vehicleId) return err("Escolha o veículo.");
   if (stage === "proposta" && (proposed == null || proposed <= 0)) return err("Informe o valor da proposta.");
 
-  const vehicle = get<{ status: string; label: string }>(
+  const vehicle = await get<{ status: string; label: string }>(
     "SELECT status, TRIM(brand || ' ' || model || ' ' || COALESCE(version, '')) AS label FROM vehicles WHERE id = ?",
     vehicleId
   );
   if (!vehicle) return err("Veículo não encontrado.");
   if (vehicle.status === "vendido") return err("Este veículo já foi vendido.");
 
-  const existing = get<{ n: number }>(
+  const existing = (await get<{ n: number }>(
     "SELECT COUNT(*) AS n FROM deals WHERE customer_id = ? AND vehicle_id = ? AND stage IN ('interessado', 'proposta', 'reservado')",
     customerId,
     vehicleId
-  )!;
+  ))!;
   if (existing.n > 0) return err("Já existe uma negociação ativa deste cliente para este veículo.");
 
-  const customer = get<Customer>("SELECT * FROM customers WHERE id = ?", customerId);
+  const customer = await get<Customer>("SELECT * FROM customers WHERE id = ?", customerId);
   if (!customer) return err("Cliente não encontrado.");
 
-  tx(() => {
-    const r = run(
+  await tx(async () => {
+    const r = await run(
       "INSERT INTO deals (vehicle_id, customer_id, stage, proposed_price, notes) VALUES (?,?,?,?,?)",
       vehicleId,
       customerId,
@@ -86,7 +86,7 @@ export async function createDeal(prev: ActionState, formData: FormData): Promise
       f.s("notes")
     );
     if (stage === "proposta") {
-      logEvent({
+      await logEvent({
         type: "proposta",
         description: `Proposta de ${customer.name}: ${brl(proposed)}`,
         vehicle: vehicleId,
@@ -94,16 +94,16 @@ export async function createDeal(prev: ActionState, formData: FormData): Promise
         deal: r.lastId,
         amount: proposed,
       });
-      upgradeCustomer(customerId, "negociacao");
+      await upgradeCustomer(customerId, "negociacao");
     } else {
-      logEvent({
+      await logEvent({
         type: "contato",
         description: `${customer.name} demonstrou interesse no ${vehicle.label}`,
         vehicle: vehicleId,
         customer: customerId,
         deal: r.lastId,
       });
-      upgradeCustomer(customerId, "interessado");
+      await upgradeCustomer(customerId, "interessado");
     }
   });
   revalidate();
@@ -111,15 +111,15 @@ export async function createDeal(prev: ActionState, formData: FormData): Promise
 }
 
 export async function proposeDeal(dealId: number, prev: ActionState, formData: FormData): Promise<ActionState> {
-  const deal = dealCtx(dealId);
+  const deal = await dealCtx(dealId);
   if (!deal) return err("Negociação não encontrada.");
   if (!["interessado", "proposta"].includes(deal.stage)) return err("Esta negociação não está aberta a propostas.");
   const proposed = fields(formData).cents("proposed_price");
   if (proposed == null || proposed <= 0) return err("Informe o valor da proposta.");
 
-  tx(() => {
-    run("UPDATE deals SET stage = 'proposta', proposed_price = ? WHERE id = ?", proposed, dealId);
-    logEvent({
+  await tx(async () => {
+    await run("UPDATE deals SET stage = 'proposta', proposed_price = ? WHERE id = ?", proposed, dealId);
+    await logEvent({
       type: "proposta",
       description: `Proposta de ${deal.customer_name}: ${brl(proposed)}`,
       vehicle: deal.vehicle_id,
@@ -127,34 +127,34 @@ export async function proposeDeal(dealId: number, prev: ActionState, formData: F
       deal: dealId,
       amount: proposed,
     });
-    upgradeCustomer(deal.customer_id, "negociacao");
+    await upgradeCustomer(deal.customer_id, "negociacao");
   });
   revalidate();
   return ok("Proposta registrada.");
 }
 
 export async function reserveDeal(dealId: number): Promise<{ ok: boolean; error?: string }> {
-  const deal = dealCtx(dealId);
+  const deal = await dealCtx(dealId);
   if (!deal) return err("Negociação não encontrada.");
   if (!["interessado", "proposta"].includes(deal.stage)) return err("Só é possível reservar a partir de interesse ou proposta.");
   if (deal.vehicle_status === "vendido") return err("Este veículo já foi vendido.");
-  const other = get<{ n: number }>(
+  const other = (await get<{ n: number }>(
     "SELECT COUNT(*) AS n FROM deals WHERE vehicle_id = ? AND stage = 'reservado' AND id != ?",
     deal.vehicle_id,
     dealId
-  )!;
+  ))!;
   if (other.n > 0) return err("Já existe uma reserva ativa para este veículo.");
 
-  tx(() => {
-    run("UPDATE deals SET stage = 'reservado' WHERE id = ?", dealId);
-    logEvent({
+  await tx(async () => {
+    await run("UPDATE deals SET stage = 'reservado' WHERE id = ?", dealId);
+    await logEvent({
       type: "reserva",
       description: `Veículo reservado para ${deal.customer_name}`,
       vehicle: deal.vehicle_id,
       customer: deal.customer_id,
       deal: dealId,
     });
-    upgradeCustomer(deal.customer_id, "negociacao");
+    await upgradeCustomer(deal.customer_id, "negociacao");
   });
   revalidate();
   return ok();
@@ -166,7 +166,7 @@ export async function reserveDeal(dealId: number): Promise<{ ok: boolean; error?
  * negociações concorrentes do mesmo veículo.
  */
 export async function registerSale(dealId: number, prev: ActionState, formData: FormData): Promise<ActionState> {
-  const deal = dealCtx(dealId);
+  const deal = await dealCtx(dealId);
   if (!deal) return err("Negociação não encontrada.");
   if (["vendido", "entregue"].includes(deal.stage)) return err("Esta venda já foi registrada.");
   if (deal.vehicle_status === "vendido") return err("Este veículo já foi vendido em outra negociação.");
@@ -185,8 +185,8 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
   if (down > 0 && down > salePrice) return err("A entrada não pode ser maior que o valor da venda.");
   const balanceDue = f.s("balance_due_date") ?? addDaysISO(soldDate, 7);
 
-  tx(() => {
-    run(
+  await tx(async () => {
+    await run(
       `UPDATE deals SET stage = 'vendido', sale_price = ?, down_payment = ?, payment_method = ?, financed_amount = ?,
          trade_in_desc = ?, trade_in_value = ?, commission = ?, channel = COALESCE(?, channel), notes = COALESCE(?, notes), sold_date = ?
        WHERE id = ?`,
@@ -202,18 +202,18 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
       soldDate,
       dealId
     );
-    run("UPDATE vehicles SET status = 'vendido' WHERE id = ?", deal.vehicle_id);
+    await run("UPDATE vehicles SET status = 'vendido' WHERE id = ?", deal.vehicle_id);
 
     if (commission > 0) {
-      const c = run(
+      const c = await run(
         "INSERT INTO costs (vehicle_id, category, description, amount, date) VALUES (?, 'comissao', ?, ?, ?)",
         deal.vehicle_id,
         `Comissão — venda para ${deal.customer_name}`,
         commission,
         soldDate
       );
-      run("UPDATE deals SET commission_cost_id = ? WHERE id = ?", c.lastId, dealId);
-      logEvent({
+      await run("UPDATE deals SET commission_cost_id = ? WHERE id = ?", c.lastId, dealId);
+      await logEvent({
         type: "custo",
         description: `Custo adicionado — Comissão: venda para ${deal.customer_name}`,
         vehicle: deal.vehicle_id,
@@ -224,14 +224,14 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
 
     // consignado: o repasse combinado com o dono vira custo na venda
     if (deal.vehicle_consignado === 1 && deal.vehicle_consignor_value != null && deal.vehicle_consignor_value > 0) {
-      run(
+      await run(
         "INSERT INTO costs (vehicle_id, category, description, amount, date) VALUES (?, 'outros', ?, ?, ?)",
         deal.vehicle_id,
         `Repasse ao dono${deal.vehicle_consignor ? ` — ${deal.vehicle_consignor}` : ""} (consignação)`,
         deal.vehicle_consignor_value,
         soldDate
       );
-      logEvent({
+      await logEvent({
         type: "custo",
         description: `Repasse ao dono${deal.vehicle_consignor ? ` — ${deal.vehicle_consignor}` : ""} (consignação)`,
         vehicle: deal.vehicle_id,
@@ -240,7 +240,7 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
       });
     }
 
-    logEvent({
+    await logEvent({
       type: "venda",
       description: `Venda registrada para ${deal.customer_name} — ${brl(salePrice)}`,
       vehicle: deal.vehicle_id,
@@ -251,7 +251,7 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
     });
 
     if (down > 0) {
-      run(
+      await run(
         "INSERT INTO receivables (description, customer_id, deal_id, amount, due_date, status, received_date) VALUES (?,?,?,?,?,'recebido',?)",
         `Entrada — ${deal.vehicle_label}`,
         deal.customer_id,
@@ -260,7 +260,7 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
         soldDate,
         soldDate
       );
-      logEvent({
+      await logEvent({
         type: "recebimento",
         description: `Entrada recebida — ${deal.vehicle_label}`,
         vehicle: deal.vehicle_id,
@@ -271,7 +271,7 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
       });
     }
     if (tradeValue > 0) {
-      logEvent({
+      await logEvent({
         type: "outro",
         description: `Troca aceita como parte do pagamento${tradeDesc ? `: ${tradeDesc}` : ""} (${brl(tradeValue)})`,
         vehicle: deal.vehicle_id,
@@ -282,7 +282,7 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
       });
     }
     if (balance > 0) {
-      run(
+      await run(
         "INSERT INTO receivables (description, customer_id, deal_id, amount, due_date) VALUES (?,?,?,?,?)",
         `${financed && financed > 0 ? "Repasse financiamento" : "Saldo da venda"} — ${deal.vehicle_label}`,
         deal.customer_id,
@@ -293,15 +293,15 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
     }
 
     // negociações concorrentes do mesmo veículo são encerradas
-    const competing = all<{ id: number; customer_id: number; name: string }>(
+    const competing = await all<{ id: number; customer_id: number; name: string }>(
       `SELECT d.id, d.customer_id, cu.name FROM deals d JOIN customers cu ON cu.id = d.customer_id
        WHERE d.vehicle_id = ? AND d.id != ? AND d.stage IN ('interessado', 'proposta', 'reservado')`,
       deal.vehicle_id,
       dealId
     );
     for (const c of competing) {
-      run("UPDATE deals SET stage = 'perdido' WHERE id = ?", c.id);
-      logEvent({
+      await run("UPDATE deals SET stage = 'perdido' WHERE id = ?", c.id);
+      await logEvent({
         type: "status",
         description: `Negociação com ${c.name} encerrada — veículo vendido`,
         vehicle: deal.vehicle_id,
@@ -311,7 +311,7 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
       });
     }
 
-    run("UPDATE customers SET status = 'vendido' WHERE id = ?", deal.customer_id);
+    await run("UPDATE customers SET status = 'vendido' WHERE id = ?", deal.customer_id);
   });
 
   revalidate();
@@ -331,7 +331,7 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
   const f = fields(formData);
   const vehicleId = f.id("vehicle_id");
   if (!vehicleId) return err("Escolha o veículo vendido.");
-  const vehicle = get<{ status: string; label: string; consignado: number; consignor: string | null; consignor_value: number | null }>(
+  const vehicle = await get<{ status: string; label: string; consignado: number; consignor: string | null; consignor_value: number | null }>(
     "SELECT status, TRIM(brand || ' ' || model || ' ' || COALESCE(version, '')) AS label, consignado, consignor, consignor_value FROM vehicles WHERE id = ?",
     vehicleId
   );
@@ -343,7 +343,7 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
   const soldDate = f.s("sold_date") ?? todayISO();
 
   const sellerId = f.id("seller_id");
-  const seller = sellerId ? get<Seller>("SELECT * FROM sellers WHERE id = ?", sellerId) : undefined;
+  const seller = sellerId ? await get<Seller>("SELECT * FROM sellers WHERE id = ?", sellerId) : undefined;
   if (sellerId && !seller) return err("Vendedor não encontrado.");
   let commission = f.cents("commission");
   if (commission == null && seller) {
@@ -351,7 +351,7 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
     else if (seller.commission_pct != null) commission = Math.round((salePrice * seller.commission_pct) / 100);
     else {
       // sem comissão própria: usa a regra padrão "Venda de carro" (aba Comissões)
-      const rule = get<{ amount: number | null }>("SELECT amount FROM commission_rules WHERE key = 'venda_carro'");
+      const rule = await get<{ amount: number | null }>("SELECT amount FROM commission_rules WHERE key = 'venda_carro'");
       commission = rule?.amount ?? null;
     }
   }
@@ -361,21 +361,23 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
   let customerId = f.id("customer_id");
   let customerName: string;
   if (customerId) {
-    const c = get<Customer>("SELECT * FROM customers WHERE id = ?", customerId);
+    const c = await get<Customer>("SELECT * FROM customers WHERE id = ?", customerId);
     if (!c) return err("Cliente não encontrado.");
     customerName = c.name;
   } else {
-    const generic = get<Customer>("SELECT * FROM customers WHERE name = 'Venda balcão'");
+    const generic = await get<Customer>("SELECT * FROM customers WHERE name = 'Venda balcão'");
     customerId =
       generic?.id ??
-      run(
-        "INSERT INTO customers (name, status, notes) VALUES ('Venda balcão', 'vendido', 'Cliente genérico usado pelas vendas rápidas (botão Vendido).')"
+      (
+        await run(
+          "INSERT INTO customers (name, status, notes) VALUES ('Venda balcão', 'vendido', 'Cliente genérico usado pelas vendas rápidas (botão Vendido).')"
+        )
       ).lastId;
     customerName = "Venda balcão";
   }
 
-  tx(() => {
-    const dealId = run(
+  await tx(async () => {
+    const dealId = (await run(
       "INSERT INTO deals (vehicle_id, customer_id, stage, sale_price, commission, seller_id, channel, sold_date) VALUES (?,?,'vendido',?,?,?,?,?)",
       vehicleId,
       customerId!,
@@ -384,19 +386,19 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
       seller?.id ?? null,
       f.s("channel"),
       soldDate
-    ).lastId;
-    run("UPDATE vehicles SET status = 'vendido', sale_price = COALESCE(sale_price, ?) WHERE id = ?", salePrice, vehicleId);
+    )).lastId;
+    await run("UPDATE vehicles SET status = 'vendido', sale_price = COALESCE(sale_price, ?) WHERE id = ?", salePrice, vehicleId);
 
     if (commission > 0) {
-      const c = run(
+      const c = await run(
         "INSERT INTO costs (vehicle_id, category, description, amount, date) VALUES (?, 'comissao', ?, ?, ?)",
         vehicleId,
         `Comissão — ${seller?.name ?? "venda"}`,
         commission,
         soldDate
       );
-      run("UPDATE deals SET commission_cost_id = ? WHERE id = ?", c.lastId, dealId);
-      logEvent({
+      await run("UPDATE deals SET commission_cost_id = ? WHERE id = ?", c.lastId, dealId);
+      await logEvent({
         type: "custo",
         description: `Custo adicionado — Comissão${seller ? `: ${seller.name}` : ""}`,
         vehicle: vehicleId,
@@ -407,14 +409,14 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
 
     // consignado: o repasse combinado com o dono vira custo na venda
     if (vehicle.consignado === 1 && vehicle.consignor_value != null && vehicle.consignor_value > 0) {
-      run(
+      await run(
         "INSERT INTO costs (vehicle_id, category, description, amount, date) VALUES (?, 'outros', ?, ?, ?)",
         vehicleId,
         `Repasse ao dono${vehicle.consignor ? ` — ${vehicle.consignor}` : ""} (consignação)`,
         vehicle.consignor_value,
         soldDate
       );
-      logEvent({
+      await logEvent({
         type: "custo",
         description: `Repasse ao dono${vehicle.consignor ? ` — ${vehicle.consignor}` : ""} (consignação)`,
         vehicle: vehicleId,
@@ -423,7 +425,7 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
       });
     }
 
-    logEvent({
+    await logEvent({
       type: "venda",
       description: `Venda registrada${seller ? ` por ${seller.name}` : ""} — ${brl(salePrice)}`,
       vehicle: vehicleId,
@@ -433,7 +435,7 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
       date: soldDate,
     });
 
-    run(
+    await run(
       "INSERT INTO receivables (description, customer_id, deal_id, amount, due_date, status, received_date) VALUES (?,?,?,?,?,'recebido',?)",
       `Venda — ${vehicle.label}`,
       customerId!,
@@ -442,7 +444,7 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
       soldDate,
       soldDate
     );
-    logEvent({
+    await logEvent({
       type: "recebimento",
       description: `Venda recebida — ${vehicle.label}`,
       vehicle: vehicleId,
@@ -453,15 +455,15 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
     });
 
     // negociações concorrentes do mesmo veículo são encerradas
-    const competing = all<{ id: number; customer_id: number; name: string }>(
+    const competing = await all<{ id: number; customer_id: number; name: string }>(
       `SELECT d.id, d.customer_id, cu.name FROM deals d JOIN customers cu ON cu.id = d.customer_id
        WHERE d.vehicle_id = ? AND d.id != ? AND d.stage IN ('interessado', 'proposta', 'reservado')`,
       vehicleId,
       dealId
     );
     for (const c of competing) {
-      run("UPDATE deals SET stage = 'perdido' WHERE id = ?", c.id);
-      logEvent({
+      await run("UPDATE deals SET stage = 'perdido' WHERE id = ?", c.id);
+      await logEvent({
         type: "status",
         description: `Negociação com ${c.name} encerrada — veículo vendido`,
         vehicle: vehicleId,
@@ -471,7 +473,7 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
       });
     }
 
-    run("UPDATE customers SET status = 'vendido' WHERE id = ?", customerId!);
+    await run("UPDATE customers SET status = 'vendido' WHERE id = ?", customerId!);
   });
 
   revalidate();
@@ -479,12 +481,12 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
 }
 
 export async function markDelivered(dealId: number): Promise<{ ok: boolean; error?: string }> {
-  const deal = dealCtx(dealId);
+  const deal = await dealCtx(dealId);
   if (!deal) return err("Negociação não encontrada.");
   if (deal.stage !== "vendido") return err("Só é possível entregar uma venda registrada.");
   const today = todayISO();
-  run("UPDATE deals SET stage = 'entregue', delivered_date = ? WHERE id = ?", today, dealId);
-  logEvent({
+  await run("UPDATE deals SET stage = 'entregue', delivered_date = ? WHERE id = ?", today, dealId);
+  await logEvent({
     type: "entrega",
     description: `Veículo entregue a ${deal.customer_name}`,
     vehicle: deal.vehicle_id,
@@ -497,32 +499,32 @@ export async function markDelivered(dealId: number): Promise<{ ok: boolean; erro
 }
 
 export async function markLost(dealId: number, prev: ActionState, formData: FormData): Promise<ActionState> {
-  const deal = dealCtx(dealId);
+  const deal = await dealCtx(dealId);
   if (!deal) return err("Negociação não encontrada.");
   if (!["interessado", "proposta", "reservado"].includes(deal.stage)) return err("Esta negociação não está ativa.");
   const reason = fields(formData).s("reason");
 
-  tx(() => {
-    run(
+  await tx(async () => {
+    await run(
       "UPDATE deals SET stage = 'perdido', notes = COALESCE(?, notes) WHERE id = ?",
       reason ? `Motivo da perda: ${reason}` : null,
       dealId
     );
-    logEvent({
+    await logEvent({
       type: "status",
       description: `Negociação perdida — ${deal.customer_name}${reason ? ` (${reason})` : ""}`,
       vehicle: deal.vehicle_id,
       customer: deal.customer_id,
       deal: dealId,
     });
-    const active = get<{ n: number }>(
+    const active = (await get<{ n: number }>(
       "SELECT COUNT(*) AS n FROM deals WHERE customer_id = ? AND stage IN ('interessado', 'proposta', 'reservado') AND id != ?",
       deal.customer_id,
       dealId
-    )!;
-    const customer = get<Customer>("SELECT * FROM customers WHERE id = ?", deal.customer_id);
+    ))!;
+    const customer = await get<Customer>("SELECT * FROM customers WHERE id = ?", deal.customer_id);
     if (customer && customer.status !== "vendido" && active.n === 0) {
-      run("UPDATE customers SET status = 'perdido' WHERE id = ?", deal.customer_id);
+      await run("UPDATE customers SET status = 'perdido' WHERE id = ?", deal.customer_id);
     }
   });
   revalidate();
@@ -531,30 +533,30 @@ export async function markLost(dealId: number, prev: ActionState, formData: Form
 
 /** Desfaz uma venda registrada por engano: volta para "reservado" e remove recebíveis/comissão gerados. */
 export async function undoSale(dealId: number): Promise<{ ok: boolean; error?: string }> {
-  const deal = dealCtx(dealId);
+  const deal = await dealCtx(dealId);
   if (!deal) return err("Negociação não encontrada.");
   if (!["vendido", "entregue"].includes(deal.stage)) return err("Esta negociação não é uma venda.");
 
-  tx(() => {
-    run("DELETE FROM receivables WHERE deal_id = ?", dealId);
+  await tx(async () => {
+    await run("DELETE FROM receivables WHERE deal_id = ?", dealId);
     if (deal.commission_cost_id) {
-      run("DELETE FROM costs WHERE id = ?", deal.commission_cost_id);
-      run("UPDATE deals SET commission_cost_id = NULL WHERE id = ?", dealId);
+      await run("DELETE FROM costs WHERE id = ?", deal.commission_cost_id);
+      await run("UPDATE deals SET commission_cost_id = NULL WHERE id = ?", dealId);
     }
-    run("UPDATE deals SET stage = 'reservado', sold_date = NULL, delivered_date = NULL WHERE id = ?", dealId);
-    run("UPDATE vehicles SET status = 'cadastrado' WHERE id = ?", deal.vehicle_id);
-    logEvent({
+    await run("UPDATE deals SET stage = 'reservado', sold_date = NULL, delivered_date = NULL WHERE id = ?", dealId);
+    await run("UPDATE vehicles SET status = 'cadastrado' WHERE id = ?", deal.vehicle_id);
+    await logEvent({
       type: "status",
       description: `Venda desfeita — ${deal.customer_name}`,
       vehicle: deal.vehicle_id,
       customer: deal.customer_id,
       deal: dealId,
     });
-    const otherSold = get<{ n: number }>(
+    const otherSold = (await get<{ n: number }>(
       "SELECT COUNT(*) AS n FROM deals WHERE customer_id = ? AND stage IN ('vendido', 'entregue') AND id != ?",
       deal.customer_id,
       dealId
-    )!;
+    ))!;
     if (otherSold.n === 0) run("UPDATE customers SET status = 'negociacao' WHERE id = ?", deal.customer_id);
   });
   revalidate();

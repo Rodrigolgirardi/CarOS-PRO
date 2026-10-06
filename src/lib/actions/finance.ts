@@ -25,10 +25,10 @@ export async function addIncome(prev: ActionState, formData: FormData): Promise<
   const customerId = f.id("customer_id");
   const sellerId = f.id("seller_id");
   const commission = f.cents("commission") ?? 0;
-  const seller = sellerId ? get<{ name: string }>("SELECT name FROM sellers WHERE id = ?", sellerId) : undefined;
+  const seller = sellerId ? await get<{ name: string }>("SELECT name FROM sellers WHERE id = ?", sellerId) : undefined;
 
-  tx(() => {
-    run(
+  await tx(async () => {
+    await run(
       "INSERT INTO receivables (description, customer_id, amount, due_date, status, received_date) VALUES (?,?,?,?,'recebido',?)",
       description,
       customerId,
@@ -36,9 +36,9 @@ export async function addIncome(prev: ActionState, formData: FormData): Promise<
       date,
       date
     );
-    logEvent({ type: "recebimento", description: `Entrada recebida — ${description}`, customer: customerId, amount, date });
+    await logEvent({ type: "recebimento", description: `Entrada recebida — ${description}`, customer: customerId, amount, date });
     if (commission > 0) {
-      run(
+      await run(
         "INSERT INTO payables (description, category, amount, due_date) VALUES (?,?,?,?)",
         `Comissão${seller ? ` ${seller.name}` : ""} — ${description}`,
         "Comissões",
@@ -64,7 +64,7 @@ export async function savePayable(id: number | null, prev: ActionState, formData
   if (!due) return err("Informe o vencimento.");
 
   if (id == null) {
-    run(
+    await run(
       "INSERT INTO payables (description, category, amount, due_date, vehicle_id) VALUES (?,?,?,?,?)",
       description,
       f.s("category"),
@@ -75,9 +75,9 @@ export async function savePayable(id: number | null, prev: ActionState, formData
     revalidate();
     return ok("Conta adicionada.");
   }
-  const current = get<Payable>("SELECT * FROM payables WHERE id = ?", id);
+  const current = await get<Payable>("SELECT * FROM payables WHERE id = ?", id);
   if (!current) return err("Conta não encontrada.");
-  run(
+  await run(
     "UPDATE payables SET description=?, category=?, amount=?, due_date=?, vehicle_id=? WHERE id=?",
     description,
     f.s("category"),
@@ -91,12 +91,12 @@ export async function savePayable(id: number | null, prev: ActionState, formData
 }
 
 export async function togglePayable(id: number): Promise<{ ok: boolean; error?: string }> {
-  const p = get<Payable>("SELECT * FROM payables WHERE id = ?", id);
+  const p = await get<Payable>("SELECT * FROM payables WHERE id = ?", id);
   if (!p) return err("Conta não encontrada.");
   if (p.status === "pendente") {
     const today = todayISO();
-    run("UPDATE payables SET status = 'pago', paid_date = ? WHERE id = ?", today, id);
-    logEvent({
+    await run("UPDATE payables SET status = 'pago', paid_date = ? WHERE id = ?", today, id);
+    await logEvent({
       type: "pagamento",
       description: `Conta paga — ${p.description}`,
       vehicle: p.vehicle_id,
@@ -104,14 +104,14 @@ export async function togglePayable(id: number): Promise<{ ok: boolean; error?: 
       date: today,
     });
   } else {
-    run("UPDATE payables SET status = 'pendente', paid_date = NULL WHERE id = ?", id);
+    await run("UPDATE payables SET status = 'pendente', paid_date = NULL WHERE id = ?", id);
   }
   revalidate();
   return ok();
 }
 
 export async function deletePayable(id: number): Promise<{ ok: boolean; error?: string }> {
-  run("DELETE FROM payables WHERE id = ?", id);
+  await run("DELETE FROM payables WHERE id = ?", id);
   revalidate();
   return ok();
 }
@@ -128,7 +128,7 @@ export async function saveReceivable(id: number | null, prev: ActionState, formD
   if (!due) return err("Informe o vencimento.");
 
   if (id == null) {
-    run(
+    await run(
       "INSERT INTO receivables (description, customer_id, amount, due_date) VALUES (?,?,?,?)",
       description,
       f.id("customer_id"),
@@ -138,9 +138,9 @@ export async function saveReceivable(id: number | null, prev: ActionState, formD
     revalidate();
     return ok("Conta adicionada.");
   }
-  const current = get<Receivable>("SELECT * FROM receivables WHERE id = ?", id);
+  const current = await get<Receivable>("SELECT * FROM receivables WHERE id = ?", id);
   if (!current) return err("Conta não encontrada.");
-  run(
+  await run(
     "UPDATE receivables SET description=?, customer_id=?, amount=?, due_date=? WHERE id=?",
     description,
     f.id("customer_id"),
@@ -153,15 +153,15 @@ export async function saveReceivable(id: number | null, prev: ActionState, formD
 }
 
 export async function toggleReceivable(id: number): Promise<{ ok: boolean; error?: string }> {
-  const r = get<Receivable>("SELECT * FROM receivables WHERE id = ?", id);
+  const r = await get<Receivable>("SELECT * FROM receivables WHERE id = ?", id);
   if (!r) return err("Conta não encontrada.");
   if (r.status === "pendente") {
     const today = todayISO();
     const vehicle = r.deal_id
-      ? get<{ vehicle_id: number }>("SELECT vehicle_id FROM deals WHERE id = ?", r.deal_id)
+      ? await get<{ vehicle_id: number }>("SELECT vehicle_id FROM deals WHERE id = ?", r.deal_id)
       : undefined;
-    run("UPDATE receivables SET status = 'recebido', received_date = ? WHERE id = ?", today, id);
-    logEvent({
+    await run("UPDATE receivables SET status = 'recebido', received_date = ? WHERE id = ?", today, id);
+    await logEvent({
       type: "recebimento",
       description: `Recebido — ${r.description}`,
       customer: r.customer_id,
@@ -171,14 +171,14 @@ export async function toggleReceivable(id: number): Promise<{ ok: boolean; error
       date: today,
     });
   } else {
-    run("UPDATE receivables SET status = 'pendente', received_date = NULL WHERE id = ?", id);
+    await run("UPDATE receivables SET status = 'pendente', received_date = NULL WHERE id = ?", id);
   }
   revalidate();
   return ok();
 }
 
 export async function deleteReceivable(id: number): Promise<{ ok: boolean; error?: string }> {
-  run("DELETE FROM receivables WHERE id = ?", id);
+  await run("DELETE FROM receivables WHERE id = ?", id);
   revalidate();
   return ok();
 }
@@ -195,17 +195,17 @@ export async function deleteCashEntry(
     return result.ok ? ok("Transação excluída.") : result;
   }
   if (kind === "recebimento") {
-    const r = get<Receivable>("SELECT * FROM receivables WHERE id = ?", id);
+    const r = await get<Receivable>("SELECT * FROM receivables WHERE id = ?", id);
     if (!r) return err("Transação não encontrada.");
-    run("DELETE FROM receivables WHERE id = ?", id);
-    logEvent({ type: "recebimento", description: `Recebimento excluído do caixa — ${r.description}`, amount: r.amount });
+    await run("DELETE FROM receivables WHERE id = ?", id);
+    await logEvent({ type: "recebimento", description: `Recebimento excluído do caixa — ${r.description}`, amount: r.amount });
     revalidate();
     return ok("Transação excluída.");
   }
-  const p = get<Payable>("SELECT * FROM payables WHERE id = ?", id);
+  const p = await get<Payable>("SELECT * FROM payables WHERE id = ?", id);
   if (!p) return err("Transação não encontrada.");
-  run("DELETE FROM payables WHERE id = ?", id);
-  logEvent({
+  await run("DELETE FROM payables WHERE id = ?", id);
+  await logEvent({
     type: "pagamento",
     description: `Conta excluída do caixa — ${p.description}`,
     vehicle: p.vehicle_id,

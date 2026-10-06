@@ -6,8 +6,8 @@ import { getProfile } from "@/lib/queries/profile";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Configurações" };
 
-export default function SettingsPage() {
-  const profile = getProfile();
+export default async function SettingsPage() {
+  const profile = await getProfile();
 
   return (
     <>

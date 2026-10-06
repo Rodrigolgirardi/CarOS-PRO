@@ -58,7 +58,7 @@ function HighlightCard({
 export default async function SalesPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const { tab: tabParam } = await searchParams;
   const tab = tabParam === "destaques" ? "destaques" : tabParam === "relatorio" ? "relatorio" : "vendas";
-  const sold = listDeals()
+  const sold = (await listDeals())
     .filter((d) => d.stage === "vendido" || d.stage === "entregue")
     .sort((a, b) => ((a.sold_date ?? "") < (b.sold_date ?? "") ? 1 : -1));
 

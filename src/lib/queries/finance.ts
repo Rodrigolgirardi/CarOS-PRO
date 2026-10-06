@@ -6,7 +6,7 @@ import { listVehicles } from "./vehicles";
 
 export type FinanceStatusFilter = "pendentes" | "resolvidas" | "todas";
 
-export function listPayables(filter: FinanceStatusFilter = "pendentes"): PayableRow[] {
+export async function listPayables(filter: FinanceStatusFilter = "pendentes"): Promise<PayableRow[]> {
   const where =
     filter === "pendentes" ? "WHERE pa.status = 'pendente'" : filter === "resolvidas" ? "WHERE pa.status = 'pago'" : "";
   return all<PayableRow>(
@@ -18,7 +18,7 @@ export function listPayables(filter: FinanceStatusFilter = "pendentes"): Payable
   );
 }
 
-export function listReceivables(filter: FinanceStatusFilter = "pendentes"): ReceivableRow[] {
+export async function listReceivables(filter: FinanceStatusFilter = "pendentes"): Promise<ReceivableRow[]> {
   const where =
     filter === "pendentes"
       ? "WHERE re.status = 'pendente'"
@@ -57,8 +57,8 @@ export interface DreVehicle {
   profit: number | null;
 }
 
-export function dreData(): DreVehicle[] {
-  const grouped = all<{ vehicle_id: number; category: CostCategory; total: number }>(
+export async function dreData(): Promise<DreVehicle[]> {
+  const grouped = await all<{ vehicle_id: number; category: CostCategory; total: number }>(
     "SELECT vehicle_id, category, SUM(amount) AS total FROM costs GROUP BY vehicle_id, category"
   );
   const costsByVehicle = new Map<number, DreCostLine[]>();
@@ -68,7 +68,7 @@ export function dreData(): DreVehicle[] {
     costsByVehicle.set(g.vehicle_id, list);
   }
 
-  return listVehicles("todos").map((v) => {
+  return (await listVehicles("todos")).map((v) => {
     const m = vehicleMetrics(v);
     const costs = (costsByVehicle.get(v.id) ?? []).sort((a, b) => b.total - a.total);
     // consignado ainda não vendido: o repasse combinado entra como custo previsto
@@ -91,13 +91,13 @@ export function dreData(): DreVehicle[] {
   });
 }
 
-export function openTotals(): { payables: number; payablesCount: number; receivables: number; receivablesCount: number } {
-  const p = get<{ total: number; n: number }>(
+export async function openTotals(): Promise<{ payables: number; payablesCount: number; receivables: number; receivablesCount: number }> {
+  const p = (await get<{ total: number; n: number }>(
     "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS n FROM payables WHERE status = 'pendente'"
-  )!;
-  const r = get<{ total: number; n: number }>(
+  ))!;
+  const r = (await get<{ total: number; n: number }>(
     "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS n FROM receivables WHERE status = 'pendente'"
-  )!;
+  ))!;
   return { payables: p.total, payablesCount: p.n, receivables: r.total, receivablesCount: r.n };
 }
 
@@ -130,9 +130,9 @@ export interface Cashflow {
 }
 
 /** Fluxo de caixa: entradas = recebimentos; saídas = compras + custos + contas pagas. */
-export function cashflow(fromISO: string | null, toISO?: string | null): Cashflow {
+export async function cashflow(fromISO: string | null, toISO?: string | null): Promise<Cashflow> {
   const VLABEL = "TRIM(v.brand || ' ' || v.model || ' ' || COALESCE(v.version, ''))";
-  const received = all<{
+  const received = await all<{
     id: number;
     date: string;
     description: string;
@@ -147,11 +147,11 @@ export function cashflow(fromISO: string | null, toISO?: string | null): Cashflo
      LEFT JOIN vehicles v ON v.id = d.vehicle_id
      WHERE re.status = 'recebido'`
   );
-  const purchases = all<{ id: number; date: string; amount: number; vehicle_id: number; label: string; plate: string | null }>(
+  const purchases = await all<{ id: number; date: string; amount: number; vehicle_id: number; label: string; plate: string | null }>(
     `SELECT p.id, p.date, p.price AS amount, p.vehicle_id, ${VLABEL} AS label, v.plate
      FROM purchases p JOIN vehicles v ON v.id = p.vehicle_id`
   );
-  const costs = all<{
+  const costs = await all<{
     id: number;
     date: string;
     amount: number;
@@ -164,7 +164,7 @@ export function cashflow(fromISO: string | null, toISO?: string | null): Cashflo
     `SELECT c.id, c.date, c.amount, c.vehicle_id, c.category, c.description, ${VLABEL} AS label, v.plate
      FROM costs c JOIN vehicles v ON v.id = c.vehicle_id`
   );
-  const paid = all<{
+  const paid = await all<{
     id: number;
     date: string;
     description: string;

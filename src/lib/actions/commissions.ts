@@ -29,28 +29,28 @@ export async function createCommissionRule(prev: ActionState, formData: FormData
   if (!label) return err("Dê um nome ao tipo de comissão.");
   const amount = f.cents("amount");
   if (amount != null && amount < 0) return err("Valor inválido.");
-  const maxSort = get<{ m: number }>("SELECT COALESCE(MAX(sort), 0) AS m FROM commission_rules")!.m;
-  run("INSERT INTO commission_rules (key, label, amount, sort) VALUES (?,?,?,?)", slugify(label), label, amount, maxSort + 1);
+  const maxSort = (await get<{ m: number }>("SELECT COALESCE(MAX(sort), 0) AS m FROM commission_rules"))!.m;
+  await run("INSERT INTO commission_rules (key, label, amount, sort) VALUES (?,?,?,?)", slugify(label), label, amount, maxSort + 1);
   revalidatePath("/", "layout");
   return ok("Tipo de comissão criado.");
 }
 
 /** Remove um tipo de comissão (sem "Venda de carro", a venda rápida só deixa de sugerir valor). */
 export async function deleteCommissionRule(key: string): Promise<{ ok: boolean; error?: string }> {
-  const rule = get<{ key: string }>("SELECT key FROM commission_rules WHERE key = ?", key);
+  const rule = await get<{ key: string }>("SELECT key FROM commission_rules WHERE key = ?", key);
   if (!rule) return err("Tipo de comissão não encontrado.");
-  run("DELETE FROM commission_rules WHERE key = ?", key);
+  await run("DELETE FROM commission_rules WHERE key = ?", key);
   revalidatePath("/", "layout");
   return ok();
 }
 
 /** Atualiza o valor padrão de uma comissão (vazio = em branco). */
 export async function saveCommissionRule(key: string, prev: ActionState, formData: FormData): Promise<ActionState> {
-  const rule = get<{ key: string }>("SELECT key FROM commission_rules WHERE key = ?", key);
+  const rule = await get<{ key: string }>("SELECT key FROM commission_rules WHERE key = ?", key);
   if (!rule) return err("Tipo de comissão não encontrado.");
   const amount = fields(formData).cents("amount"); // null quando em branco
   if (amount != null && amount < 0) return err("Valor inválido.");
-  run("UPDATE commission_rules SET amount = ? WHERE key = ?", amount, key);
+  await run("UPDATE commission_rules SET amount = ? WHERE key = ?", amount, key);
   revalidatePath("/", "layout");
   return ok("Comissão atualizada.");
 }

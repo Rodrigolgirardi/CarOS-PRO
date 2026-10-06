@@ -13,9 +13,9 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendedores" };
 
 // Vendedores e comissões padrão vivem juntos: uma tela só para a equipe e os valores.
-export default function SellersPage() {
-  const sellers = listSellers();
-  const rules = listCommissionRules();
+export default async function SellersPage() {
+  const sellers = await listSellers();
+  const rules = await listCommissionRules();
 
   return (
     <>

@@ -9,12 +9,12 @@ export interface Profile {
 }
 
 /** Perfil do dono + estado da proteção por senha (tudo na tabela meta). */
-export function getProfile(): Profile {
-  const avatar = getMeta("profile_avatar");
+export async function getProfile(): Promise<Profile> {
+  const avatar = await getMeta("profile_avatar");
   return {
-    name: getMeta("profile_name") ?? "Minha loja",
+    name: await getMeta("profile_name") ?? "Minha loja",
     avatarUrl: avatar ? uploadUrl(avatar) : null,
-    login: getMeta("auth_login"),
-    authEnabled: getMeta("auth_password") != null,
+    login: await getMeta("auth_login"),
+    authEnabled: await getMeta("auth_password") != null,
   };
 }

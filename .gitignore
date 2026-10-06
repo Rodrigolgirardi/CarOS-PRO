@@ -11,3 +11,8 @@ next-env.d.ts
 
 # sistema
 .DS_Store
+
+# segredos de ambiente
+.env
+.env.local
+.env*.local

@@ -40,8 +40,8 @@ export default async function VehiclesPage({
   const LINK_ONLY = ["parados", "todos"];
   const valid = TABS.some((t) => t.key === filtro) || LINK_ONLY.includes(filtro ?? "");
   const filter = (valid ? filtro : "estoque") as VehicleFilter;
-  const rows = listVehicles(filter);
-  const counts = vehicleCounts();
+  const rows = await listVehicles(filter);
+  const counts = await vehicleCounts();
   const tabCount: Record<string, number> = {
     estoque: counts.todos - (counts.vendido ?? 0),
     para_cadastrar: counts.para_cadastrar ?? 0,
@@ -60,14 +60,14 @@ export default async function VehiclesPage({
           <Plus size={14} />
           Adicionar veículo
         </LinkButton>
-        <AddExpenseButton vehicles={vehicleOptions()} />
-        <AddIncomeButton customers={customerOptions()} sellers={sellerOptions()} rules={listCommissionRules()} />
+        <AddExpenseButton vehicles={await vehicleOptions()} />
+        <AddIncomeButton customers={await customerOptions()} sellers={await sellerOptions()} rules={await listCommissionRules()} />
         <PlateLookupButton />
         <QuickSaleButton
-          vehicles={vehicleOptions()}
-          sellers={sellerOptions()}
-          customers={customerOptions()}
-          defaultCommission={commissionRule("venda_carro")}
+          vehicles={await vehicleOptions()}
+          sellers={await sellerOptions()}
+          customers={await customerOptions()}
+          defaultCommission={await commissionRule("venda_carro")}
         />
       </div>
 

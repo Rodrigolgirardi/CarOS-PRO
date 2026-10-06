@@ -7,7 +7,7 @@ export interface CustomerListRow extends Customer {
   last_activity: string | null;
 }
 
-export function listCustomers(status?: CustomerStatus | "todos"): CustomerListRow[] {
+export async function listCustomers(status?: CustomerStatus | "todos"): Promise<CustomerListRow[]> {
   const where = status && status !== "todos" ? `WHERE cu.status = '${status.replace(/[^a-z]/g, "")}'` : "";
   return all<CustomerListRow>(
     `SELECT cu.*,
@@ -23,8 +23,8 @@ export function listCustomers(status?: CustomerStatus | "todos"): CustomerListRo
   );
 }
 
-export function customerCounts(): Record<string, number> {
-  const rows = all<{ status: string; n: number }>("SELECT status, COUNT(*) AS n FROM customers GROUP BY status");
+export async function customerCounts(): Promise<Record<string, number>> {
+  const rows = await all<{ status: string; n: number }>("SELECT status, COUNT(*) AS n FROM customers GROUP BY status");
   const counts: Record<string, number> = { todos: 0 };
   for (const r of rows) {
     counts[r.status] = r.n;
@@ -33,7 +33,7 @@ export function customerCounts(): Record<string, number> {
   return counts;
 }
 
-export function getCustomer(id: number): Customer | undefined {
+export async function getCustomer(id: number): Promise<Customer | undefined> {
   return get<Customer>("SELECT * FROM customers WHERE id = ?", id);
 }
 
@@ -43,6 +43,6 @@ export interface CustomerOption {
   city: string | null;
 }
 
-export function customerOptions(): CustomerOption[] {
+export async function customerOptions(): Promise<CustomerOption[]> {
   return all<CustomerOption>("SELECT id, name, city FROM customers ORDER BY name");
 }

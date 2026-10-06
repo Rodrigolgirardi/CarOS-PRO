@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const profile = getProfile();
+  const profile = await getProfile();
 
   // proteção por senha: com login ativo e sem sessão válida, só a tela de entrada aparece
   let locked = false;

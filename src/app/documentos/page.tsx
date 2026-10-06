@@ -25,10 +25,10 @@ export default async function DocumentsPage({
 }) {
   const { tipo } = await searchParams;
   const filter = tipo && tipo in DOC_TYPE ? (tipo as DocumentType) : "todos";
-  const docs = listDocuments(filter === "todos" ? undefined : filter);
-  const counts = documentCounts();
-  const vehicles = vehicleOptions({ includeSold: true });
-  const customers = customerOptions();
+  const docs = await listDocuments(filter === "todos" ? undefined : filter);
+  const counts = await documentCounts();
+  const vehicles = await vehicleOptions({ includeSold: true });
+  const customers = await customerOptions();
 
   return (
     <>

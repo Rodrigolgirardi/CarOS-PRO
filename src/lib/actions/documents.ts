@@ -21,7 +21,7 @@ export async function uploadDocument(prev: ActionState, formData: FormData): Pro
   const customerId = f.id("customer_id");
   const dealId = f.id("deal_id");
 
-  run(
+  await run(
     "INSERT INTO documents (name, type, vehicle_id, customer_id, deal_id, file_name, mime, size) VALUES (?,?,?,?,?,?,?,?)",
     name,
     type,
@@ -32,7 +32,7 @@ export async function uploadDocument(prev: ActionState, formData: FormData): Pro
     saved.mime,
     saved.size
   );
-  logEvent({
+  await logEvent({
     type: "documento",
     description: `Documento anexado — ${name}`,
     vehicle: vehicleId,
@@ -44,9 +44,9 @@ export async function uploadDocument(prev: ActionState, formData: FormData): Pro
 }
 
 export async function deleteDocument(id: number): Promise<{ ok: boolean; error?: string }> {
-  const doc = get<Doc>("SELECT * FROM documents WHERE id = ?", id);
+  const doc = await get<Doc>("SELECT * FROM documents WHERE id = ?", id);
   if (!doc) return err("Documento não encontrado.");
-  run("DELETE FROM documents WHERE id = ?", id);
+  await run("DELETE FROM documents WHERE id = ?", id);
   deleteUpload(doc.file_name);
   revalidatePath("/", "layout");
   return ok("Documento excluído.");

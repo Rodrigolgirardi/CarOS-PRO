@@ -27,18 +27,18 @@ LEFT JOIN (
 ) r ON r.deal_id = d.id
 `;
 
-export function listDeals(): DealRow[] {
+export async function listDeals(): Promise<DealRow[]> {
   return all<DealRow>(`${BASE} ORDER BY d.created_at DESC, d.id DESC`);
 }
 
-export function getDeal(id: number): DealRow | undefined {
+export async function getDeal(id: number): Promise<DealRow | undefined> {
   return get<DealRow>(`${BASE} WHERE d.id = ?`, id);
 }
 
-export function dealsForVehicle(vehicleId: number): DealRow[] {
+export async function dealsForVehicle(vehicleId: number): Promise<DealRow[]> {
   return all<DealRow>(`${BASE} WHERE d.vehicle_id = ? ORDER BY d.created_at DESC`, vehicleId);
 }
 
-export function dealsForCustomer(customerId: number): DealRow[] {
+export async function dealsForCustomer(customerId: number): Promise<DealRow[]> {
   return all<DealRow>(`${BASE} WHERE d.customer_id = ? ORDER BY d.created_at DESC`, customerId);
 }

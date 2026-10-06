@@ -16,7 +16,7 @@ export async function addCost(vehicleId: number, prev: ActionState, formData: Fo
   if (amount == null || amount <= 0) return err("Informe o valor do custo.");
 
   const description = f.s("description");
-  run(
+  await run(
     "INSERT INTO costs (vehicle_id, category, description, amount, date) VALUES (?,?,?,?,?)",
     vehicleId,
     category,
@@ -24,7 +24,7 @@ export async function addCost(vehicleId: number, prev: ActionState, formData: Fo
     amount,
     date
   );
-  logEvent({
+  await logEvent({
     type: "custo",
     description: `Custo adicionado — ${COST_CATEGORY[category as keyof typeof COST_CATEGORY]}${description ? `: ${description}` : ""}`,
     vehicle: vehicleId,
@@ -47,7 +47,7 @@ export async function addCostForVehicle(prev: ActionState, formData: FormData): 
     const description = f.s("description");
     if (!description) return err("Descreva o gasto (ex.: padaria, água, material da loja).");
     if (amount == null || amount <= 0) return err("Informe o valor do gasto.");
-    run(
+    await run(
       "INSERT INTO payables (description, category, amount, due_date, status, paid_date) VALUES (?,?,?,?,'pago',?)",
       `Administrativo — ${description}`,
       "Gastos administrativos",
@@ -55,20 +55,20 @@ export async function addCostForVehicle(prev: ActionState, formData: FormData): 
       date,
       date
     );
-    logEvent({ type: "custo", description: `Gasto administrativo — ${description}`, amount, date });
+    await logEvent({ type: "custo", description: `Gasto administrativo — ${description}`, amount, date });
     revalidatePath("/", "layout");
     return ok("Gasto administrativo lançado.");
   }
 
   const vehicleId = f.int("vehicle_id");
   if (vehicleId == null) return err("Escolha o veículo.");
-  const vehicle = get<{ id: number }>("SELECT id FROM vehicles WHERE id = ?", vehicleId);
+  const vehicle = await get<{ id: number }>("SELECT id FROM vehicles WHERE id = ?", vehicleId);
   if (!vehicle) return err("Veículo não encontrado.");
   return addCost(vehicleId, prev, formData);
 }
 
 export async function updateCost(costId: number, prev: ActionState, formData: FormData): Promise<ActionState> {
-  const cost = get<Cost>("SELECT * FROM costs WHERE id = ?", costId);
+  const cost = await get<Cost>("SELECT * FROM costs WHERE id = ?", costId);
   if (!cost) return err("Custo não encontrado.");
 
   const f = fields(formData);
@@ -79,8 +79,8 @@ export async function updateCost(costId: number, prev: ActionState, formData: Fo
   if (amount == null || amount <= 0) return err("Informe o valor do custo.");
   const description = f.s("description");
 
-  tx(() => {
-    run(
+  await tx(async () => {
+    await run(
       "UPDATE costs SET category = ?, description = ?, amount = ?, date = ? WHERE id = ?",
       category,
       description,
@@ -89,10 +89,10 @@ export async function updateCost(costId: number, prev: ActionState, formData: Fo
       costId
     );
     // mantém em sincronia a tarefa/comissão que geraram este custo
-    run("UPDATE tasks SET cost = ? WHERE cost_id = ?", amount, costId);
-    run("UPDATE deals SET commission = ? WHERE commission_cost_id = ?", amount, costId);
+    await run("UPDATE tasks SET cost = ? WHERE cost_id = ?", amount, costId);
+    await run("UPDATE deals SET commission = ? WHERE commission_cost_id = ?", amount, costId);
     if (amount !== cost.amount || category !== cost.category) {
-      logEvent({
+      await logEvent({
         type: "custo",
         description: `Custo atualizado — ${COST_CATEGORY[category as keyof typeof COST_CATEGORY]}${description ? `: ${description}` : ""}${
           amount !== cost.amount ? ` (${brl(cost.amount)} → ${brl(amount)})` : ""
@@ -108,12 +108,12 @@ export async function updateCost(costId: number, prev: ActionState, formData: Fo
 }
 
 export async function deleteCost(costId: number): Promise<{ ok: boolean; error?: string }> {
-  const cost = get<Cost>("SELECT * FROM costs WHERE id = ?", costId);
+  const cost = await get<Cost>("SELECT * FROM costs WHERE id = ?", costId);
   if (!cost) return err("Custo não encontrado.");
-  run("UPDATE tasks SET cost_id = NULL WHERE cost_id = ?", costId);
-  run("UPDATE deals SET commission_cost_id = NULL WHERE commission_cost_id = ?", costId);
-  run("DELETE FROM costs WHERE id = ?", costId);
-  logEvent({
+  await run("UPDATE tasks SET cost_id = NULL WHERE cost_id = ?", costId);
+  await run("UPDATE deals SET commission_cost_id = NULL WHERE commission_cost_id = ?", costId);
+  await run("DELETE FROM costs WHERE id = ?", costId);
+  await logEvent({
     type: "custo",
     description: `Custo removido — ${COST_CATEGORY[cost.category]} (${brl(cost.amount)})`,
     vehicle: cost.vehicle_id,

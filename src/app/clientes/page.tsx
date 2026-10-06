@@ -22,10 +22,10 @@ export default async function CustomersPage({
   const { status } = await searchParams;
   const filter =
     status === "consignantes" ? "consignantes" : status && status in CUSTOMER_STATUS ? (status as CustomerStatus) : "todos";
-  const all = listCustomers(filter === "todos" || filter === "consignantes" ? undefined : filter);
+  const all = await listCustomers(filter === "todos" || filter === "consignantes" ? undefined : filter);
   const customers = filter === "consignantes" ? all.filter((c) => c.kind === "consignante") : all;
-  const counts = customerCounts();
-  const consignantesCount = listCustomers(undefined).filter((c) => c.kind === "consignante").length;
+  const counts = await customerCounts();
+  const consignantesCount = (await listCustomers(undefined)).filter((c) => c.kind === "consignante").length;
 
   return (
     <>

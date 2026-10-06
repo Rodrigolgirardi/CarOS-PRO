@@ -6,7 +6,7 @@ export interface SellerRow extends Seller {
   commission_total: number; // soma das comissões dessas vendas
 }
 
-export function listSellers(): SellerRow[] {
+export async function listSellers(): Promise<SellerRow[]> {
   return all<SellerRow>(
     `SELECT s.*, COUNT(d.id) AS sales_count, COALESCE(SUM(d.commission), 0) AS commission_total
      FROM sellers s
@@ -16,6 +16,6 @@ export function listSellers(): SellerRow[] {
   );
 }
 
-export function sellerOptions(): Seller[] {
+export async function sellerOptions(): Promise<Seller[]> {
   return all<Seller>("SELECT * FROM sellers ORDER BY name");
 }

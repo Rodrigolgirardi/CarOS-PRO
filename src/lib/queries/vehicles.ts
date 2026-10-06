@@ -36,7 +36,7 @@ export type VehicleFilter =
 const STATUS_FILTERS: VehicleStatus[] = ["para_cadastrar", "para_arrumar", "cadastrado", "vendido"];
 
 // Consignados ficam junto do estoque em todas as listas; a aba Consignados é só um recorte.
-export function listVehicles(filter: VehicleFilter = "todos"): VehicleRow[] {
+export async function listVehicles(filter: VehicleFilter = "todos"): Promise<VehicleRow[]> {
   let where = "";
   if (filter === "estoque") where = "WHERE v.status != 'vendido'";
   else if (filter === "consignados") where = "WHERE v.consignado = 1 AND v.status != 'vendido'";
@@ -50,8 +50,8 @@ export function listVehicles(filter: VehicleFilter = "todos"): VehicleRow[] {
   );
 }
 
-export function vehicleCounts(): Record<string, number> {
-  const rows = all<{ status: string; n: number }>("SELECT status, COUNT(*) AS n FROM vehicles GROUP BY status");
+export async function vehicleCounts(): Promise<Record<string, number>> {
+  const rows = await all<{ status: string; n: number }>("SELECT status, COUNT(*) AS n FROM vehicles GROUP BY status");
   const counts: Record<string, number> = { todos: 0 };
   for (const r of rows) {
     counts[r.status] = r.n;
@@ -60,17 +60,17 @@ export function vehicleCounts(): Record<string, number> {
   return counts;
 }
 
-export function getVehicle(id: number): VehicleRow | undefined {
+export async function getVehicle(id: number): Promise<VehicleRow | undefined> {
   return get<VehicleRow>(`${BASE} WHERE v.id = ?`, id);
 }
 
-export function vehicleCosts(vehicleId: number): Cost[] {
+export async function vehicleCosts(vehicleId: number): Promise<Cost[]> {
   return all<Cost>("SELECT * FROM costs WHERE vehicle_id = ? ORDER BY date DESC, id DESC", vehicleId);
 }
 
 /** Plataformas onde o veículo já foi anunciado. */
-export function vehiclePlatforms(vehicleId: number): string[] {
-  return all<{ platform: string }>("SELECT platform FROM vehicle_platforms WHERE vehicle_id = ?", vehicleId).map(
+export async function vehiclePlatforms(vehicleId: number): Promise<string[]> {
+  return (await all<{ platform: string }>("SELECT platform FROM vehicle_platforms WHERE vehicle_id = ?", vehicleId)).map(
     (r) => r.platform
   );
 }
@@ -84,7 +84,7 @@ export interface VehicleOption {
   sale_price: number | null;
 }
 
-export function vehicleOptions(opts?: { includeSold?: boolean; consignedOnly?: boolean }): VehicleOption[] {
+export async function vehicleOptions(opts?: { includeSold?: boolean; consignedOnly?: boolean }): Promise<VehicleOption[]> {
   const conds = [
     ...(opts?.includeSold ? [] : ["status != 'vendido'"]),
     ...(opts?.consignedOnly ? ["consignado = 1"] : []),

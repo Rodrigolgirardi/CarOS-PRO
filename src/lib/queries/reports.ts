@@ -32,8 +32,8 @@ export interface StockReport {
   byStatus: { status: string; n: number; invested: number }[];
 }
 
-export function stockReport(): StockReport {
-  const rows = listVehicles("estoque");
+export async function stockReport(): Promise<StockReport> {
+  const rows = await listVehicles("estoque");
   let invested = 0;
   let saleValue = 0;
   let potentialProfit = 0;
@@ -85,9 +85,9 @@ export interface SalesReport {
   avgDaysToSell: number | null;
 }
 
-export function salesReport(period: Period): SalesReport {
+export async function salesReport(period: Period): Promise<SalesReport> {
   const from = periodStart(period);
-  const sold = listVehicles("vendido").filter((v) => v.sold_date && (!from || v.sold_date >= from));
+  const sold = (await listVehicles("vendido")).filter((v) => v.sold_date && (!from || v.sold_date >= from));
   const rows: SaleReportRow[] = sold.map((v) => {
     const m = vehicleMetrics(v);
     return {
@@ -121,9 +121,9 @@ export interface PurchasesReport {
   avgCost: number | null; // custo total médio por veículo comprado
 }
 
-export function purchasesReport(period: Period): PurchasesReport {
+export async function purchasesReport(period: Period): Promise<PurchasesReport> {
   const from = periodStart(period);
-  const rows = listVehicles("todos")
+  const rows = (await listVehicles("todos"))
     .filter((v) => v.purchase_date && (!from || v.purchase_date >= from))
     .sort((a, b) => ((a.purchase_date ?? "") < (b.purchase_date ?? "") ? 1 : -1));
   const totalPurchase = rows.reduce((acc, r) => acc + (r.purchase_price ?? 0), 0);
@@ -145,15 +145,15 @@ export interface VehicleRankings {
   highestCost: VehicleRow[];
 }
 
-export function vehicleRankings(): VehicleRankings {
-  const sold = salesReport("tudo").rows;
-  const stock = listVehicles("estoque");
+export async function vehicleRankings(): Promise<VehicleRankings> {
+  const sold = (await salesReport("tudo")).rows;
+  const stock = await listVehicles("estoque");
   return {
     topProfit: [...sold].sort((a, b) => (b.profit ?? -Infinity) - (a.profit ?? -Infinity)).slice(0, 5),
     topMargin: [...sold].sort((a, b) => (b.margin ?? -Infinity) - (a.margin ?? -Infinity)).slice(0, 5),
     longestInStock: [...stock]
       .sort((a, b) => (vehicleMetrics(b).days ?? 0) - (vehicleMetrics(a).days ?? 0))
       .slice(0, 5),
-    highestCost: [...listVehicles("todos")].sort((a, b) => b.total_cost - a.total_cost).slice(0, 5),
+    highestCost: [...(await listVehicles("todos"))].sort((a, b) => b.total_cost - a.total_cost).slice(0, 5),
   };
 }

@@ -73,8 +73,8 @@ export default async function ReportsPage({
         ]}
       />
 
-      {tab === "estoque" && (() => {
-        const r = stockReport();
+      {tab === "estoque" && (await (async () => {
+        const r = await stockReport();
         return (
           <div className="space-y-5">
             <StatGrid className="grid-cols-2 md:grid-cols-5">
@@ -140,10 +140,10 @@ export default async function ReportsPage({
             </div>
           </div>
         );
-      })()}
+      })())}
 
-      {tab === "vendas" && (() => {
-        const r = salesReport(periodo);
+      {tab === "vendas" && (await (async () => {
+        const r = await salesReport(periodo);
         return (
           <div className="space-y-5">
             <Chips
@@ -209,10 +209,10 @@ export default async function ReportsPage({
             )}
           </div>
         );
-      })()}
+      })())}
 
-      {tab === "compras" && (() => {
-        const r = purchasesReport(periodo);
+      {tab === "compras" && (await (async () => {
+        const r = await purchasesReport(periodo);
         return (
           <div className="space-y-5">
             <Chips
@@ -264,10 +264,10 @@ export default async function ReportsPage({
             )}
           </div>
         );
-      })()}
+      })())}
 
-      {tab === "veiculos" && (() => {
-        const r = vehicleRankings();
+      {tab === "veiculos" && (await (async () => {
+        const r = await vehicleRankings();
         const money = (v: number | null) => (v == null ? "—" : brl(v));
         return (
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -347,7 +347,7 @@ export default async function ReportsPage({
             </RankCard>
           </div>
         );
-      })()}
+      })())}
     </>
   );
 }

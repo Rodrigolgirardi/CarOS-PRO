@@ -88,9 +88,9 @@ export default async function FinancePage({
     ? (sp.status as FinanceStatusFilter)
     : "pendentes";
 
-  const totals = openTotals();
-  const vehicles = vehicleOptions({ includeSold: true });
-  const customers = customerOptions();
+  const totals = await openTotals();
+  const vehicles = await vehicleOptions({ includeSold: true });
+  const customers = await customerOptions();
 
   const tabHref = (t: string) => `/financeiro?tab=${t}`;
 
@@ -107,7 +107,7 @@ export default async function FinancePage({
         ]}
       />
 
-      {tab === "caixa" && (() => {
+      {tab === "caixa" && (await (async () => {
         const monthEnd = mes
           ? `${mes}-${String(new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0).getDate()).padStart(2, "0")}`
           : null;
@@ -118,7 +118,7 @@ export default async function FinancePage({
           s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
         const busca = sp.busca?.trim() ? norm(sp.busca.trim()) : null;
         const buscaPlaca = busca ? busca.replace(/[^a-z0-9]/g, "") : null;
-        const flow = dia ? cashflow(dia, dia) : mes ? cashflow(`${mes}-01`, monthEnd) : cashflow(periodFrom(periodo));
+        const flow = dia ? await cashflow(dia, dia) : mes ? await cashflow(`${mes}-01`, monthEnd) : await cashflow(periodFrom(periodo));
         const entries = flow.entries.filter((e) => {
           if (veiculoId && e.vehicle_id !== veiculoId) return false;
           if (!busca) return true;
@@ -242,10 +242,10 @@ export default async function FinancePage({
             )}
           </div>
         );
-      })()}
+      })())}
 
-      {tab === "dre" && (() => {
-        const dre = dreData();
+      {tab === "dre" && (await (async () => {
+        const dre = await dreData();
         const sold = dre.filter((d) => d.sold);
         const stock = dre.filter((d) => !d.sold);
         const revenue = sold.reduce((s, d) => s + (d.sale ?? 0), 0);
@@ -354,10 +354,10 @@ export default async function FinancePage({
             )}
           </div>
         );
-      })()}
+      })())}
 
-      {tab === "pagar" && (() => {
-        const rows = listPayables(statusFilter);
+      {tab === "pagar" && (await (async () => {
+        const rows = await listPayables(statusFilter);
         return (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -440,10 +440,10 @@ export default async function FinancePage({
             )}
           </div>
         );
-      })()}
+      })())}
 
-      {tab === "receber" && (() => {
-        const rows = listReceivables(statusFilter);
+      {tab === "receber" && (await (async () => {
+        const rows = await listReceivables(statusFilter);
         return (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -536,7 +536,7 @@ export default async function FinancePage({
             )}
           </div>
         );
-      })()}
+      })())}
     </>
   );
 }

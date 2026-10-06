@@ -46,7 +46,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const v = getVehicle(Number(id));
+  const v = await getVehicle(Number(id));
   return { title: v ? vehicleLabel(v) : "Veículo" };
 }
 
@@ -84,7 +84,7 @@ export default async function VehiclePage({
   const { id: idParam } = await params;
   const { tab: tabParam } = await searchParams;
   const id = Number(idParam);
-  const vehicle = getVehicle(id);
+  const vehicle = await getVehicle(id);
   if (!vehicle) notFound();
 
   const tab: Tab = TABS.includes(tabParam as Tab) ? (tabParam as Tab) : "resumo";
@@ -92,17 +92,17 @@ export default async function VehiclePage({
   const label = vehicleLabel(vehicle);
   const sold = vehicle.status === "vendido";
 
-  const costs = vehicleCosts(id);
-  const tasks = tasksForVehicle(id);
-  const docs = docsForVehicle(id);
-  const events = eventsForVehicle(id);
-  const deals = dealsForVehicle(id);
-  const customers = customerOptions();
-  const vehicles = vehicleOptions();
+  const costs = await vehicleCosts(id);
+  const tasks = await tasksForVehicle(id);
+  const docs = await docsForVehicle(id);
+  const events = await eventsForVehicle(id);
+  const deals = await dealsForVehicle(id);
+  const customers = await customerOptions();
+  const vehicles = await vehicleOptions();
 
   const pendingTasks = tasks.filter((t) => t.status === "pendente").length;
   const soldDeal = deals.find((d) => d.stage === "vendido" || d.stage === "entregue");
-  const platforms = vehiclePlatforms(id);
+  const platforms = await vehiclePlatforms(id);
 
   const sortedTasks = [...tasks].sort((a, b) => {
     const ia = DEFAULT_CHECKLIST.indexOf(a.type);
@@ -173,9 +173,9 @@ export default async function VehiclePage({
             {!sold && (
               <QuickSaleButton
                 vehicles={vehicles}
-                sellers={sellerOptions()}
+                sellers={await sellerOptions()}
                 customers={customers}
-                defaultCommission={commissionRule("venda_carro")}
+                defaultCommission={await commissionRule("venda_carro")}
                 fixedVehicleId={id}
               />
             )}

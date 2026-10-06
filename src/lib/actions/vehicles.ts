@@ -38,8 +38,8 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
   const seller = f.s("seller");
   const consignorValue = f.cents("consignor_value");
 
-  const vehicleId = tx(() => {
-    const v = run(
+  const vehicleId = await tx(async () => {
+    const v = await run(
       `INSERT INTO vehicles (brand, model, version, year_fab, year_model, plate, km, color, fuel, transmission, renavam, chassis, laudo, blindado, leilao, fipe_price, consignado, consignor, consignor_value, status, sale_price, photo, notes)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'para_arrumar',?,?,?)`,
       brand,
@@ -67,7 +67,7 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
     );
     const vid = v.lastId;
     if (!consigned) {
-      run(
+      await run(
         "INSERT INTO purchases (vehicle_id, seller, date, price, payment_method, notes) VALUES (?,?,?,?,?,?)",
         vid,
         seller,
@@ -84,15 +84,17 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
       const [namePart, ...phonePart] = consignor!.split("—");
       const ownerName = namePart.trim() || consignor!;
       const ownerPhone = phonePart.join("—").trim() || null;
-      const existing = get<{ id: number }>("SELECT id FROM customers WHERE name = ? COLLATE NOCASE", ownerName);
+      const existing = await get<{ id: number }>("SELECT id FROM customers WHERE name = ? COLLATE NOCASE", ownerName);
       const ownerId =
         existing?.id ??
-        run(
-          "INSERT INTO customers (name, phone, kind, notes) VALUES (?,?,'consignante','Criado automaticamente ao receber um carro em consignação.')",
-          ownerName,
-          ownerPhone
+        (
+          await run(
+            "INSERT INTO customers (name, phone, kind, notes) VALUES (?,?,'consignante','Criado automaticamente ao receber um carro em consignação.')",
+            ownerName,
+            ownerPhone
+          )
         ).lastId;
-      logEvent({
+      await logEvent({
         type: "outro",
         description: `Deixou o ${brand} ${model} em consignação${consignorValue != null ? ` (repasse ${brl(consignorValue)})` : ""}`,
         vehicle: vid,
@@ -100,7 +102,7 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
         date,
       });
     } else {
-      logEvent({
+      await logEvent({
         type: "compra",
         description: `Compra registrada${seller ? ` — ${seller}` : ""}`,
         vehicle: vid,
@@ -109,7 +111,7 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
       });
     }
     if (salePrice != null)
-      logEvent({ type: "preco", description: `Preço de venda definido: ${brl(salePrice)}`, vehicle: vid, amount: salePrice, date });
+      await logEvent({ type: "preco", description: `Preço de venda definido: ${brl(salePrice)}`, vehicle: vid, amount: salePrice, date });
     return vid;
   });
 
@@ -118,7 +120,7 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
 }
 
 export async function updateVehicle(id: number, prev: ActionState, formData: FormData): Promise<ActionState> {
-  const current = get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", id);
+  const current = await get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", id);
   if (!current) return err("Veículo não encontrado.");
 
   const f = fields(formData);
@@ -137,8 +139,8 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
   }
   const salePrice = f.cents("sale_price");
 
-  tx(() => {
-    run(
+  await tx(async () => {
+    await run(
       `UPDATE vehicles SET brand=?, model=?, version=?, year_fab=?, year_model=?, plate=?, km=?, color=?, fuel=?, transmission=?, renavam=?, chassis=?, laudo=?, blindado=?, leilao=?, fipe_price=?, consignor=?, consignor_value=?, sale_price=?, photo=?, notes=? WHERE id=?`,
       brand,
       model,
@@ -165,10 +167,10 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
     );
     if (!isConsigned) {
       // consignado não tem compra para criar/atualizar
-      const purchase = get<{ id: number }>("SELECT id FROM purchases WHERE vehicle_id = ? ORDER BY id LIMIT 1", id);
+      const purchase = await get<{ id: number }>("SELECT id FROM purchases WHERE vehicle_id = ? ORDER BY id LIMIT 1", id);
       const pDate = f.s("purchase_date") ?? todayISO();
       if (purchase) {
-        run(
+        await run(
           "UPDATE purchases SET seller=?, date=?, price=?, payment_method=?, notes=? WHERE id=?",
           f.s("seller"),
           pDate,
@@ -178,7 +180,7 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
           purchase.id
         );
       } else {
-        run(
+        await run(
           "INSERT INTO purchases (vehicle_id, seller, date, price, payment_method, notes) VALUES (?,?,?,?,?,?)",
           id,
           f.s("seller"),
@@ -190,7 +192,7 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
       }
     }
     if ((salePrice ?? null) !== (current.sale_price ?? null)) {
-      logEvent({
+      await logEvent({
         type: "preco",
         description:
           current.sale_price == null
@@ -209,10 +211,10 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
 }
 
 export async function deleteVehicle(id: number): Promise<{ ok: boolean; error?: string; message?: string }> {
-  const v = get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", id);
+  const v = await get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", id);
   if (!v) return err("Veículo não encontrado.");
-  const docs = all<{ file_name: string }>("SELECT file_name FROM documents WHERE vehicle_id = ?", id);
-  run("DELETE FROM vehicles WHERE id = ?", id); // cascade remove tudo relacionado
+  const docs = await all<{ file_name: string }>("SELECT file_name FROM documents WHERE vehicle_id = ?", id);
+  await run("DELETE FROM vehicles WHERE id = ?", id); // cascade remove tudo relacionado
   for (const d of docs) deleteUpload(d.file_name);
   deleteUpload(v.photo);
   revalidate();
@@ -220,15 +222,15 @@ export async function deleteVehicle(id: number): Promise<{ ok: boolean; error?: 
 }
 
 export async function duplicateVehicle(id: number): Promise<{ ok: boolean; error?: string; id?: number }> {
-  const v = get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", id);
+  const v = await get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", id);
   if (!v) return err("Veículo não encontrado.");
-  const p = get<{ seller: string | null; price: number; payment_method: string | null }>(
+  const p = await get<{ seller: string | null; price: number; payment_method: string | null }>(
     "SELECT seller, price, payment_method FROM purchases WHERE vehicle_id = ? ORDER BY id LIMIT 1",
     id
   );
   const today = todayISO();
-  const newId = tx(() => {
-    const r = run(
+  const newId = await tx(async () => {
+    const r = await run(
       `INSERT INTO vehicles (brand, model, version, year_fab, year_model, plate, km, color, fuel, transmission, status, sale_price, notes)
        VALUES (?,?,?,?,?,?,?,?,?,?,'para_arrumar',?,?)`,
       v.brand,
@@ -245,7 +247,7 @@ export async function duplicateVehicle(id: number): Promise<{ ok: boolean; error
       v.notes
     );
     const vid = r.lastId;
-    run(
+    await run(
       "INSERT INTO purchases (vehicle_id, seller, date, price, payment_method) VALUES (?,?,?,?,?)",
       vid,
       p?.seller ?? null,
@@ -254,7 +256,7 @@ export async function duplicateVehicle(id: number): Promise<{ ok: boolean; error
       p?.payment_method ?? null
     );
     for (const t of DEFAULT_CHECKLIST) run("INSERT INTO tasks (vehicle_id, type) VALUES (?, ?)", vid, t);
-    logEvent({ type: "compra", description: `Veículo duplicado a partir de ${v.brand} ${v.model}`, vehicle: vid, amount: p?.price ?? null, date: today });
+    await logEvent({ type: "compra", description: `Veículo duplicado a partir de ${v.brand} ${v.model}`, vehicle: vid, amount: p?.price ?? null, date: today });
     return vid;
   });
   revalidate();
@@ -262,14 +264,14 @@ export async function duplicateVehicle(id: number): Promise<{ ok: boolean; error
 }
 
 export async function setVehicleStatus(id: number, status: string): Promise<{ ok: boolean; error?: string }> {
-  const v = get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", id);
+  const v = await get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", id);
   if (!v) return err("Veículo não encontrado.");
   if (v.status === "vendido") return err("Veículo vendido — desfaça a venda para alterar o status.");
   if (status === "vendido") return err("Para marcar como vendido, registre a venda em Vendas.");
   if (!(status in VEHICLE_STATUS)) return err("Status inválido.");
   if (status === v.status) return ok();
-  run("UPDATE vehicles SET status = ? WHERE id = ?", status, id);
-  logEvent({
+  await run("UPDATE vehicles SET status = ? WHERE id = ?", status, id);
+  await logEvent({
     type: "status",
     description: `Status alterado: ${VEHICLE_STATUS[v.status].label} → ${VEHICLE_STATUS[status as VehicleStatus].label}`,
     vehicle: id,
@@ -284,33 +286,33 @@ export async function toggleVehiclePlatform(
   platform: string
 ): Promise<{ ok: boolean; error?: string }> {
   if (!AD_PLATFORMS.includes(platform)) return err("Plataforma inválida.");
-  const vehicle = get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", vehicleId);
+  const vehicle = await get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", vehicleId);
   if (!vehicle) return err("Veículo não encontrado.");
 
-  const existing = get<{ platform: string }>(
+  const existing = await get<{ platform: string }>(
     "SELECT platform FROM vehicle_platforms WHERE vehicle_id = ? AND platform = ?",
     vehicleId,
     platform
   );
   if (existing) {
-    run("DELETE FROM vehicle_platforms WHERE vehicle_id = ? AND platform = ?", vehicleId, platform);
-    logEvent({ type: "status", description: `Anúncio removido: ${platform}`, vehicle: vehicleId });
+    await run("DELETE FROM vehicle_platforms WHERE vehicle_id = ? AND platform = ?", vehicleId, platform);
+    await logEvent({ type: "status", description: `Anúncio removido: ${platform}`, vehicle: vehicleId });
   } else {
-    run("INSERT INTO vehicle_platforms (vehicle_id, platform) VALUES (?, ?)", vehicleId, platform);
-    logEvent({ type: "status", description: `Anunciado em: ${platform}`, vehicle: vehicleId });
+    await run("INSERT INTO vehicle_platforms (vehicle_id, platform) VALUES (?, ?)", vehicleId, platform);
+    await logEvent({ type: "status", description: `Anunciado em: ${platform}`, vehicle: vehicleId });
   }
   revalidate();
   return ok();
 }
 
 export async function setSalePrice(id: number, prev: ActionState, formData: FormData): Promise<ActionState> {
-  const v = get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", id);
+  const v = await get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", id);
   if (!v) return err("Veículo não encontrado.");
   const price = fields(formData).cents("sale_price");
   if (price == null || price <= 0) return err("Informe um preço válido.");
   if (price === v.sale_price) return ok();
-  run("UPDATE vehicles SET sale_price = ? WHERE id = ?", price, id);
-  logEvent({
+  await run("UPDATE vehicles SET sale_price = ? WHERE id = ?", price, id);
+  await logEvent({
     type: "preco",
     description:
       v.sale_price == null ? `Preço de venda definido: ${brl(price)}` : `Preço alterado: ${brl(v.sale_price)} → ${brl(price)}`,

@@ -28,9 +28,9 @@ export default async function OperationsPage({
     ? (sp.status as TaskFilter)
     : "pendentes";
 
-  const tasks = listTasks(statusFilter);
-  const summary = pendingByGroup();
-  const vehicles = vehicleOptions({ includeSold: true });
+  const tasks = await listTasks(statusFilter);
+  const summary = await pendingByGroup();
+  const vehicles = await vehicleOptions({ includeSold: true });
 
   const summaryFor = (g: TaskGroup) => summary.find((s) => s.group === g);
   const visibleGroups = (grupo ? [grupo] : GROUP_ORDER).filter((g) =>

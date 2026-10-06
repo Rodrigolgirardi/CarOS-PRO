@@ -9,8 +9,8 @@ import { listPlateCache } from "@/lib/queries/plate-cache";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Banco de dados" };
 
-export default function PlateDatabasePage() {
-  const rows = listPlateCache();
+export default async function PlateDatabasePage() {
+  const rows = await listPlateCache();
 
   return (
     <>

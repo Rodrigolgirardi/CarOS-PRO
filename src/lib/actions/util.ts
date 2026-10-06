@@ -36,7 +36,7 @@ export function ok(message?: string): { ok: true; message?: string } {
 }
 
 /** Registra um evento no histórico (timeline de veículo/cliente). */
-export function logEvent(e: {
+export async function logEvent(e: {
   type: EventType;
   description: string;
   vehicle?: number | null;
@@ -44,8 +44,8 @@ export function logEvent(e: {
   deal?: number | null;
   amount?: number | null;
   date?: string;
-}): void {
-  run(
+}): Promise<void> {
+  await run(
     "INSERT INTO events (vehicle_id, customer_id, deal_id, type, description, amount, date) VALUES (?,?,?,?,?,?,?)",
     e.vehicle ?? null,
     e.customer ?? null,

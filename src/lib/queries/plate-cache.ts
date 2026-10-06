@@ -35,8 +35,11 @@ export async function getPlateCache(plate: string): Promise<PlateData | null> {
 
 export async function savePlateCache(plate: string, data: PlateData): Promise<void> {
   await run(
-    `INSERT OR REPLACE INTO plate_lookups (plate, data, brand, model, version, year_fab, year_model, color, fuel, created_at)
-     VALUES (?,?,?,?,?,?,?,?,?, datetime('now'))`,
+    `INSERT INTO plate_lookups (plate, data, brand, model, version, year_fab, year_model, color, fuel)
+     VALUES (?,?,?,?,?,?,?,?,?)
+     ON CONFLICT (plate) DO UPDATE SET data = EXCLUDED.data, brand = EXCLUDED.brand, model = EXCLUDED.model,
+       version = EXCLUDED.version, year_fab = EXCLUDED.year_fab, year_model = EXCLUDED.year_model,
+       color = EXCLUDED.color, fuel = EXCLUDED.fuel`,
     plate,
     JSON.stringify(data),
     data.brand,

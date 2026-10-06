@@ -84,7 +84,7 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
       const [namePart, ...phonePart] = consignor!.split("—");
       const ownerName = namePart.trim() || consignor!;
       const ownerPhone = phonePart.join("—").trim() || null;
-      const existing = await get<{ id: number }>("SELECT id FROM customers WHERE name = ? COLLATE NOCASE", ownerName);
+      const existing = await get<{ id: number }>("SELECT id FROM customers WHERE lower(name) = lower(?)", ownerName);
       const ownerId =
         existing?.id ??
         (

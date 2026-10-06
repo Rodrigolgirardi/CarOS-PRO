@@ -42,7 +42,7 @@ export async function listVehicles(filter: VehicleFilter = "todos"): Promise<Veh
   else if (filter === "consignados") where = "WHERE v.consignado = 1 AND v.status != 'vendido'";
   else if (filter === "parados")
     where =
-      "WHERE v.status != 'vendido' AND p.date IS NOT NULL AND julianday('now', 'localtime') - julianday(p.date) > 60";
+      "WHERE v.status != 'vendido' AND p.date IS NOT NULL AND (CURRENT_DATE - p.date::date) > 60";
   else if (STATUS_FILTERS.includes(filter as VehicleStatus)) where = `WHERE v.status = '${filter}'`;
   return all<VehicleRow>(
     `${BASE} ${where}

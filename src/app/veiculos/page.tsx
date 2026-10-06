@@ -8,6 +8,7 @@ import { LinkTabs } from "@/components/ui/tabs";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
 import { AddExpenseButton } from "@/components/vehicles/add-expense-button";
 import { AddIncomeButton } from "@/components/finance/add-income-button";
+import { PlateLookupButton } from "@/components/plate-cache/plate-lookup-button";
 import { QuickSaleButton } from "@/components/vehicles/quick-sale-button";
 import { customerOptions } from "@/lib/queries/customers";
 import { sellerOptions } from "@/lib/queries/sellers";
@@ -68,6 +69,7 @@ export default async function VehiclesPage({
               defaultCommission={commissionRule("venda_carro")}
             />
             <AddIncomeButton customers={customerOptions()} sellers={sellerOptions()} rules={listCommissionRules()} />
+            <PlateLookupButton />
           </div>
         }
       />

@@ -287,7 +287,7 @@ function toPg(sql: string): string {
 }
 
 /** Tabelas sem coluna id (o run() não tenta RETURNING id nelas). */
-const NO_ID_TABLES = new Set(["meta", "commission_rules", "vehicle_platforms", "plate_lookups"]);
+const NO_ID_TABLES = new Set(["meta", "commission_rules", "vehicle_platforms", "plate_lookups", "auth_sessions"]);
 
 async function query(sql: string, params: Param[]): Promise<{ rows: Record<string, unknown>[]; rowCount: number }> {
   await ensureReady();

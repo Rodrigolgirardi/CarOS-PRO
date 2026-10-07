@@ -45,7 +45,7 @@ export function UserMenu({ name, avatarUrl, login, authEnabled }: UserMenuProps)
         className="flex items-center gap-2 rounded-full border border-transparent py-0.5 pl-0.5 pr-2 transition-colors hover:border-zinc-200 hover:bg-white"
       >
         <Avatar name={name} avatarUrl={avatarUrl} size="sm" />
-        <span className="max-w-[140px] truncate text-[13px] font-medium text-zinc-700">{name}</span>
+        <span className="hidden max-w-[140px] truncate text-[13px] font-medium text-zinc-700 sm:inline">{name}</span>
         <ChevronDown size={13} className={cn("text-zinc-400 transition-transform", open && "rotate-180")} />
       </button>
 

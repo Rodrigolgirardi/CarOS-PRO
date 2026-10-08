@@ -48,7 +48,7 @@ export function MobileHeader({ actions, children }: MobileHeaderProps) {
 
       {open && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-zinc-900/30 backdrop-blur-[2px]" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setOpen(false)} />
           <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-zinc-50 shadow-xl">
             <div className="flex items-center gap-2.5 px-4 pb-4 pt-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}

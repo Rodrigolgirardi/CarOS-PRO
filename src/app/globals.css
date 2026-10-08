@@ -41,13 +41,76 @@
 }
 
 /* ---------------------------------------------------------------- modo escuro
-   Inversão global com correção de matiz: o layout claro vira escuro mantendo
-   as cores aproximadas; fotos, vídeos e logos são re-invertidos para o normal. */
+   Tema escuro de verdade: remapeia as variáveis de cor do Tailwind (nada de
+   filter/invert — aquilo desligava a suavização de texto e deixava tudo borrado).
+   Textos, fotos e gráficos ficam nítidos; os componentes não mudam. */
 html.dark {
-  filter: invert(1) hue-rotate(180deg);
-  background-color: #0b0b0d;
+  color-scheme: dark;
+
+  /* neutros: a escala zinc espelhada (900 vira texto claro, 50 vira fundo) */
+  --color-white: #151518; /* cards e tabelas (era branco) */
+  --color-zinc-50: #1b1b1f;
+  --color-zinc-100: #232328;
+  --color-zinc-200: #2e2e34;
+  --color-zinc-300: #45454d;
+  --color-zinc-400: #8b8b95;
+  --color-zinc-500: #a5a5ae;
+  --color-zinc-600: #c7c7cf;
+  --color-zinc-700: #e1e1e6;
+  --color-zinc-800: #efeff2;
+  --color-zinc-900: #f7f7f9;
+  --color-zinc-950: #ffffff;
+
+  /* tons suaves (-50 fundo, -200 borda) e vivos legíveis no escuro */
+  --color-emerald-50: #10291e;
+  --color-emerald-400: #52e3a4;
+  --color-emerald-500: #3fd994;
+  --color-emerald-600: #2fcf8a;
+  --color-emerald-700: #7deebb;
+
+  --color-red-50: #331418;
+  --color-red-200: #512028;
+  --color-red-400: #ff8585;
+  --color-red-500: #ff7070;
+  --color-red-600: #ff6b6b;
+  --color-red-700: #ffa3a3;
+
+  --color-amber-50: #332406;
+  --color-amber-200: #5a400d;
+  --color-amber-400: #fbbf24;
+  --color-amber-600: #f5b63a;
+  --color-amber-700: #fbd34d;
+  --color-amber-800: #fde28a;
+  --color-amber-900: #fdeab5;
+
+  --color-blue-50: #16233a;
+  --color-blue-300: #7cb0ff;
+  --color-blue-400: #6ea7ff;
+  --color-blue-500: #5f9dff;
+  --color-blue-600: #4f93ff;
+  --color-blue-700: #9ec5ff;
+  --color-blue-800: #3a6cc0;
+  --color-blue-900: #2f589d;
+
+  --color-violet-50: #292044;
+  --color-violet-400: #a78bfa;
+  --color-violet-700: #c7b7fd;
+
+  --color-teal-50: #0f2d2b;
+  --color-teal-400: #2dd4bf;
+  --color-teal-700: #67e8e0;
+
+  --color-orange-400: #fda55e;
+  --color-orange-500: #fb923c;
 }
-html.dark img,
-html.dark video {
-  filter: invert(1) hue-rotate(180deg);
+
+/* a página fica um tom abaixo dos cards, para dar profundidade */
+html.dark body {
+  background-color: #0e0e10;
+}
+
+/* logos das montadoras viram silhueta clara (muitas são escuras demais no fundo preto) */
+html.dark img.brand-logo {
+  filter: brightness(0) invert(1);
+  opacity: 0.85;
 }

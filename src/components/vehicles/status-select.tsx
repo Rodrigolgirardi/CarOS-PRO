@@ -13,18 +13,20 @@ export function StatusSelect({ id, status }: { id: number; status: VehicleStatus
   const toast = useToast();
 
   return (
-    <Select
-      value={status}
-      disabled={pending}
-      aria-label="Alterar status"
-      onChange={(e) =>
-        startTransition(async () => {
-          const r = await setVehicleStatus(id, e.target.value);
-          if (!r.ok) toast(r.error ?? "Não foi possível alterar.", "error");
-        })
-      }
-      className="h-7 w-auto pr-7 text-xs"
-    >
+    // largura fixa para o seletor ficar na mesma linha do badge de status
+    <span className="inline-block w-[6.75rem]">
+      <Select
+        value={status}
+        disabled={pending}
+        aria-label="Alterar status"
+        onChange={(e) =>
+          startTransition(async () => {
+            const r = await setVehicleStatus(id, e.target.value);
+            if (!r.ok) toast(r.error ?? "Não foi possível alterar.", "error");
+          })
+        }
+        className="h-7 pr-7 text-xs"
+      >
       {(Object.keys(VEHICLE_STATUS) as VehicleStatus[])
         .filter((s) => s !== "vendido")
         .map((s) => (
@@ -32,6 +34,7 @@ export function StatusSelect({ id, status }: { id: number; status: VehicleStatus
             {VEHICLE_STATUS[s].label}
           </option>
         ))}
-    </Select>
+      </Select>
+    </span>
   );
 }

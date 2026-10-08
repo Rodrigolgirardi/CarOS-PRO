@@ -27,9 +27,9 @@ export const DOT_CLASS: Record<Tone, string> = {
 };
 
 export const VEHICLE_STATUS: Record<VehicleStatus, { label: string; tone: Tone }> = {
-  para_cadastrar: { label: "Para cadastrar", tone: "blue" },
-  para_arrumar: { label: "Para arrumar", tone: "amber" },
-  cadastrado: { label: "Cadastrado", tone: "emerald" },
+  para_cadastrar: { label: "Cadastrar", tone: "blue" },
+  para_arrumar: { label: "Arrumar", tone: "amber" },
+  cadastrado: { label: "Pronto", tone: "emerald" }, // carro ok, pronto para venda
   vendido: { label: "Vendido", tone: "zinc" },
 };
 

@@ -6,11 +6,12 @@ SELECT
   v.*,
   p.id             AS purchase_id,
   p.price          AS purchase_price,
-  p.date           AS purchase_date,
+  COALESCE(p.date, v.consignado_date) AS purchase_date,
   p.seller         AS purchase_seller,
   p.payment_method AS purchase_payment,
   p.notes          AS purchase_notes,
   COALESCE(c.total, 0) AS costs_total,
+  COALESCE(pl.n, 0) AS platforms_count,
   COALESCE(p.price, 0) + COALESCE(c.total, 0) AS total_cost,
   sd.sale_price    AS sold_price,
   sd.sold_date     AS sold_date,
@@ -19,6 +20,7 @@ SELECT
 FROM vehicles v
 LEFT JOIN purchases p ON p.vehicle_id = v.id
 LEFT JOIN (SELECT vehicle_id, SUM(amount) AS total FROM costs GROUP BY vehicle_id) c ON c.vehicle_id = v.id
+LEFT JOIN (SELECT vehicle_id, COUNT(*) AS n FROM vehicle_platforms GROUP BY vehicle_id) pl ON pl.vehicle_id = v.id
 LEFT JOIN deals sd ON sd.vehicle_id = v.id AND sd.stage IN ('vendido', 'entregue')
 LEFT JOIN customers bc ON bc.id = sd.customer_id
 `;
@@ -39,14 +41,16 @@ const STATUS_FILTERS: VehicleStatus[] = ["para_cadastrar", "para_arrumar", "cada
 export async function listVehicles(filter: VehicleFilter = "todos"): Promise<VehicleRow[]> {
   let where = "";
   if (filter === "estoque") where = "WHERE v.status != 'vendido'";
+  // a aba Cadastrados inclui os "para arrumar": continuam sendo estoque da loja
+  else if (filter === "cadastrado") where = "WHERE v.status IN ('cadastrado', 'para_arrumar')";
   else if (filter === "consignados") where = "WHERE v.consignado = 1 AND v.status != 'vendido'";
   else if (filter === "parados")
     where =
-      "WHERE v.status != 'vendido' AND p.date IS NOT NULL AND (CURRENT_DATE - p.date::date) > 60";
+      "WHERE v.status != 'vendido' AND COALESCE(p.date, v.consignado_date) IS NOT NULL AND (CURRENT_DATE - COALESCE(p.date, v.consignado_date)::date) > 60";
   else if (STATUS_FILTERS.includes(filter as VehicleStatus)) where = `WHERE v.status = '${filter}'`;
   return all<VehicleRow>(
     `${BASE} ${where}
-     ORDER BY CASE WHEN v.status = 'vendido' THEN 1 ELSE 0 END, COALESCE(p.date, v.created_at) DESC, v.id DESC`
+     ORDER BY CASE WHEN v.status = 'vendido' THEN 1 ELSE 0 END, COALESCE(p.date, v.consignado_date, v.created_at) DESC, v.id DESC`
   );
 }
 

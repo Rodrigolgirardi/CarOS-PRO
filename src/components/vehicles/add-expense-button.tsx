@@ -25,12 +25,12 @@ export function AddExpenseButton({ vehicles }: { vehicles: VehicleOption[] }) {
     <>
       <Button variant="warning" onClick={() => setOpen(true)}>
         <Receipt size={14} />
-        Adicionar gasto
+        Adicionar saída
       </Button>
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Adicionar gasto"
+        title="Adicionar saída"
         description={
           admin
             ? "Gasto da loja (padaria, água, material…) — entra no caixa, mas não no custo de nenhum carro."

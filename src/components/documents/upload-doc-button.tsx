@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Camera, Upload } from "lucide-react";
 import { uploadDocument } from "@/lib/actions/documents";
 import { DOC_TYPE } from "@/lib/labels";
 import type { DocumentType } from "@/lib/types";
@@ -32,7 +32,24 @@ export function UploadDocButton({
   label = "Enviar documento",
 }: UploadDocButtonProps) {
   const [open, setOpen] = useState(false);
-  const { state, formAction } = useAction(uploadDocument, { onSuccess: () => setOpen(false) });
+  // foto tirada na hora (câmera do celular) que pré-preenche o campo de arquivo
+  const [camFile, setCamFile] = useState<File | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const camRef = useRef<HTMLInputElement>(null);
+  const close = () => {
+    setOpen(false);
+    setCamFile(null);
+    if (camRef.current) camRef.current.value = "";
+  };
+  const { state, formAction } = useAction(uploadDocument, { onSuccess: close });
+
+  useEffect(() => {
+    if (open && camFile && fileRef.current) {
+      const dt = new DataTransfer();
+      dt.items.add(camFile);
+      fileRef.current.files = dt.files;
+    }
+  }, [open, camFile]);
 
   return (
     <>
@@ -40,15 +57,35 @@ export function UploadDocButton({
         <Upload size={13} />
         {label}
       </Button>
+      <Button size="sm" onClick={() => camRef.current?.click()}>
+        <Camera size={13} />
+        Tirar foto
+      </Button>
+      {/* abre a câmera no celular; no computador vira um seletor de arquivo comum */}
+      <input
+        ref={camRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) {
+            setCamFile(f);
+            setOpen(true);
+          }
+        }}
+      />
       <Modal
         open={open}
-        onClose={() => setOpen(false)}
-        title="Enviar documento"
-        description="O arquivo fica salvo localmente, na pasta de dados do CarOS."
+        onClose={close}
+        title={camFile ? "Salvar foto" : "Enviar documento"}
+        description="O arquivo fica salvo junto com os dados do CarOS."
       >
         <form action={formAction} className="space-y-4">
           <Field label="Arquivo" required>
             <input
+              ref={fileRef}
               type="file"
               name="file"
               required
@@ -101,8 +138,8 @@ export function UploadDocButton({
           {dealId != null && <input type="hidden" name="deal_id" value={dealId} />}
           <FormError state={state} />
           <div className="flex justify-end gap-2">
-            <Button onClick={() => setOpen(false)}>Cancelar</Button>
-            <SubmitButton>Enviar</SubmitButton>
+            <Button onClick={close}>Cancelar</Button>
+            <SubmitButton>{camFile ? "Salvar foto" : "Enviar"}</SubmitButton>
           </div>
         </form>
       </Modal>

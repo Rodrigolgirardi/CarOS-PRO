@@ -52,6 +52,51 @@ export async function addIncome(prev: ActionState, formData: FormData): Promise<
   return ok(commission > 0 ? "Entrada registrada — comissão lançada em contas a pagar." : "Entrada registrada.");
 }
 
+/**
+ * Lançamento direto no caixa (gasto ou receita avulsos): entra já como
+ * pago/recebido na data informada — por padrão, o dia de hoje.
+ */
+export async function addCashMovement(prev: ActionState, formData: FormData): Promise<ActionState> {
+  const f = fields(formData);
+  const type = f.s("type") === "receita" ? "receita" : "gasto";
+  const description = f.s("description");
+  const amount = f.cents("amount");
+  const date = f.s("date") ?? todayISO();
+  if (!description) return err(type === "gasto" ? "Descreva o gasto (ex.: Conta de luz)." : "Descreva a receita (ex.: Documentação).");
+  if (amount == null || amount <= 0) return err("Informe o valor.");
+
+  if (type === "receita") {
+    await run(
+      "INSERT INTO receivables (description, amount, due_date, status, received_date) VALUES (?,?,?,'recebido',?)",
+      description,
+      amount,
+      date,
+      date
+    );
+    await logEvent({ type: "recebimento", description: `Receita lançada no caixa — ${description}`, amount, date });
+  } else {
+    await run(
+      "INSERT INTO payables (description, category, amount, due_date, vehicle_id, status, paid_date) VALUES (?,?,?,?,?,'pago',?)",
+      description,
+      f.s("category") ?? "Outros",
+      amount,
+      date,
+      f.id("vehicle_id"),
+      date
+    );
+    await logEvent({
+      type: "pagamento",
+      description: `Gasto lançado no caixa — ${description}`,
+      vehicle: f.id("vehicle_id"),
+      amount,
+      date,
+    });
+  }
+
+  revalidate();
+  return ok(type === "receita" ? "Receita lançada no caixa." : "Gasto lançado no caixa.");
+}
+
 // --------------------------------------------------------------- contas a pagar
 
 export async function savePayable(id: number | null, prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -184,6 +229,25 @@ export async function deleteReceivable(id: number): Promise<{ ok: boolean; error
 }
 
 // ------------------------------------------------------------------- extrato
+
+/** Vincula (ou desvincula) um gasto do extrato a um veículo. */
+export async function linkCashEntry(
+  kind: "custo" | "conta",
+  id: number,
+  prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const f = fields(formData);
+  const vehicleId = f.id("vehicle_id");
+  if (kind === "custo") {
+    if (!vehicleId) return err("Escolha o veículo.");
+    await run("UPDATE costs SET vehicle_id = ? WHERE id = ?", vehicleId, id);
+  } else {
+    await run("UPDATE payables SET vehicle_id = ? WHERE id = ?", vehicleId, id);
+  }
+  revalidate();
+  return ok(vehicleId ? "Gasto vinculado ao veículo." : "Gasto desvinculado.");
+}
 
 /** Exclui uma transação do extrato apagando a linha na tabela de origem. */
 export async function deleteCashEntry(

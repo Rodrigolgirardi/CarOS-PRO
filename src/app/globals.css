@@ -40,6 +40,15 @@
   }
 }
 
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
 /* ---------------------------------------------------------------- modo escuro
    Inversão global com correção de matiz: o layout claro vira escuro mantendo
    as cores aproximadas; fotos, vídeos e logos são re-invertidos para o normal. */

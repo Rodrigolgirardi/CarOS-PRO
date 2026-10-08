@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/layout/page-header";
+import { PlateCachePanel } from "@/components/plate-cache/plate-cache-panel";
 import { AccessForm } from "@/components/settings/access-form";
 import { AppearanceForm } from "@/components/settings/appearance-form";
 import { ProfileForm } from "@/components/settings/profile-form";
@@ -10,7 +11,7 @@ export const metadata = { title: "Configurações" };
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const { tab: tabParam } = await searchParams;
-  const tab = tabParam === "seguranca" ? "seguranca" : "perfil";
+  const tab = ["seguranca", "banco"].includes(tabParam ?? "") ? tabParam! : "perfil";
   const profile = await getProfile();
 
   return (
@@ -22,18 +23,23 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         tabs={[
           { key: "perfil", label: "Perfil", href: "/configuracoes" },
           { key: "seguranca", label: "Segurança", href: "/configuracoes?tab=seguranca" },
+          { key: "banco", label: "Banco de dados", href: "/configuracoes?tab=banco" },
         ]}
       />
-      <div className="max-w-2xl divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white">
-        {tab === "seguranca" ? (
-          <AccessForm login={profile.login} authEnabled={profile.authEnabled} />
-        ) : (
-          <>
-            <ProfileForm name={profile.name} avatarUrl={profile.avatarUrl} />
-            <AppearanceForm />
-          </>
-        )}
-      </div>
+      {tab === "banco" ? (
+        <PlateCachePanel />
+      ) : (
+        <div className="max-w-2xl divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white">
+          {tab === "seguranca" ? (
+            <AccessForm login={profile.login} authEnabled={profile.authEnabled} />
+          ) : (
+            <>
+              <ProfileForm name={profile.name} avatarUrl={profile.avatarUrl} />
+              <AppearanceForm />
+            </>
+          )}
+        </div>
+      )}
     </>
   );
 }

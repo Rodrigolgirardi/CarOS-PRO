@@ -10,7 +10,11 @@ import { MAIN, MANAGE, type NavItemData } from "@/components/layout/nav-items";
 
 const ALL = [...MAIN, ...MANAGE];
 const TAB_HREFS = ["/", "/veiculos", "/vendas", "/financeiro"];
-const TABS = TAB_HREFS.map((h) => ALL.find((i) => i.href === h)!).filter(Boolean);
+// nomes curtos só na barra de baixo (a sidebar do computador mantém os originais)
+const TAB_LABELS: Record<string, string> = { "/vendas": "Leads" };
+const TABS = TAB_HREFS.map((h) => ALL.find((i) => i.href === h)!)
+  .filter(Boolean)
+  .map((i) => ({ ...i, label: TAB_LABELS[i.href] ?? i.label }));
 const MORE = ALL.filter((i) => !TAB_HREFS.includes(i.href));
 
 const isActive = (pathname: string, href: string) =>

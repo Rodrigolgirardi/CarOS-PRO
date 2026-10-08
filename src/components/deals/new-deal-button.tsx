@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Plus } from "lucide-react";
 import { createDeal } from "@/lib/actions/deals";
 import { brl } from "@/lib/format";
@@ -9,7 +8,7 @@ import type { CustomerOption } from "@/lib/queries/customers";
 import type { VehicleOption } from "@/lib/queries/vehicles";
 import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import { Field, Select, Textarea } from "@/components/ui/field";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { FormError, SubmitButton, useAction } from "@/components/ui/form";
 import { Modal } from "@/components/ui/modal";
 
@@ -24,6 +23,8 @@ interface NewDealButtonProps {
 export function NewDealButton({ vehicles, customers, vehicleId, label = "Nova negociação" }: NewDealButtonProps) {
   const [open, setOpen] = useState(false);
   const [withProposal, setWithProposal] = useState(false);
+  const [customerValue, setCustomerValue] = useState("");
+  const newCustomer = customerValue === "novo";
   const { state, formAction } = useAction(createDeal, { onSuccess: () => setOpen(false) });
 
   return (
@@ -35,28 +36,34 @@ export function NewDealButton({ vehicles, customers, vehicleId, label = "Nova ne
       <Modal open={open} onClose={() => setOpen(false)} title="Nova negociação">
         <form action={formAction} className="space-y-4">
           <Field label="Cliente" required>
-            {customers.length === 0 ? (
-              <p className="rounded-md border border-dashed border-zinc-200 px-3 py-2 text-xs text-zinc-500">
-                Nenhum cliente cadastrado —{" "}
-                <Link href="/clientes" className="font-medium text-zinc-900 underline underline-offset-2">
-                  cadastre em Clientes
-                </Link>{" "}
-                e volte aqui.
-              </p>
-            ) : (
-              <Select name="customer_id" defaultValue="" required>
-                <option value="" disabled>
-                  Escolha…
+            <Select
+              name="customer_id"
+              value={customerValue}
+              onChange={(e) => setCustomerValue(e.target.value)}
+              required
+            >
+              <option value="" disabled>
+                Escolha…
+              </option>
+              <option value="novo">＋ Cadastrar novo cliente…</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.city ? ` · ${c.city}` : ""}
                 </option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                    {c.city ? ` · ${c.city}` : ""}
-                  </option>
-                ))}
-              </Select>
-            )}
+              ))}
+            </Select>
           </Field>
+          {newCustomer && (
+            <div className="grid grid-cols-2 gap-3 rounded-lg border border-zinc-100 bg-zinc-50/60 p-3">
+              <Field label="Nome" required>
+                <Input name="new_customer_name" placeholder="Marcos Vieira" required autoFocus />
+              </Field>
+              <Field label="Telefone">
+                <Input name="new_customer_phone" placeholder="(11) 99999-0000" />
+              </Field>
+            </div>
+          )}
           {vehicleId != null ? (
             <input type="hidden" name="vehicle_id" value={vehicleId} />
           ) : (

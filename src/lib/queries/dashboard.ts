@@ -14,6 +14,14 @@ export interface StockVehicleSlice {
   sale: number | null;
   profit: number | null; // null quando não há preço de venda
   consigned: boolean; // carro de terceiro na loja
+  photo: string | null;
+  brand: string;
+  yearLabel: string | null; // "20/21"
+  version: string | null;
+  transmission: string | null;
+  km: number | null;
+  days: number | null;
+  status: VehicleRow["status"];
 }
 
 export interface MonthlyPoint {
@@ -81,6 +89,14 @@ export async function dashboardData(): Promise<DashboardData> {
       sale: v.sale_price,
       profit: v.sale_price != null ? (m.profit ?? v.sale_price - m.totalCost) : null,
       consigned: v.consignado === 1,
+      photo: v.photo,
+      brand: v.brand,
+      yearLabel: v.year_fab ? `${String(v.year_fab).slice(-2)}/${String(v.year_model ?? v.year_fab).slice(-2)}` : null,
+      version: v.version,
+      transmission: v.transmission,
+      km: v.km,
+      days: m.days,
+      status: v.status,
     });
     if (v.sale_price != null) {
       saleValue += v.sale_price;

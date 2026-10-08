@@ -14,7 +14,7 @@ export function StatusSelect({ id, status }: { id: number; status: VehicleStatus
 
   return (
     // largura fixa para o seletor ficar na mesma linha do badge de status
-    <span className="inline-block w-[6.75rem]">
+    <span className="inline-block w-[6rem]">
       <Select
         value={status}
         disabled={pending}
@@ -25,7 +25,7 @@ export function StatusSelect({ id, status }: { id: number; status: VehicleStatus
             if (!r.ok) toast(r.error ?? "Não foi possível alterar.", "error");
           })
         }
-        className="h-7 pr-7 text-xs"
+        className="h-7 px-2 pr-6 text-[11px]"
       >
       {(Object.keys(VEHICLE_STATUS) as VehicleStatus[])
         .filter((s) => s !== "vendido")

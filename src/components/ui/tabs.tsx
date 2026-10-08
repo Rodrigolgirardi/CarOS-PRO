@@ -9,7 +9,18 @@ export interface LinkTab {
 }
 
 /** Abas por link (estado na URL — recarregável e compartilhável). */
-export function LinkTabs({ tabs, activeKey, className }: { tabs: LinkTab[]; activeKey: string; className?: string }) {
+export function LinkTabs({
+  tabs,
+  activeKey,
+  className,
+  mobileCounts = false,
+}: {
+  tabs: LinkTab[];
+  activeKey: string;
+  className?: string;
+  /** mostra os contadores também no celular (use quando as abas são poucas) */
+  mobileCounts?: boolean;
+}) {
   return (
     <div className={cn("flex items-center gap-0.5 overflow-x-auto border-b border-zinc-200", className)}>
       {tabs.map((t) => {
@@ -27,7 +38,12 @@ export function LinkTabs({ tabs, activeKey, className }: { tabs: LinkTab[]; acti
           >
             {t.label}
             {t.count != null && (
-              <span className="hidden rounded-full bg-zinc-100 px-1.5 py-px text-[11px] tabular-nums text-zinc-500 sm:inline">
+              <span
+                className={cn(
+                  "rounded-full bg-zinc-100 px-1.5 py-px text-[11px] tabular-nums text-zinc-500",
+                  mobileCounts ? "inline" : "hidden sm:inline"
+                )}
+              >
                 {t.count}
               </span>
             )}

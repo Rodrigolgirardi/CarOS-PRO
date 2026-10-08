@@ -75,6 +75,7 @@ export default async function VehiclesPage({
 
       <LinkTabs
         className="mb-4"
+        mobileCounts
         activeKey={filter === "parados" ? "" : filter}
         tabs={TABS.map((t) => ({
           key: t.key,

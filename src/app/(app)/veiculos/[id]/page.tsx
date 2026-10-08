@@ -6,13 +6,12 @@ import { BrandLogo } from "@/components/vehicles/brand-logo";
 import { SalePriceButton } from "@/components/vehicles/sale-price-button";
 import { StatusSelect } from "@/components/vehicles/status-select";
 import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
-import { VehicleRowActions } from "@/components/vehicles/vehicle-row-actions";
 import { NewDealButton } from "@/components/deals/new-deal-button";
 import { QuickSaleButton } from "@/components/vehicles/quick-sale-button";
 import { UploadDocButton } from "@/components/documents/upload-doc-button";
 import { TaskCheck } from "@/components/tasks/task-check";
 import { TaskCreateButton, TaskEditButton } from "@/components/tasks/task-dialogs";
-import { Badge, DealStageBadge, VehicleStatusBadge } from "@/components/ui/badge";
+import { Badge, DealStageBadge } from "@/components/ui/badge";
 import { ConfirmButton } from "@/components/ui/confirm";
 import { Stat, StatGrid } from "@/components/ui/stat";
 import { LinkTabs } from "@/components/ui/tabs";
@@ -28,6 +27,7 @@ import {
   TASK_TYPE,
   VEHICLE_LAUDO,
   VEHICLE_LEILAO,
+  VEHICLE_STATUS,
 } from "@/lib/labels";
 import { vehicleLabel, vehicleMetrics } from "@/lib/metrics";
 import { commissionRule } from "@/lib/queries/commissions";
@@ -140,7 +140,7 @@ export default async function VehiclePage({
               <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-zinc-500">
                 {vehicle.year_fab && (
                   <span>
-                    {vehicle.year_fab}/{vehicle.year_model ?? vehicle.year_fab}
+                    {String(vehicle.year_fab).slice(-2)}/{String(vehicle.year_model ?? vehicle.year_fab).slice(-2)}
                   </span>
                 )}
                 {vehicle.km != null && <span>{fmtKm(vehicle.km)}</span>}
@@ -151,9 +151,27 @@ export default async function VehiclePage({
                     {vehicle.plate}
                   </span>
                 )}
-                <VehicleStatusBadge status={vehicle.status} />
-                {!sold && <StatusSelect id={id} status={vehicle.status} />}
               </p>
+              {/* status + ações, coladas na foto; Lead e Vendido sempre lado a lado */}
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2 max-lg:[&_button]:h-7 max-lg:[&_button]:gap-1 max-lg:[&_button]:px-2 max-lg:[&_button]:text-xs">
+                <span
+                  title={VEHICLE_STATUS[vehicle.status].label}
+                  className={`size-2.5 shrink-0 rounded-full ${DOT_CLASS[VEHICLE_STATUS[vehicle.status].tone]}`}
+                />
+                {!sold && <StatusSelect id={id} status={vehicle.status} />}
+                {!sold && (
+                  <span className="flex items-center gap-1.5 sm:gap-2">
+                    <NewDealButton vehicles={vehicles} customers={customers} vehicleId={id} label="Lead" />
+                    <QuickSaleButton
+                      vehicles={vehicles}
+                      sellers={await sellerOptions()}
+                      customers={customers}
+                      defaultCommission={await commissionRule("venda_carro")}
+                      fixedVehicleId={id}
+                    />
+                  </span>
+                )}
+              </div>
               <div className="mt-2.5 flex flex-wrap items-center gap-2 empty:mt-0">
                 {sold && soldDeal && (
                   <span className="text-[13px] text-zinc-500">
@@ -174,21 +192,6 @@ export default async function VehiclePage({
                 )}
               </div>
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {!sold && (
-              <NewDealButton vehicles={vehicles} customers={customers} vehicleId={id} />
-            )}
-            {!sold && (
-              <QuickSaleButton
-                vehicles={vehicles}
-                sellers={await sellerOptions()}
-                customers={customers}
-                defaultCommission={await commissionRule("venda_carro")}
-                fixedVehicleId={id}
-              />
-            )}
-            <VehicleRowActions id={id} label={label} redirectAfterDelete="/veiculos" />
           </div>
         </div>
       </div>

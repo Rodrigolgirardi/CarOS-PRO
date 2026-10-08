@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, ChevronRight, Trash2 } from "lucide-react";
 import { choosePlateFipe, deletePlateCache } from "@/lib/actions/plate";
-import { brl, fmtDate } from "@/lib/format";
+import { brl } from "@/lib/format";
 import type { PlateData } from "@/lib/plate-lookup";
 import type { PlateCacheRow as Row } from "@/lib/queries/plate-cache";
 import { ActionButton } from "@/components/ui/action-button";
@@ -34,22 +34,23 @@ export function PlateCacheRow({ row, data }: { row: Row; data: PlateData | null 
             {row.plate}
           </span>
         </Td>
-        <Td className="max-w-[280px]">
+        <Td className="w-full max-w-[280px] max-sm:max-w-[10rem]">
           <span className="flex items-center gap-2">
             <BrandLogo brand={row.brand} size={16} />
             <span className="truncate font-medium text-zinc-900">
-              {[row.brand, row.model, row.version].filter(Boolean).join(" ") || "—"}
+              {[row.model, row.version].filter(Boolean).join(" ") || row.brand || "—"}
             </span>
           </span>
         </Td>
-        <Td className="text-zinc-500">
+        <Td className="text-zinc-500 max-sm:hidden">
           {row.year_fab
             ? `${String(row.year_fab).slice(-2)}/${String(row.year_model ?? row.year_fab).slice(-2)}`
             : "—"}
         </Td>
-        <Td className="text-zinc-600">{row.color ?? "—"}</Td>
-        <Td className="text-zinc-600">{row.fuel ?? "—"}</Td>
-        <Td className="text-zinc-500">{fmtDate(row.created_at.slice(0, 10))}</Td>
+        <Td className="text-zinc-600 max-sm:hidden">{row.color ?? "—"}</Td>
+        <Td right className="w-px text-zinc-500 max-sm:px-1">
+          {`${row.created_at.slice(8, 10)}/${row.created_at.slice(5, 7)}/${row.created_at.slice(2, 4)}`}
+        </Td>
         <Td className="w-12">
           <span onClick={(e) => e.stopPropagation()}>
             <ConfirmButton

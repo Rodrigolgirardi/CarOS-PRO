@@ -51,10 +51,19 @@ function dealCtx(id: number): Promise<DealCtx | undefined> {
 
 export async function createDeal(prev: ActionState, formData: FormData): Promise<ActionState> {
   const f = fields(formData);
-  const customerId = f.id("customer_id");
+  let customerId = f.id("customer_id");
   const vehicleId = f.id("vehicle_id");
   const stage = f.s("stage") === "proposta" ? "proposta" : "interessado";
   const proposed = f.cents("proposed_price");
+
+  // "+ Novo cliente" direto na negociação: cadastra na hora
+  if (f.s("customer_id") === "novo") {
+    const newName = f.s("new_customer_name");
+    if (!newName) return err("Informe o nome do novo cliente.");
+    customerId = (
+      await run("INSERT INTO customers (name, phone) VALUES (?,?)", newName, f.s("new_customer_phone"))
+    ).lastId;
+  }
   if (!customerId) return err("Escolha o cliente.");
   if (!vehicleId) return err("Escolha o veículo.");
   if (stage === "proposta" && (proposed == null || proposed <= 0)) return err("Informe o valor da proposta.");

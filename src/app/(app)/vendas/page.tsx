@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BadgeCheck, Clock, Percent, Trophy } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { CustomersPanel } from "@/components/customers/customers-panel";
 import { SaleRow } from "@/components/deals/sale-row";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Stat, StatGrid } from "@/components/ui/stat";
@@ -55,9 +56,9 @@ function HighlightCard({
   );
 }
 
-export default async function SalesPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-  const { tab: tabParam } = await searchParams;
-  const tab = tabParam === "destaques" ? "destaques" : tabParam === "relatorio" ? "relatorio" : "vendas";
+export default async function SalesPage({ searchParams }: { searchParams: Promise<{ tab?: string; status?: string }> }) {
+  const { tab: tabParam, status } = await searchParams;
+  const tab = ["destaques", "relatorio", "clientes"].includes(tabParam ?? "") ? tabParam! : "vendas";
   const sold = (await listDeals())
     .filter((d) => d.stage === "vendido" || d.stage === "entregue")
     .sort((a, b) => ((a.sold_date ?? "") < (b.sold_date ?? "") ? 1 : -1));
@@ -86,10 +87,13 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
           { key: "vendas", label: "Vendas", count: sold.length, href: "/vendas" },
           { key: "destaques", label: "Destaques", href: "/vendas?tab=destaques" },
           { key: "relatorio", label: "Relatório", href: "/vendas?tab=relatorio" },
+          { key: "clientes", label: "Clientes", href: "/vendas?tab=clientes" },
         ]}
       />
 
-      {sold.length === 0 ? (
+      {tab === "clientes" ? (
+        <CustomersPanel status={status} />
+      ) : sold.length === 0 ? (
         <EmptyState
           icon={BadgeCheck}
           title="Nenhuma venda registrada"

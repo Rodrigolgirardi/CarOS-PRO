@@ -2,20 +2,27 @@ import Link from "next/link";
 import {
   AlertCircle,
   ArrowDownToLine,
+  ArrowRight,
+  BadgeDollarSign,
+  Car,
   CheckCircle2,
   ChevronRight,
   Clock,
   FileWarning,
+  Layers,
   Receipt,
+  RefreshCw,
+  TrendingUp,
+  Users,
+  Wallet,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
 import { MonthlySalesChart } from "@/components/dashboard/monthly-chart";
-import { BrandLogo } from "@/components/vehicles/brand-logo";
+import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
 import { Badge } from "@/components/ui/badge";
-import { Stat, StatGrid } from "@/components/ui/stat";
-import { brl, fmtDateShort, pct } from "@/lib/format";
-import { DOT_CLASS, EVENT_META } from "@/lib/labels";
+import { brl, fmtDateShort, fmtKm, pct } from "@/lib/format";
+import { DOT_CLASS, EVENT_META, VEHICLE_STATUS } from "@/lib/labels";
 import { dashboardData } from "@/lib/queries/dashboard";
 
 export const dynamic = "force-dynamic";
@@ -28,14 +35,76 @@ interface AttentionItem {
   urgent?: boolean;
 }
 
-// Rampa azul tom sobre tom para o gráfico de estoque: os carros já vêm
-// ordenados por valor (desc), então o maior fica com o tom mais escuro.
+// Rampa azul tom sobre tom para a barra de estoque (mais escuro = maior valor).
 const STOCK_SHADES = ["bg-blue-900", "bg-blue-800", "bg-blue-700", "bg-blue-600", "bg-blue-500", "bg-blue-400", "bg-blue-300"];
 const stockShade = (i: number) => STOCK_SHADES[Math.min(i, STOCK_SHADES.length - 1)];
+
+/** KPI compacto: rótulo + ícone suave, número grande, contexto. */
+function KpiCard({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  iconClass,
+  valueClass,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  icon: LucideIcon;
+  iconClass: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium leading-snug text-zinc-500">{label}</p>
+        <span className={`grid size-7 shrink-0 place-items-center rounded-lg ${iconClass}`}>
+          <Icon size={15} strokeWidth={1.75} />
+        </span>
+      </div>
+      <p className={`mt-1 text-lg font-semibold tracking-tight tabular-nums sm:text-xl ${valueClass ?? "text-zinc-900"}`}>
+        {value}
+      </p>
+      <p className="mt-0.5 truncate text-[11px] text-zinc-400">{sub}</p>
+    </div>
+  );
+}
+
+/** Indicador do resumo do mês (dentro de um card único). */
+function MonthStat({
+  label,
+  value,
+  sub,
+  valueClass,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="p-4">
+      <p className="text-xs font-medium text-zinc-500">{label}</p>
+      <p className={`mt-1 text-lg font-semibold tracking-tight tabular-nums ${valueClass ?? "text-zinc-900"}`}>{value}</p>
+      <p className="mt-0.5 truncate text-[11px] text-zinc-400">{sub}</p>
+    </div>
+  );
+}
+
+const MESES_PT = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
 
 export default async function DashboardPage() {
   const data = await dashboardData();
   const { stock, month, attention, recent } = data;
+  const now = new Date();
+  const mesAtual = `${MESES_PT[now.getMonth()]} ${now.getFullYear()}`;
+  const monthNet = month.revenue - month.spend;
+  const monthMargin = month.revenue > 0 ? monthNet / month.revenue : null;
+  const totalPurchases = stock.vehicles.reduce((s, v) => s + v.purchase, 0);
 
   const items: AttentionItem[] = [];
   if (attention.stale > 0)
@@ -56,9 +125,7 @@ export default async function DashboardPage() {
   if (attention.preparing > 0)
     items.push({
       icon: Wrench,
-      text: `${attention.preparing} ${
-        attention.preparing === 1 ? "veículo para arrumar" : "veículos para arrumar"
-      }`,
+      text: `${attention.preparing} ${attention.preparing === 1 ? "veículo para arrumar" : "veículos para arrumar"}`,
       href: "/veiculos?filtro=para_arrumar",
     });
   if (attention.payablesOpen > 0)
@@ -80,111 +147,244 @@ export default async function DashboardPage() {
     });
 
   return (
-    <>
-      <section>
-        <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Vendas</h2>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_220px]">
-          <MonthlySalesChart months={data.monthly} />
-          <StatGrid className="grid-cols-2 lg:grid-cols-1 lg:grid-rows-3">
-            <Stat
-              label="Faturamento"
-              value={brl(month.revenue)}
-              sub={month.sales === 0 ? "Nenhuma venda no mês" : `${month.sales} venda(s) no mês`}
-            />
-            <Stat
-              label="Gastos"
-              value={brl(month.spend)}
-              valueClassName="text-red-600"
-              sub="Compras + custos + contas"
-            />
-            <Stat
-              label="Geração de caixa"
-              value={brl(month.revenue - month.spend)}
-              valueClassName={month.revenue - month.spend >= 0 ? "text-emerald-600" : "text-red-600"}
-              sub="Faturamento − gastos"
-            />
-          </StatGrid>
+    <div className="space-y-5">
+      {/* ------------------------------------------------ KPIs principais */}
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiCard
+          label="Patrimônio em estoque"
+          value={brl(stock.invested)}
+          sub={`${stock.count} ${stock.count === 1 ? "veículo" : "veículos"}`}
+          icon={Layers}
+          iconClass="bg-blue-50 text-blue-600"
+        />
+        <KpiCard
+          label="Capital investido"
+          value={brl(totalPurchases)}
+          sub="Total de compras"
+          icon={Wallet}
+          iconClass="bg-zinc-100 text-zinc-600"
+        />
+        <KpiCard
+          label="Lucro estimado"
+          value={brl(stock.potentialProfit)}
+          sub="Potencial de venda"
+          icon={TrendingUp}
+          iconClass="bg-emerald-50 text-emerald-600"
+          valueClass={stock.potentialProfit >= 0 ? "text-emerald-600" : "text-red-600"}
+        />
+        <KpiCard
+          label="Giro do estoque"
+          value={stock.avgDays != null ? `${stock.avgDays} dias` : "—"}
+          sub="Tempo médio"
+          icon={RefreshCw}
+          iconClass="bg-violet-50 text-violet-600"
+        />
+      </section>
+
+      {/* ------------------------------------------------ resultado mensal */}
+      <MonthlySalesChart months={data.monthly} />
+
+      {/* ------------------------------------------------ resumo do mês */}
+      <section className="rounded-2xl border border-zinc-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3">
+          <h2 className="text-[15px] font-semibold tracking-tight text-zinc-900">Resumo do mês</h2>
+          <span className="text-xs text-zinc-400">{mesAtual}</span>
+        </div>
+        <div className="grid grid-cols-2 divide-x divide-y divide-zinc-100 sm:grid-cols-4 sm:divide-y-0 [&>*:nth-child(3)]:border-l-0 sm:[&>*:nth-child(3)]:border-l">
+          <MonthStat
+            label="Faturamento"
+            value={brl(month.revenue)}
+            sub={month.sales === 0 ? "Nenhuma venda" : `${month.sales} venda(s)`}
+          />
+          <MonthStat label="Custos" value={brl(month.spend)} sub="Compras + custos + contas" valueClass="text-red-600" />
+          <MonthStat
+            label="Lucro"
+            value={brl(monthNet)}
+            sub="Faturamento − gastos"
+            valueClass={monthNet >= 0 ? "text-emerald-600" : "text-red-600"}
+          />
+          <MonthStat label="Margem" value={monthMargin != null ? pct(monthMargin) : "0%"} sub="Sobre faturamento" />
         </div>
       </section>
 
-      <section className="mt-7">
-        <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Estoque</h2>
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-          <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3">
-            <p className="text-[13px] font-semibold text-zinc-900">
-              {stock.count} {stock.count === 1 ? "veículo" : "veículos"} em estoque ·{" "}
-              <span className="tabular-nums">{brl(stock.invested)}</span>
-            </p>
-            <p className="text-xs text-zinc-400">
-              {stock.preparing > 0 ? `${stock.preparing} para arrumar` : ""}
-            </p>
-          </div>
-          {stock.vehicles.length === 0 ? (
-            <p className="px-4 py-6 text-[13px] text-zinc-400">Nenhum veículo em estoque.</p>
-          ) : (
-            <>
-              {/* distribuição do valor do estoque: uma fatia por carro, tom sobre tom (mais escuro = maior valor) */}
-              {stock.invested > 0 && (
-                <div className="border-b border-zinc-100 px-4 py-3">
-                  <div className="flex h-2.5 items-stretch gap-[2px]">
-                    {stock.vehicles.map((v, i) => (
-                      <div
-                        key={v.id}
-                        className={`min-w-[3px] rounded-[2px] first:rounded-l-full last:rounded-r-full ${stockShade(i)}`}
-                        style={{ width: `${(v.invested / stock.invested) * 100}%` }}
-                        title={`${v.label} — ${brl(v.invested)} (${pct(v.invested / stock.invested, 0)} do estoque)`}
-                      />
-                    ))}
-                  </div>
-                  <p className="mt-1.5 text-[11px] text-zinc-400">
-                    Cada fatia é um carro, na ordem da lista — tom mais escuro, maior valor.
-                  </p>
-                </div>
-              )}
-              <div className="divide-y divide-zinc-100">
-                {stock.vehicles.map((v, i) => {
-                  const share = stock.invested > 0 ? v.invested / stock.invested : 0;
-                  return (
-                    <Link
-                      key={v.id}
-                      href={`/veiculos/${v.id}`}
-                      className="flex items-center justify-between gap-3 px-4 py-2.5 transition-colors hover:bg-zinc-50"
-                    >
-                      <span className="flex min-w-0 items-center gap-2.5">
-                        <BrandLogo brand={v.label} size={18} />
-                        <span className="truncate text-[13px] font-medium text-zinc-800">{v.label}</span>
+      {/* ------------------------------------------------ estoque */}
+      <section className="rounded-2xl border border-zinc-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3">
+          <h2 className="text-[15px] font-semibold tracking-tight text-zinc-900">Estoque</h2>
+          <Link
+            href="/veiculos"
+            className="flex items-center gap-1 rounded-full border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
+          >
+            Ver todos
+            <ArrowRight size={12} />
+          </Link>
+        </div>
+
+        {stock.vehicles.length === 0 ? (
+          <p className="px-4 py-8 text-center text-[13px] text-zinc-400">
+            Nenhum veículo em estoque — registre a próxima compra para repor.
+          </p>
+        ) : (
+          <div className="space-y-3 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[13px] font-semibold text-zinc-900">
+                {stock.count} {stock.count === 1 ? "veículo" : "veículos"} em estoque ·{" "}
+                <span className="tabular-nums">{brl(stock.invested)}</span>
+              </p>
+              {stock.preparing > 0 && <p className="text-xs text-zinc-400">{stock.preparing} para arrumar</p>}
+            </div>
+
+            {/* distribuição do patrimônio: uma fatia por carro */}
+            {stock.invested > 0 && (
+              <div className="flex h-2.5 items-stretch gap-[2px]">
+                {stock.vehicles.map((v, i) => (
+                  <div
+                    key={v.id}
+                    className={`min-w-[3px] rounded-[2px] first:rounded-l-full last:rounded-r-full ${stockShade(i)}`}
+                    style={{ width: `${(v.invested / stock.invested) * 100}%` }}
+                    title={`${v.label} — ${brl(v.invested)} (${pct(v.invested / stock.invested, 0)} do estoque)`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* cards de veículo */}
+            <div className="space-y-2.5">
+              {stock.vehicles.map((v) => {
+                const statusMeta = VEHICLE_STATUS[v.status];
+                const specs = [v.yearLabel, v.version, v.transmission].filter(Boolean).join(" · ");
+                return (
+                  <Link
+                    key={v.id}
+                    href={`/veiculos/${v.id}`}
+                    className="flex items-stretch gap-3 rounded-2xl border border-zinc-100 bg-zinc-50/50 p-3 transition-colors hover:border-zinc-200 hover:bg-zinc-50 sm:gap-4"
+                  >
+                    <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                      <span className="flex min-w-0 items-center gap-3">
+                        <VehiclePhoto photo={v.photo} brand={v.brand} size="md" />
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-1.5">
+                            <span className="truncate text-sm font-semibold text-zinc-900">{v.label}</span>
+                            {v.status !== "cadastrado" ? (
+                              <Badge tone={statusMeta.tone} className="shrink-0 px-1.5 py-0 text-[10px]">
+                                {statusMeta.label}
+                              </Badge>
+                            ) : (
+                              <span
+                                className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                                  v.consigned ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700"
+                                }`}
+                              >
+                                {v.consigned ? "Consignado" : "Próprio"}
+                              </span>
+                            )}
+                          </span>
+                          {specs && <span className="mt-0.5 block truncate text-xs text-zinc-500">{specs}</span>}
+                          <span className="mt-1 flex items-center gap-2.5 text-[11px] text-zinc-400">
+                            {v.days != null && (
+                              <span className="flex items-center gap-1">
+                                <Clock size={11} />
+                                {v.days} dias no estoque
+                              </span>
+                            )}
+                            {v.km != null && <span>{fmtKm(v.km)}</span>}
+                          </span>
+                        </span>
+                      </span>
+
+                      <span className="shrink-0 space-y-1 border-zinc-100 text-[12px] max-sm:border-t max-sm:pt-2 sm:w-56 sm:border-l sm:pl-4">
+                        <span className="flex items-center justify-between gap-3">
+                          <span className="text-zinc-400">Custo total</span>
+                          <span className="font-medium tabular-nums text-zinc-700">
+                            {brl(v.sale != null && v.profit != null ? v.sale - v.profit : v.invested)}
+                          </span>
+                        </span>
+                        <span className="flex items-center justify-between gap-3">
+                          <span className="text-zinc-400">Preço de venda</span>
+                          <span className="font-medium tabular-nums text-zinc-900">
+                            {v.sale != null ? brl(v.sale) : "—"}
+                          </span>
+                        </span>
                         <span
-                          className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                            v.consigned ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700"
+                          className={`flex items-center justify-between gap-3 rounded-md px-1.5 py-1 ${
+                            v.profit == null ? "bg-zinc-100/60" : v.profit >= 0 ? "bg-emerald-50" : "bg-red-50"
                           }`}
                         >
-                          {v.consigned ? "Consignado" : "Próprio"}
-                        </span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-2.5">
-                        <span className="hidden h-1.5 w-20 overflow-hidden rounded-full bg-zinc-100 sm:block">
                           <span
-                            className={`block h-full rounded-full ${stockShade(i)}`}
-                            style={{ width: `${share * 100}%` }}
-                          />
+                            className={
+                              v.profit == null ? "text-zinc-400" : v.profit >= 0 ? "text-emerald-700" : "text-red-600"
+                            }
+                          >
+                            Lucro estimado
+                          </span>
+                          <span
+                            className={`font-semibold tabular-nums ${
+                              v.profit == null ? "text-zinc-400" : v.profit >= 0 ? "text-emerald-600" : "text-red-600"
+                            }`}
+                          >
+                            {v.profit != null ? brl(v.profit) : "—"}
+                          </span>
                         </span>
-                        <span className="w-10 text-right text-xs tabular-nums text-zinc-400">{pct(share, 0)}</span>
-                        <span className="w-24 text-right text-[13px] tabular-nums text-zinc-600">{brl(v.invested)}</span>
                       </span>
-                    </Link>
-                  );
-                })}
-              </div>
-              <div className="flex items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50/60 px-4 py-2.5">
-                <span className="text-[13px] font-semibold text-zinc-900">Custo total (compra + custos)</span>
-                <span className="text-[13px] font-semibold tabular-nums text-zinc-900">{brl(stock.invested)}</span>
-              </div>
-            </>
-          )}
+                    </div>
+                    <ChevronRight size={15} className="hidden shrink-0 self-center text-zinc-300 sm:block" />
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ------------------------------------------------ ações rápidas */}
+      <section>
+        <h2 className="mb-2.5 text-[15px] font-semibold tracking-tight text-zinc-900">Ações rápidas</h2>
+        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+          <Link
+            href="/compras/nova"
+            className="flex items-center justify-between gap-2 rounded-2xl border border-violet-100 bg-violet-50 px-3.5 py-3 text-[13px] font-semibold text-violet-700 transition-colors hover:bg-violet-100"
+          >
+            <span className="flex items-center gap-2">
+              <Car size={16} />
+              Novo veículo
+            </span>
+            <ChevronRight size={14} className="opacity-50" />
+          </Link>
+          <Link
+            href="/veiculos"
+            className="flex items-center justify-between gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3.5 py-3 text-[13px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
+          >
+            <span className="flex items-center gap-2">
+              <BadgeDollarSign size={16} />
+              Registrar venda
+            </span>
+            <ChevronRight size={14} className="opacity-50" />
+          </Link>
+          <Link
+            href="/vendas?tab=clientes"
+            className="flex items-center justify-between gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-3.5 py-3 text-[13px] font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+          >
+            <span className="flex items-center gap-2">
+              <Users size={16} />
+              Lead
+            </span>
+            <ChevronRight size={14} className="opacity-50" />
+          </Link>
+          <Link
+            href="/financeiro"
+            className="flex items-center justify-between gap-2 rounded-2xl border border-red-100 bg-red-50 px-3.5 py-3 text-[13px] font-semibold text-red-600 transition-colors hover:bg-red-100"
+          >
+            <span className="flex items-center gap-2">
+              <Receipt size={16} />
+              Despesas
+            </span>
+            <ChevronRight size={14} className="opacity-50" />
+          </Link>
         </div>
       </section>
 
-      <div className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-2">
+      {/* ------------------------------------------------ atenção + atividade */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <details className="group">
           <summary className="mb-2.5 flex cursor-pointer list-none items-center gap-1.5 text-[13px] font-semibold text-zinc-900 [&::-webkit-details-marker]:hidden">
             <ChevronRight size={14} className="text-zinc-400 transition-transform group-open:rotate-90" />
@@ -195,7 +395,7 @@ export default async function DashboardPage() {
               </span>
             )}
           </summary>
-          <div className="divide-y divide-zinc-100 overflow-hidden rounded-xl border border-zinc-200 bg-white">
+          <div className="divide-y divide-zinc-100 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
             {items.length === 0 ? (
               <div className="flex items-center gap-3 px-4 py-6 text-[13px] text-zinc-500">
                 <CheckCircle2 size={16} className="text-emerald-500" />
@@ -236,7 +436,7 @@ export default async function DashboardPage() {
               </span>
             )}
           </summary>
-          <div className="divide-y divide-zinc-100 overflow-hidden rounded-xl border border-zinc-200 bg-white">
+          <div className="divide-y divide-zinc-100 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
             {recent.length === 0 ? (
               <p className="px-4 py-6 text-[13px] text-zinc-400">
                 A linha do tempo aparece aqui conforme você registra compras, custos e vendas.
@@ -280,6 +480,6 @@ export default async function DashboardPage() {
           </div>
         </details>
       </div>
-    </>
+    </div>
   );
 }

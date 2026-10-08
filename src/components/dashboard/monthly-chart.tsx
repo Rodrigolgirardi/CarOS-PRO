@@ -45,9 +45,14 @@ export function MonthlySalesChart({ months }: { months: MonthlyPoint[] }) {
   );
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5">
+    <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-[13px] font-semibold text-zinc-900">Vendas mês a mês</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-[15px] font-semibold tracking-tight text-zinc-900">Resultado mensal</h3>
+          <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] font-medium text-zinc-500">
+            Últimos 12 meses
+          </span>
+        </div>
         <div className="flex items-center gap-4 text-[11px] text-zinc-500">
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-blue-600" />
@@ -55,11 +60,11 @@ export function MonthlySalesChart({ months }: { months: MonthlyPoint[] }) {
           </span>
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-red-500" />
-            Gastos
+            Custos
           </span>
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-emerald-600" />
-            Geração de caixa
+            Lucro
           </span>
         </div>
       </div>
@@ -70,7 +75,7 @@ export function MonthlySalesChart({ months }: { months: MonthlyPoint[] }) {
           const empty = m.revenue === 0 && m.spend === 0;
           const hint = empty
             ? `${m.label} — sem movimentação`
-            : `${m.label} — Faturamento ${brl(m.revenue)} (${m.sales} venda(s)) · Gastos ${brl(m.spend)} · Geração de caixa ${brl(lucro)}`;
+            : `${m.label} — Faturamento ${brl(m.revenue)} (${m.sales} venda(s)) · Custos ${brl(m.spend)} · Lucro ${brl(lucro)}`;
           return (
             <div key={m.key} className="flex min-w-0 flex-1 flex-col items-stretch" title={hint}>
               <div className="relative h-36">

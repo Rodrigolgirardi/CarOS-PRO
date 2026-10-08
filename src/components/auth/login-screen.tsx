@@ -18,7 +18,7 @@ function EntrarButton() {
     <button
       type="submit"
       disabled={pending}
-      className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-lime-300 text-lg font-bold text-zinc-900 transition-colors hover:bg-lime-400 disabled:pointer-events-none disabled:opacity-60"
+      className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-lime-300 text-lg font-bold text-[#1a2e05] transition-colors hover:bg-lime-400 disabled:pointer-events-none disabled:opacity-60"
     >
       {pending && <Loader2 size={18} className="animate-spin" />}
       Entrar

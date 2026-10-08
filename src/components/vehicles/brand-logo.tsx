@@ -21,7 +21,7 @@ export function BrandLogo({ brand, size = 16, className }: BrandLogoProps) {
       width={size}
       height={size}
       loading="lazy"
-      className={cn("inline-block shrink-0 object-contain", className)}
+      className={cn("brand-logo inline-block shrink-0 object-contain", className)}
     />
   );
 }

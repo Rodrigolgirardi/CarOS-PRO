@@ -22,6 +22,25 @@ function NavItem({ href, label, icon: Icon }: NavItemData) {
   );
 }
 
+/** Lista de navegação — usada na sidebar (desktop) e na gaveta (celular). */
+export function SidebarNav() {
+  return (
+    <>
+      <div className="space-y-0.5">
+        {MAIN.map((item) => (
+          <NavItem key={item.href} {...item} />
+        ))}
+      </div>
+      <div className="mx-2 my-3 border-t border-zinc-200/80" />
+      <div className="space-y-0.5">
+        {MANAGE.map((item) => (
+          <NavItem key={item.href} {...item} />
+        ))}
+      </div>
+    </>
+  );
+}
+
 export function Sidebar({ children }: { children?: React.ReactNode }) {
   return (
     <aside className="hidden h-full w-56 shrink-0 flex-col border-r border-zinc-200 bg-zinc-50/70 lg:flex">
@@ -31,17 +50,7 @@ export function Sidebar({ children }: { children?: React.ReactNode }) {
         <span className="text-[15px] font-semibold tracking-tight text-zinc-900">CarOS</span>
       </div>
       <nav className="flex-1 overflow-y-auto px-2.5 pb-4">
-        <div className="space-y-0.5">
-          {MAIN.map((item) => (
-            <NavItem key={item.href} {...item} />
-          ))}
-        </div>
-        <div className="mx-2 my-3 border-t border-zinc-200/80" />
-        <div className="space-y-0.5">
-          {MANAGE.map((item) => (
-            <NavItem key={item.href} {...item} />
-          ))}
-        </div>
+        <SidebarNav />
       </nav>
       {children && <div className="px-2.5 pb-3">{children}</div>}
     </aside>

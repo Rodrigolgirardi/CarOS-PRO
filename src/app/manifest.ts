@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-/** Manifesto PWA: permite "instalar" o CarOS na tela inicial do celular. */
+/** Deixa o CarOS instalável: "Adicionar à tela inicial" vira um app de verdade. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "CarOS PRO",

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, FileText, History, Trash2, User } from "lucide-react";
+import { CalendarClock, FileText, History, Pencil, Trash2, User } from "lucide-react";
 import { AddCostButton, CostRowActions } from "@/components/vehicles/cost-dialogs";
 import { BrandLogo } from "@/components/vehicles/brand-logo";
 import { SalePriceButton } from "@/components/vehicles/sale-price-button";
@@ -13,7 +13,6 @@ import { UploadDocButton } from "@/components/documents/upload-doc-button";
 import { TaskCheck } from "@/components/tasks/task-check";
 import { TaskCreateButton, TaskEditButton } from "@/components/tasks/task-dialogs";
 import { Badge, DealStageBadge, VehicleStatusBadge } from "@/components/ui/badge";
-import { LinkButton } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/confirm";
 import { Stat, StatGrid } from "@/components/ui/stat";
 import { LinkTabs } from "@/components/ui/tabs";
@@ -62,6 +61,16 @@ function InfoCard({ title, action, children }: { title: string; action?: React.R
   );
 }
 
+/** Célula compacta (rótulo em cima, valor embaixo) para grades de até 3 por linha. */
+function Cell({ label, value, className }: { label: string; value: React.ReactNode; className?: string }) {
+  return (
+    <div className={className}>
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-400">{label}</dt>
+      <dd className="mt-0.5 break-words text-[13px] font-medium text-zinc-900">{value ?? "—"}</dd>
+    </div>
+  );
+}
+
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-4 py-1">
@@ -71,7 +80,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-const TABS = ["resumo", "plataformas", "custos", "operacoes", "documentos", "historico"] as const;
+const TABS = ["resumo", "plataformas", "custos", "operacoes", "documentos", "dados", "historico"] as const;
 type Tab = (typeof TABS)[number];
 
 export default async function VehiclePage({
@@ -142,10 +151,10 @@ export default async function VehiclePage({
                     {vehicle.plate}
                   </span>
                 )}
-              </p>
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
                 <VehicleStatusBadge status={vehicle.status} />
                 {!sold && <StatusSelect id={id} status={vehicle.status} />}
+              </p>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2 empty:mt-0">
                 {sold && soldDeal && (
                   <span className="text-[13px] text-zinc-500">
                     para{" "}
@@ -179,7 +188,6 @@ export default async function VehiclePage({
                 fixedVehicleId={id}
               />
             )}
-            <LinkButton href={`/veiculos/${id}/editar`}>Editar</LinkButton>
             <VehicleRowActions id={id} label={label} redirectAfterDelete="/veiculos" />
           </div>
         </div>
@@ -224,15 +232,27 @@ export default async function VehiclePage({
           { key: "plataformas", label: "Plataformas", count: platforms.length, href: `/veiculos/${id}?tab=plataformas` },
           { key: "custos", label: "Custos", count: costs.length, href: `/veiculos/${id}?tab=custos` },
           { key: "documentos", label: "Documentos", count: docs.length, href: `/veiculos/${id}?tab=documentos` },
+          { key: "dados", label: "Dados", href: `/veiculos/${id}?tab=dados` },
           { key: "historico", label: "Histórico", href: `/veiculos/${id}?tab=historico` },
         ]}
       />
 
       {tab === "resumo" && (
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-          <InfoCard title="Informações do veículo">
-            <dl className="grid grid-cols-2 gap-x-8">
-              <Row
+          <InfoCard
+            title="Informações do veículo"
+            action={
+              <Link
+                href={`/veiculos/${id}/editar`}
+                className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+              >
+                <Pencil size={12} />
+                Editar
+              </Link>
+            }
+          >
+            <dl className="grid grid-cols-3 gap-x-4 gap-y-3.5">
+              <Cell
                 label="Marca"
                 value={
                   <span className="inline-flex items-center gap-1.5">
@@ -241,24 +261,28 @@ export default async function VehiclePage({
                   </span>
                 }
               />
-              <Row label="Modelo" value={vehicle.model} />
-              <Row label="Versão" value={vehicle.version} />
-              <Row label="Ano" value={vehicle.year_fab ? `${vehicle.year_fab}/${vehicle.year_model ?? vehicle.year_fab}` : null} />
-              <Row label="Placa" value={vehicle.plate} />
-              <Row label="KM" value={vehicle.km != null ? fmtKm(vehicle.km) : null} />
-              <Row label="Cor" value={vehicle.color} />
-              <Row label="Câmbio" value={vehicle.transmission} />
-              <Row label="Combustível" value={vehicle.fuel} />
-              <Row label="Renavam" value={vehicle.renavam} />
-              <Row label="Chassi" value={vehicle.chassis} />
-              <Row label="Laudo cautelar" value={vehicle.laudo ? VEHICLE_LAUDO[vehicle.laudo] : null} />
-              <Row label="Blindado" value={vehicle.blindado == null ? null : vehicle.blindado ? "Sim" : "Não"} />
-              <Row label="Leilão" value={vehicle.leilao ? VEHICLE_LEILAO[vehicle.leilao] : null} />
+              <Cell label="Modelo" value={vehicle.model} />
+              <Cell label="Versão" value={vehicle.version} />
+              <Cell label="Ano" value={vehicle.year_fab ? `${vehicle.year_fab}/${vehicle.year_model ?? vehicle.year_fab}` : null} />
+              <Cell label="Placa" value={vehicle.plate} />
+              <Cell label="KM" value={vehicle.km != null ? fmtKm(vehicle.km) : null} />
+              <Cell label="Cor" value={vehicle.color} />
+              <Cell label="Câmbio" value={vehicle.transmission} />
+              <Cell label="Combustível" value={vehicle.fuel} />
+              <Cell label="Renavam" value={vehicle.renavam} />
+              <Cell label="Blindado" value={vehicle.blindado == null ? null : vehicle.blindado ? "Sim" : "Não"} />
+              <Cell label="Leilão" value={vehicle.leilao ? VEHICLE_LEILAO[vehicle.leilao] : null} />
+              <Cell label="Chassi" value={vehicle.chassis} className="col-span-3" />
+              <Cell
+                label="Laudo cautelar"
+                value={vehicle.laudo ? VEHICLE_LAUDO[vehicle.laudo] : null}
+                className="col-span-3"
+              />
               {vehicle.consignado === 1 && (
                 <>
-                  <Row label="Consignação — dono" value={vehicle.consignor} />
-                  <Row
-                    label="Repasse combinado"
+                  <Cell label="Consignação — dono" value={vehicle.consignor} className="col-span-2" />
+                  <Cell
+                    label="Repasse"
                     value={vehicle.consignor_value != null ? brl(vehicle.consignor_value) : null}
                   />
                 </>
@@ -498,6 +522,64 @@ export default async function VehiclePage({
               </TBody>
             </Table>
           )}
+        </div>
+      )}
+
+      {tab === "dados" && (
+        <div className="max-w-xl">
+          <InfoCard
+            title={vehicle.consignado === 1 ? "Dados da consignação" : "Dados da compra"}
+            action={
+              <Link
+                href={`/veiculos/${id}/editar`}
+                className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+              >
+                <Pencil size={12} />
+                Editar
+              </Link>
+            }
+          >
+            <dl className="grid grid-cols-3 gap-x-4 gap-y-3.5">
+              <Cell
+                label={vehicle.consignado === 1 ? "Dono (consignante)" : "Comprado de"}
+                value={vehicle.consignado === 1 ? vehicle.consignor : vehicle.purchase_seller}
+                className="col-span-2"
+              />
+              <Cell
+                label={vehicle.consignado === 1 ? "Data da consignação" : "Data da compra"}
+                value={vehicle.purchase_date ? fmtDate(vehicle.purchase_date) : null}
+              />
+              <Cell label="CPF" value={vehicle.origin_cpf} />
+              <Cell
+                label="WhatsApp"
+                value={
+                  vehicle.origin_whatsapp ? (
+                    <a
+                      href={`https://wa.me/55${vehicle.origin_whatsapp.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-emerald-700 underline-offset-2 hover:underline"
+                    >
+                      {vehicle.origin_whatsapp}
+                    </a>
+                  ) : null
+                }
+              />
+              <Cell
+                label="E-mail"
+                value={
+                  vehicle.origin_email ? (
+                    <a
+                      href={`mailto:${vehicle.origin_email}`}
+                      className="text-zinc-900 underline-offset-2 hover:underline"
+                    >
+                      {vehicle.origin_email}
+                    </a>
+                  ) : null
+                }
+              />
+            </dl>
+          </InfoCard>
         </div>
       )}
 

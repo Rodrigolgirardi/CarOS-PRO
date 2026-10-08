@@ -40,6 +40,15 @@
   }
 }
 
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
 /* ---------------------------------------------------------------- modo escuro
    Tema escuro de verdade: remapeia as variáveis de cor do Tailwind (nada de
    filter/invert — aquilo desligava a suavização de texto e deixava tudo borrado).

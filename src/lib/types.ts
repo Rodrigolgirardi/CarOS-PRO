@@ -75,6 +75,10 @@ export interface Vehicle {
   consignado: number; // 1 = carro de terceiro na loja (sem compra, sem saída de caixa)
   consignor: string | null; // dono do carro consignado
   consignor_value: number | null; // repasse combinado com o dono (centavos)
+  consignado_date: string | null; // data em que o carro consignado entrou na loja
+  origin_cpf: string | null; // CPF de quem vendeu/consignou o carro
+  origin_whatsapp: string | null;
+  origin_email: string | null;
   status: VehicleStatus;
   sale_price: number | null; // preço de venda anunciado/planejado
   photo: string | null;
@@ -233,6 +237,8 @@ export interface VehicleRow extends Vehicle {
   purchase_notes: string | null;
   purchase_id: number | null;
   costs_total: number;
+  /** nº de plataformas onde o carro está anunciado */
+  platforms_count: number;
   total_cost: number;
   sold_price: number | null;
   sold_date: string | null;

@@ -2,35 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BadgePercent,
-  Car,
-  Database,
-  FileText,
-  Handshake,
-  LayoutDashboard,
-  ShoppingCart,
-  Users,
-  Wallet,
-} from "lucide-react";
 import { cn } from "@/lib/cn";
+import { MAIN, MANAGE, type NavItemData } from "@/components/layout/nav-items";
 
-const MAIN = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/veiculos", label: "Veículos", icon: Car },
-  { href: "/compras", label: "Compras", icon: ShoppingCart },
-  { href: "/vendas", label: "Vendas", icon: Handshake },
-  { href: "/clientes", label: "Clientes", icon: Users },
-  { href: "/vendedores", label: "Vendedores", icon: BadgePercent },
-];
-
-const MANAGE = [
-  { href: "/financeiro", label: "Financeiro", icon: Wallet },
-  { href: "/documentos", label: "Documentos", icon: FileText },
-  { href: "/banco-de-dados", label: "Banco de dados", icon: Database },
-];
-
-function NavItem({ href, label, icon: Icon }: (typeof MAIN)[number]) {
+function NavItem({ href, label, icon: Icon }: NavItemData) {
   const pathname = usePathname();
   const active = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
   return (
@@ -68,7 +43,7 @@ export function SidebarNav() {
 
 export function Sidebar({ children }: { children?: React.ReactNode }) {
   return (
-    <aside className="hidden h-full w-56 shrink-0 flex-col border-r border-zinc-200 bg-zinc-50/70 md:flex">
+    <aside className="hidden h-full w-56 shrink-0 flex-col border-r border-zinc-200 bg-zinc-50/70 lg:flex">
       <div className="flex items-center gap-2.5 px-4 pb-5 pt-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/caros-mark.png" alt="" className="size-7 shrink-0 rounded-md object-cover" />

@@ -40,8 +40,8 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
 
   const vehicleId = await tx(async () => {
     const v = await run(
-      `INSERT INTO vehicles (brand, model, version, year_fab, year_model, plate, km, color, fuel, transmission, renavam, chassis, laudo, blindado, leilao, fipe_price, consignado, consignor, consignor_value, status, sale_price, photo, notes)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'para_arrumar',?,?,?)`,
+      `INSERT INTO vehicles (brand, model, version, year_fab, year_model, plate, km, color, fuel, transmission, renavam, chassis, laudo, blindado, leilao, fipe_price, consignado, consignor, consignor_value, consignado_date, origin_cpf, origin_whatsapp, origin_email, status, sale_price, photo, notes)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'para_arrumar',?,?,?)`,
       brand,
       model,
       f.s("version"),
@@ -61,6 +61,10 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
       consigned ? 1 : 0,
       consigned ? consignor : null,
       consigned ? consignorValue : null,
+      consigned ? (f.s("consignado_date") ?? todayISO()) : null,
+      f.s("origin_cpf"),
+      f.s("origin_whatsapp"),
+      f.s("origin_email"),
       salePrice,
       photo,
       f.s("notes")
@@ -115,8 +119,25 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
     return vid;
   });
 
+  await attachContract(f.file("contract"), vehicleId);
   revalidate();
   redirect(`/veiculos/${vehicleId}`);
+}
+
+/** Anexa o contrato enviado no formulário como documento do veículo. */
+async function attachContract(file: File | null, vehicleId: number) {
+  if (!file) return;
+  const saved = await saveUpload(file);
+  await run(
+    "INSERT INTO documents (name, type, vehicle_id, file_name, mime, size) VALUES (?,?,?,?,?,?)",
+    file.name || "Contrato",
+    "contrato",
+    vehicleId,
+    saved.fileName,
+    saved.mime,
+    saved.size
+  );
+  await logEvent({ type: "documento", description: `Contrato anexado — ${file.name || "Contrato"}`, vehicle: vehicleId });
 }
 
 export async function updateVehicle(id: number, prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -141,7 +162,7 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
 
   await tx(async () => {
     await run(
-      `UPDATE vehicles SET brand=?, model=?, version=?, year_fab=?, year_model=?, plate=?, km=?, color=?, fuel=?, transmission=?, renavam=?, chassis=?, laudo=?, blindado=?, leilao=?, fipe_price=?, consignor=?, consignor_value=?, sale_price=?, photo=?, notes=? WHERE id=?`,
+      `UPDATE vehicles SET brand=?, model=?, version=?, year_fab=?, year_model=?, plate=?, km=?, color=?, fuel=?, transmission=?, renavam=?, chassis=?, laudo=?, blindado=?, leilao=?, fipe_price=?, consignor=?, consignor_value=?, consignado_date=?, origin_cpf=?, origin_whatsapp=?, origin_email=?, sale_price=?, photo=?, notes=? WHERE id=?`,
       brand,
       model,
       f.s("version"),
@@ -160,6 +181,10 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
       f.int("fipe_price_cents") ?? current.fipe_price,
       isConsigned ? (f.s("consignor") ?? current.consignor) : current.consignor,
       isConsigned ? f.cents("consignor_value") : current.consignor_value,
+      isConsigned ? (f.s("consignado_date") ?? current.consignado_date) : current.consignado_date,
+      f.s("origin_cpf"),
+      f.s("origin_whatsapp"),
+      f.s("origin_email"),
       salePrice,
       photo,
       f.s("notes"),
@@ -206,6 +231,7 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
     }
   });
 
+  await attachContract(f.file("contract"), id);
   revalidate();
   redirect(`/veiculos/${id}`);
 }

@@ -219,7 +219,7 @@ export default async function ReportsPage({
               activeKey={periodo}
               items={PERIODS.map((p) => ({ key: p, label: PERIOD_LABEL[p], href: `/relatorios?tab=compras&periodo=${p}` }))}
             />
-            <StatGrid className="grid-cols-3">
+            <StatGrid className="grid-cols-1 sm:grid-cols-3">
               <Stat label="Veículos comprados" value={r.count} />
               <Stat label="Valor comprado" value={brl(r.totalPurchase)} />
               <Stat label="Custo total médio" value={brl(r.avgCost)} sub="Compra + custos por veículo" />

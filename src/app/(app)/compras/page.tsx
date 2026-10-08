@@ -32,7 +32,7 @@ export default async function PurchasesPage() {
         }
       />
 
-      <StatGrid className="mb-5 grid-cols-3">
+      <StatGrid className="mb-5 grid-cols-1 sm:grid-cols-3">
         <Stat label="Veículos comprados" value={report.count} />
         <Stat label="Total em compras" value={brl(report.totalPurchase)} />
         <Stat label="Custo total médio" value={brl(report.avgCost)} sub="Compra + custos por veículo" />

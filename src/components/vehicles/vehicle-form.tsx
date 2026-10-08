@@ -106,13 +106,13 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
 
   return (
     <>
-    <form ref={formRef} action={formAction} className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_300px]">
+    <form ref={formRef} action={formAction} className="grid grid-cols-1 items-start gap-6 lg:gap-8 lg:grid-cols-[1fr_300px]">
       {/* valor FIPE em centavos — preenchido pela consulta de placa */}
       <input type="hidden" name="fipe_price_cents" value={fipePrice ?? ""} />
-      <div className="min-w-0 space-y-8">
+      <div className="min-w-0 space-y-6 md:space-y-8">
         <section>
           <SectionTitle>Veículo</SectionTitle>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-4">
             <Field label="Placa" className="md:col-span-2" hint="Busque para preencher os dados do veículo.">
               <div className="flex gap-1.5">
                 <Input
@@ -306,8 +306,8 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
             Entrada
           </SectionTitle>
           <input type="hidden" name="entry_type" value={entryType} />
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <Field label="Tipo de entrada" className="md:col-span-2">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-3">
+            <Field label="Tipo de entrada" className="col-span-2 md:col-span-1">
               <Select
                 value={entryType}
                 disabled={editing}
@@ -320,10 +320,9 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                 <option value="consignado">Consignado (carro de terceiro)</option>
               </Select>
             </Field>
-            <div className="hidden md:col-span-2 md:block" />
             {consigned ? (
               <>
-                <Field label="Dono do veículo" required className="md:col-span-2">
+                <Field label="Dono do veículo" required className="col-span-2 md:col-span-1">
                   <Input
                     name="consignor"
                     defaultValue={vehicle?.consignor ?? ""}
@@ -334,7 +333,6 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                 <Field
                   label="Repasse combinado"
                   hint="Quanto o dono recebe quando o carro vender — vira custo só na venda."
-                  className="md:col-span-2"
                 >
                   <CurrencyInput
                     name="consignor_value"
@@ -342,10 +340,13 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                     onCentsChange={setPurchase}
                   />
                 </Field>
+                <Field label="Data de entrada" hint="Quando o carro chegou na loja.">
+                  <Input type="date" name="consignado_date" defaultValue={vehicle?.consignado_date ?? todayISO()} />
+                </Field>
               </>
             ) : (
               <>
-                <Field label="Preço de compra" required className="md:col-span-2">
+                <Field label="Preço de compra" required>
                   <CurrencyInput
                     name="purchase_price"
                     defaultCents={vehicle?.purchase_price}
@@ -353,13 +354,13 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                     required
                   />
                 </Field>
-                <Field label="Data da compra" required className="md:col-span-2">
+                <Field label="Data da compra" required>
                   <Input type="date" name="purchase_date" defaultValue={vehicle?.purchase_date ?? todayISO()} required />
                 </Field>
-                <Field label="Vendedor" className="md:col-span-2">
+                <Field label="Vendedor">
                   <Input name="seller" defaultValue={vehicle?.purchase_seller ?? ""} placeholder="Particular — Marcos Vieira" />
                 </Field>
-                <Field label="Forma de pagamento" className="md:col-span-2">
+                <Field label="Forma de pagamento">
                   <Select name="payment_method" defaultValue={vehicle?.purchase_payment ?? ""}>
                     <option value="">—</option>
                     {PAYMENT_METHODS.map((o) => (
@@ -367,17 +368,35 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                     ))}
                   </Select>
                 </Field>
-                <Field label="Observações da compra" className="col-span-2 md:col-span-4">
+                <Field label="Observações da compra" className="col-span-2 md:col-span-3">
                   <Textarea name="purchase_notes" defaultValue={vehicle?.purchase_notes ?? ""} />
                 </Field>
               </>
             )}
+            {/* contato de quem vendeu/consignou — aparece na aba Dados do veículo */}
+            <Field label="CPF">
+              <Input name="origin_cpf" defaultValue={vehicle?.origin_cpf ?? ""} placeholder="000.000.000-00" />
+            </Field>
+            <Field label="WhatsApp">
+              <Input name="origin_whatsapp" defaultValue={vehicle?.origin_whatsapp ?? ""} placeholder="(11) 99999-0000" />
+            </Field>
+            <Field label="E-mail">
+              <Input type="email" name="origin_email" defaultValue={vehicle?.origin_email ?? ""} placeholder="nome@email.com" />
+            </Field>
+            <Field label="Contrato">
+              <input
+                type="file"
+                name="contract"
+                accept="application/pdf,image/*"
+                className="w-full text-xs text-zinc-500 file:mr-3 file:h-7 file:cursor-pointer file:rounded-md file:border file:border-zinc-200 file:bg-white file:px-2.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-50"
+              />
+            </Field>
           </div>
         </section>
 
         <section>
           <SectionTitle hint="Pode deixar em branco e definir depois, na ficha do veículo.">Venda</SectionTitle>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-4">
             <Field label="Preço de venda planejado" className="md:col-span-2">
               <CurrencyInput
                 key={saleDefault ?? "sem-preco"}

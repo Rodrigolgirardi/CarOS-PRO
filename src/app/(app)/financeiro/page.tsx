@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { CashflowChart } from "@/components/finance/cashflow-chart";
-import { NewPayableButton, NewReceivableButton } from "@/components/finance/finance-dialogs";
+import { AddMovementButton, NewPayableButton, NewReceivableButton } from "@/components/finance/finance-dialogs";
+import { ExtractSearch } from "@/components/finance/extract-filters";
+import { LinkEntryButton } from "@/components/finance/link-entry-button";
 import { MonthSelect } from "@/components/finance/month-select";
 import { BrandLogo } from "@/components/vehicles/brand-logo";
-import { ExtractFilters } from "@/components/finance/extract-filters";
 import { ActionButton } from "@/components/ui/action-button";
 import { Badge, VehicleStatusBadge } from "@/components/ui/badge";
 import { ConfirmButton } from "@/components/ui/confirm";
@@ -13,27 +13,13 @@ import { Stat, StatGrid } from "@/components/ui/stat";
 import { Chips, LinkTabs } from "@/components/ui/tabs";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
 import { deleteCashEntry, deletePayable, deleteReceivable, togglePayable, toggleReceivable } from "@/lib/actions/finance";
-import { addDaysISO, brl, daysUntil, fmtDate, monthStartISO, todayISO } from "@/lib/format";
+import { brl, daysUntil, fmtDate, todayISO } from "@/lib/format";
 import { customerOptions } from "@/lib/queries/customers";
 import { cashflow, dreData, listPayables, listReceivables, openTotals, type FinanceStatusFilter } from "@/lib/queries/finance";
 import { vehicleOptions } from "@/lib/queries/vehicles";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Financeiro" };
-
-const PERIODS = [
-  { key: "hoje", label: "Hoje" },
-  { key: "7", label: "7 dias" },
-  { key: "30", label: "30 dias" },
-  { key: "mes", label: "Mês atual" },
-] as const;
-
-function periodFrom(key: string): string | null {
-  if (key === "hoje") return todayISO();
-  if (key === "7") return addDaysISO(todayISO(), -7);
-  if (key === "mes") return monthStartISO();
-  return addDaysISO(todayISO(), -30);
-}
 
 const KIND_LABEL: Record<string, { label: string; tone: "emerald" | "blue" | "amber" | "red" | "zinc" }> = {
   recebimento: { label: "Recebimento", tone: "emerald" },
@@ -68,13 +54,8 @@ export default async function FinancePage({
 }) {
   const sp = await searchParams;
   const tab = ["caixa", "dre", "pagar", "receber"].includes(sp.tab ?? "") ? sp.tab! : "caixa";
-  const periodo = PERIODS.some((p) => p.key === sp.periodo) ? sp.periodo! : "30";
 
   // filtro por mês fechado: mês + ano (2026 em diante, acompanhando o calendário)
-  const MESES = [
-    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
-  ];
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: Math.max(1, currentYear - 2026 + 1) }, (_, i) => 2026 + i);
   const mesValido =
@@ -82,8 +63,8 @@ export default async function FinancePage({
     /^\d{4}-(0[1-9]|1[0-2])$/.test(sp.mes) &&
     Number(sp.mes.slice(0, 4)) >= 2026 &&
     Number(sp.mes.slice(0, 4)) <= currentYear;
-  const mes = mesValido ? sp.mes! : null;
-  const mesLabel = mes ? `${MESES[Number(mes.slice(5, 7)) - 1]}/${mes.slice(0, 4)}` : null;
+  // sem escolha, o caixa mostra o mês atual
+  const mes = mesValido ? sp.mes! : todayISO().slice(0, 7);
   const statusFilter: FinanceStatusFilter = ["pendentes", "resolvidas", "todas"].includes(sp.status ?? "")
     ? (sp.status as FinanceStatusFilter)
     : "pendentes";
@@ -96,7 +77,7 @@ export default async function FinancePage({
 
   return (
     <>
-      <PageHeader title="Financeiro" description="Caixa, contas a pagar e contas a receber — tudo ligado às operações." />
+      <PageHeader title="Financeiro" actions={<AddMovementButton vehicles={await vehicleOptions()} />} />
 
       <LinkTabs
         className="mb-5"
@@ -118,7 +99,7 @@ export default async function FinancePage({
           s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
         const busca = sp.busca?.trim() ? norm(sp.busca.trim()) : null;
         const buscaPlaca = busca ? busca.replace(/[^a-z0-9]/g, "") : null;
-        const flow = dia ? await cashflow(dia, dia) : mes ? await cashflow(`${mes}-01`, monthEnd) : await cashflow(periodFrom(periodo));
+        const flow = dia ? await cashflow(dia, dia) : await cashflow(`${mes}-01`, monthEnd);
         const entries = flow.entries.filter((e) => {
           if (veiculoId && e.vehicle_id !== veiculoId) return false;
           if (!busca) return true;
@@ -129,40 +110,11 @@ export default async function FinancePage({
             (!!buscaPlaca && plate.includes(buscaPlaca))
           );
         });
-        const inflow = entries.reduce((s, e) => s + e.inflow, 0);
-        const outflow = entries.reduce((s, e) => s + e.outflow, 0);
-        const periodSub = dia ? fmtDate(dia) : (mesLabel ?? "No período");
         return (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Chips
-                activeKey={mes || dia ? "" : periodo}
-                items={PERIODS.map((p) => ({ key: p.key, label: p.label, href: `/financeiro?tab=caixa&periodo=${p.key}` }))}
-              />
+            <div className="flex flex-wrap items-center gap-2">
               <MonthSelect years={years} active={mes} />
-            </div>
-            <StatGrid className="grid-cols-2 md:grid-cols-4">
-              <Stat
-                label="Saldo em caixa"
-                value={brl(flow.balance)}
-                valueClassName={flow.balance >= 0 ? undefined : "text-red-600"}
-                sub="Todo o histórico"
-              />
-              <Stat label="Entradas" value={brl(inflow)} valueClassName="text-emerald-600" sub={periodSub} />
-              <Stat label="Saídas" value={brl(outflow)} valueClassName="text-red-600" sub={periodSub} />
-              <Stat
-                label="Resultado"
-                value={brl(inflow - outflow)}
-                valueClassName={inflow - outflow >= 0 ? "text-emerald-600" : "text-red-600"}
-                sub="Entradas − saídas"
-              />
-            </StatGrid>
-
-            <CashflowChart months={flow.monthly} />
-
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-[13px] font-semibold text-zinc-900">Extrato</h2>
-              <ExtractFilters vehicles={vehicles} data={dia} veiculo={veiculoId ? String(veiculoId) : null} busca={sp.busca ?? null} />
+              <ExtractSearch busca={sp.busca ?? null} />
             </div>
 
             {entries.length === 0 ? (
@@ -170,7 +122,71 @@ export default async function FinancePage({
                 Nenhuma movimentação para esse filtro.
               </p>
             ) : (
-              <Table>
+              <>
+                {/* celular: cartões com o texto inteiro, sem rolagem lateral */}
+                <div className="space-y-2 lg:hidden">
+                  {entries.map((e, i) => {
+                    const kind = KIND_LABEL[e.kind] ?? KIND_LABEL.conta;
+                    return (
+                      <div key={`m-${e.kind}-${i}`} className="rounded-xl border border-zinc-200 bg-white p-3.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-2">
+                            <span className="text-xs text-zinc-500">{fmtDate(e.date)}</span>
+                            <Badge tone={kind.tone}>{kind.label}</Badge>
+                          </span>
+                          <span className="flex items-center gap-0.5">
+                            {(e.kind === "custo" || e.kind === "conta") && (
+                              <LinkEntryButton
+                                kind={e.kind}
+                                sourceId={e.source_id}
+                                vehicles={vehicles}
+                                currentVehicleId={e.vehicle_id}
+                              />
+                            )}
+                            {e.kind !== "compra" && (
+                              <ConfirmButton
+                                action={deleteCashEntry.bind(null, e.kind, e.source_id)}
+                                title="Excluir transação?"
+                                description={`"${e.description}" (${brl(e.inflow || e.outflow)}) será apagada do caixa e de onde estiver ligada. Não dá para desfazer.`}
+                                variant="danger-ghost"
+                                className="size-8 p-0"
+                              >
+                                <Trash2 size={16} />
+                              </ConfirmButton>
+                            )}
+                          </span>
+                        </div>
+                        <p className="mt-2 rounded-md bg-zinc-50 px-2.5 py-1.5 text-[15px] font-semibold text-zinc-900">
+                          {e.description}
+                        </p>
+                        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                          {e.vehicle_label ? (
+                            <Link href={e.href ?? "#"} className="flex min-w-0 items-center gap-1.5">
+                              <BrandLogo brand={e.vehicle_label} size={14} />
+                              <span className="truncate text-xs font-medium text-zinc-700">{e.vehicle_label}</span>
+                              {e.vehicle_plate && (
+                                <span className="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600">
+                                  {e.vehicle_plate}
+                                </span>
+                              )}
+                            </Link>
+                          ) : (
+                            <span />
+                          )}
+                          <span
+                            className={`text-sm font-semibold ${e.inflow > 0 ? "text-emerald-600" : "text-red-600"}`}
+                          >
+                            {e.inflow > 0 ? `+ ${brl(e.inflow)}` : `− ${brl(e.outflow)}`}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* computador: tabela completa */}
+                <div className="hidden lg:block">
+                  <Table>
                 <THead>
                   <Th>Data</Th>
                   <Th>Carro</Th>
@@ -221,24 +237,36 @@ export default async function FinancePage({
                         <Td right className="font-medium text-red-600">
                           {e.outflow > 0 ? `− ${brl(e.outflow)}` : ""}
                         </Td>
-                        <Td right className="w-10">
-                          {e.kind !== "compra" && (
-                            <ConfirmButton
-                              action={deleteCashEntry.bind(null, e.kind, e.source_id)}
-                              title="Excluir transação?"
-                              description={`"${e.description}" (${brl(e.inflow || e.outflow)}) será apagada do caixa e de onde estiver ligada. Não dá para desfazer.`}
-                              variant="danger-ghost"
-                              className="size-9 p-0"
-                            >
-                              <Trash2 size={21} />
-                            </ConfirmButton>
-                          )}
+                        <Td right className="w-20">
+                          <span className="flex items-center justify-end gap-0.5">
+                            {(e.kind === "custo" || e.kind === "conta") && (
+                              <LinkEntryButton
+                                kind={e.kind}
+                                sourceId={e.source_id}
+                                vehicles={vehicles}
+                                currentVehicleId={e.vehicle_id}
+                              />
+                            )}
+                            {e.kind !== "compra" && (
+                              <ConfirmButton
+                                action={deleteCashEntry.bind(null, e.kind, e.source_id)}
+                                title="Excluir transação?"
+                                description={`"${e.description}" (${brl(e.inflow || e.outflow)}) será apagada do caixa e de onde estiver ligada. Não dá para desfazer.`}
+                                variant="danger-ghost"
+                                className="size-9 p-0"
+                              >
+                                <Trash2 size={21} />
+                              </ConfirmButton>
+                            )}
+                          </span>
                         </Td>
                       </Tr>
                     );
                   })}
                 </TBody>
-              </Table>
+                  </Table>
+                </div>
+              </>
             )}
           </div>
         );

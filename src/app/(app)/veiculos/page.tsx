@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Car, Plus } from "lucide-react";
+import { Car, Megaphone, Plus, TriangleAlert } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { VehicleStatusBadge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
@@ -23,10 +23,8 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Veículos" };
 
 const TABS: { key: VehicleFilter; label: string }[] = [
-  { key: "estoque", label: "À venda" }, // tudo que ainda não vendeu; vazia = estoque zerado
-  { key: "para_cadastrar", label: "Para cadastrar" },
-  { key: "para_arrumar", label: "Para arrumar" },
   { key: "cadastrado", label: "Cadastrados" },
+  { key: "para_cadastrar", label: "Cadastrar" },
   { key: "vendido", label: "Vendidos" },
 ];
 
@@ -37,16 +35,16 @@ export default async function VehiclesPage({
 }) {
   const { filtro } = await searchParams;
   // filtros sem aba, mas acessíveis por link (ex.: dashboard)
-  const LINK_ONLY = ["parados", "todos"];
+  const LINK_ONLY = ["parados", "todos", "estoque", "para_arrumar"];
   const valid = TABS.some((t) => t.key === filtro) || LINK_ONLY.includes(filtro ?? "");
-  const filter = (valid ? filtro : "estoque") as VehicleFilter;
+  const filter = (valid ? filtro : "cadastrado") as VehicleFilter;
   const rows = await listVehicles(filter);
   const counts = await vehicleCounts();
   const tabCount: Record<string, number> = {
     estoque: counts.todos - (counts.vendido ?? 0),
     para_cadastrar: counts.para_cadastrar ?? 0,
-    para_arrumar: counts.para_arrumar ?? 0,
-    cadastrado: counts.cadastrado ?? 0,
+    // Cadastrados engloba também os "para arrumar"
+    cadastrado: (counts.cadastrado ?? 0) + (counts.para_arrumar ?? 0),
     vendido: counts.vendido ?? 0,
   };
 
@@ -54,21 +52,25 @@ export default async function VehiclesPage({
     <>
       <PageHeader title="Veículos" description="Seu estoque, do jeito que ele está agora." />
 
-      {/* ações principais, na horizontal, acima dos filtros */}
-      <div className="mb-5 flex flex-wrap items-center gap-2">
-        <LinkButton href="/compras/nova" variant="primary">
-          <Plus size={14} />
-          Adicionar veículo
-        </LinkButton>
-        <AddExpenseButton vehicles={await vehicleOptions()} />
-        <AddIncomeButton customers={await customerOptions()} sellers={await sellerOptions()} rules={await listCommissionRules()} />
-        <PlateLookupButton />
-        <QuickSaleButton
-          vehicles={await vehicleOptions()}
-          sellers={await sellerOptions()}
-          customers={await customerOptions()}
-          defaultCommission={await commissionRule("venda_carro")}
-        />
+      {/* ações principais: no celular, grade 2×2 + consulta de placa sozinha e centralizada */}
+      <div className="mb-5 space-y-2 lg:flex lg:flex-wrap lg:items-center lg:gap-2 lg:space-y-0">
+        <div className="grid grid-cols-2 gap-2 max-lg:[&_a]:h-9 max-lg:[&_a]:w-full max-lg:[&_button]:h-9 max-lg:[&_button]:w-full lg:contents">
+          <LinkButton href="/compras/nova" variant="primary">
+            <Plus size={14} />
+            Adicionar veículo
+          </LinkButton>
+          <QuickSaleButton
+            vehicles={await vehicleOptions()}
+            sellers={await sellerOptions()}
+            customers={await customerOptions()}
+            defaultCommission={await commissionRule("venda_carro")}
+          />
+          <AddExpenseButton vehicles={await vehicleOptions()} />
+          <AddIncomeButton customers={await customerOptions()} sellers={await sellerOptions()} rules={await listCommissionRules()} />
+        </div>
+        <div className="flex justify-center lg:contents">
+          <PlateLookupButton />
+        </div>
       </div>
 
       <LinkTabs
@@ -78,7 +80,7 @@ export default async function VehiclesPage({
           key: t.key,
           label: t.label,
           count: tabCount[t.key] ?? 0,
-          href: t.key === "estoque" ? "/veiculos" : `/veiculos?filtro=${t.key}`,
+          href: t.key === "cadastrado" ? "/veiculos" : `/veiculos?filtro=${t.key}`,
         }))}
       />
 
@@ -94,14 +96,14 @@ export default async function VehiclesPage({
       {rows.length === 0 ? (
         <EmptyState
           icon={Car}
-          title={filter === "estoque" ? "Estoque zerado — tudo vendido! 🎉" : "Nenhum veículo neste filtro"}
+          title={filter === "cadastrado" || filter === "estoque" ? "Estoque zerado — tudo vendido! 🎉" : "Nenhum veículo neste filtro"}
           description={
-            filter === "estoque"
+            filter === "cadastrado" || filter === "estoque"
               ? "Nenhum carro à venda no momento. Registre a próxima compra para repor o estoque."
               : "Troque o filtro acima para ver outros veículos."
           }
           action={
-            filter === "estoque" ? (
+            filter === "cadastrado" || filter === "estoque" ? (
               <LinkButton href="/compras/nova" variant="primary">
                 <Plus size={14} />
                 Registrar compra
@@ -110,7 +112,98 @@ export default async function VehiclesPage({
           }
         />
       ) : (
-        <Table>
+        <>
+          {/* celular: lista compacta — foto, nome, placa, consignado/próprio e valor de venda */}
+          <div className="space-y-2 lg:hidden">
+            {rows.map((v) => {
+              const m = vehicleMetrics(v);
+              return (
+                <Link
+                  key={v.id}
+                  href={`/veiculos/${v.id}`}
+                  className="block rounded-xl border border-zinc-200 bg-white p-4 active:bg-zinc-50"
+                >
+                  <span className="flex items-center gap-3.5">
+                    <VehiclePhoto photo={v.photo} brand={v.brand} size="md" />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="truncate text-[15px] font-medium text-zinc-900">
+                          {v.brand} {v.model}
+                        </span>
+                        <VehicleStatusBadge status={v.status} />
+                      </span>
+                      <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        {v.year_fab && (
+                          <span className="text-xs font-medium text-zinc-500">
+                            {String(v.year_fab).slice(-2)}/{String(v.year_model ?? v.year_fab).slice(-2)}
+                          </span>
+                        )}
+                        {v.plate && (
+                          <span className="rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px] text-zinc-600">
+                            {v.plate}
+                          </span>
+                        )}
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                            v.consignado === 1 ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700"
+                          }`}
+                        >
+                          {v.consignado === 1 ? "Consignado" : "Próprio"}
+                        </span>
+                        <span
+                          className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                            v.platforms_count > 0 ? "bg-sky-50 text-sky-700" : "bg-red-50 text-red-600"
+                          }`}
+                        >
+                          {v.platforms_count > 0 ? (
+                            <Megaphone size={10} />
+                          ) : (
+                            <TriangleAlert size={10} className="text-amber-500" />
+                          )}
+                          {v.platforms_count === 1 ? "1 plataforma" : `${v.platforms_count} plataformas`}
+                        </span>
+                      </span>
+                    </span>
+                  </span>
+                  <span className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-zinc-100 bg-zinc-100">
+                    <span className="block bg-zinc-50/60 px-2.5 py-2">
+                      <span className="block text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+                        {v.consignado === 1 ? "Repasse" : "Compra"}
+                      </span>
+                      <span className="mt-0.5 block text-[13px] font-medium text-zinc-700">
+                        {v.consignado === 1
+                          ? v.consignor_value != null
+                            ? brl(v.consignor_value)
+                            : "—"
+                          : brl(v.purchase_price)}
+                      </span>
+                    </span>
+                    <span className="block bg-zinc-50/60 px-2.5 py-2">
+                      <span className="block text-[10px] font-medium uppercase tracking-wide text-zinc-400">Venda</span>
+                      <span className="mt-0.5 block text-[13px] font-semibold text-zinc-900">{brl(m.priceRef)}</span>
+                    </span>
+                    <span className="block bg-zinc-50/60 px-2.5 py-2">
+                      <span className="block text-[10px] font-medium uppercase tracking-wide text-zinc-400">Margem</span>
+                      <span
+                        className={`mt-0.5 block text-[13px] font-semibold ${
+                          m.profit == null ? "text-zinc-300" : m.profit >= 0 ? "text-emerald-600" : "text-red-600"
+                        }`}
+                      >
+                        {m.profit == null ? "—" : brl(m.profit)}
+                        {m.profit != null && m.margin != null && (
+                          <span className="ml-1 text-[10px] font-medium opacity-80">({pct(m.margin)})</span>
+                        )}
+                      </span>
+                    </span>
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* computador: tabela completa */}
+          <div className="hidden lg:block">
+            <Table>
           <THead>
             <Th>Veículo</Th>
             <Th>Ano</Th>
@@ -200,7 +293,9 @@ export default async function VehiclesPage({
               );
             })}
           </TBody>
-        </Table>
+            </Table>
+          </div>
+        </>
       )}
     </>
   );

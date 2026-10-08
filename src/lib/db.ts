@@ -41,6 +41,10 @@ CREATE TABLE IF NOT EXISTS vehicles (
   consignado   INTEGER NOT NULL DEFAULT 0,
   consignor    TEXT,
   consignor_value INTEGER,
+  consignado_date TEXT,
+  origin_cpf      TEXT,
+  origin_whatsapp TEXT,
+  origin_email    TEXT,
   status       TEXT NOT NULL DEFAULT 'para_arrumar',
   sale_price   INTEGER,
   photo        TEXT,
@@ -238,6 +242,12 @@ INSERT INTO commission_rules (key, label, amount, sort) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO meta (key, value) VALUES ('demo_seeded', '1') ON CONFLICT (key) DO NOTHING;
+
+-- colunas novas em bancos já criados (idempotente)
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS consignado_date TEXT;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS origin_cpf TEXT;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS origin_whatsapp TEXT;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS origin_email TEXT;
 `;
 
 declare global {

@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, ExternalLink, Loader2, Pencil, Trash2 } from "lucide-react";
-import { deleteVehicle, duplicateVehicle } from "@/lib/actions/vehicles";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { deleteVehicle } from "@/lib/actions/vehicles";
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { Modal } from "@/components/ui/modal";
@@ -22,17 +22,6 @@ export function VehicleRowActions({ id, label, redirectAfterDelete }: VehicleRow
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  const duplicate = () =>
-    startTransition(async () => {
-      const r = await duplicateVehicle(id);
-      if (r.ok && r.id) {
-        toast("Veículo duplicado — revise placa e dados da compra.");
-        router.push(`/veiculos/${r.id}/editar`);
-      } else if (!r.ok) {
-        toast(r.error ?? "Não foi possível duplicar.", "error");
-      }
-    });
-
   const remove = () =>
     startTransition(async () => {
       const r = await deleteVehicle(id);
@@ -50,9 +39,7 @@ export function VehicleRowActions({ id, label, redirectAfterDelete }: VehicleRow
       <Menu
         ariaLabel={`Ações de ${label}`}
         items={[
-          { label: "Abrir ficha", icon: <ExternalLink size={14} />, onSelect: () => router.push(`/veiculos/${id}`) },
           { label: "Editar", icon: <Pencil size={14} />, onSelect: () => router.push(`/veiculos/${id}/editar`) },
-          { label: "Duplicar", icon: <Copy size={14} />, onSelect: duplicate },
           { label: "Excluir", icon: <Trash2 size={14} />, danger: true, onSelect: () => setConfirmOpen(true) },
         ]}
       />

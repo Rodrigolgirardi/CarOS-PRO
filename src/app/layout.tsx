@@ -8,7 +8,8 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 export const metadata: Metadata = {
   title: { default: "CarOS", template: "%s · CarOS" },
   description: "O sistema operacional da sua revenda.",
-  appleWebApp: { capable: true, title: "CarOS", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "CarOS PRO", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {

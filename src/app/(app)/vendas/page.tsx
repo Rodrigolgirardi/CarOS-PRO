@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgeCheck, Clock, Percent, Trophy } from "lucide-react";
+import { BadgeCheck, Clock, Megaphone, Percent, Trophy } from "lucide-react";
 import { CustomersPanel } from "@/components/customers/customers-panel";
 import { LeadsPanel } from "@/components/deals/leads-panel";
 import { SaleExpandRow } from "@/components/deals/sale-expand-row";
@@ -157,6 +157,22 @@ export default async function SalesPage({
             ? withDays.reduce((a, b) => ((daysToSell(b) ?? Infinity) < (daysToSell(a) ?? Infinity) ? b : a))
             : null;
 
+          // ---- canal que mais vende (conversão real, não só lead)
+          const salesByChannel = new Map<string, { n: number; revenue: number }>();
+          for (const d of sold) {
+            const k = d.channel?.trim() || "Sem canal";
+            const cur = salesByChannel.get(k) ?? { n: 0, revenue: 0 };
+            cur.n += 1;
+            cur.revenue += d.sale_price ?? 0;
+            salesByChannel.set(k, cur);
+          }
+          const rankedChannels = [...salesByChannel.entries()].sort(
+            (a, b) => b[1].n - a[1].n || b[1].revenue - a[1].revenue
+          );
+          // um canal de verdade ganha do "Sem canal" quando houver
+          const topChannel = rankedChannels.find(([k]) => k !== "Sem canal") ?? rankedChannels[0] ?? null;
+          const topChannelLeads = topChannel ? (byChannel.get(topChannel[0]) ?? 0) : 0;
+
           return (
             <div className="space-y-5">
               <section className="rounded-2xl border border-zinc-200 bg-white">
@@ -219,8 +235,29 @@ export default async function SalesPage({
                 )}
               </section>
 
-              {(biggest || bestMargin || fastest) && (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {(biggest || bestMargin || fastest || topChannel) && (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
+                  {/* só no desktop: canal que mais converte em venda */}
+                  {topChannel && (
+                    <div className="hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-card lg:block">
+                      <p className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+                        <Megaphone size={14} className="text-zinc-400" />
+                        Canal que mais vende
+                      </p>
+                      <p className="mt-2 truncate text-[13px] font-semibold text-zinc-900">{topChannel[0]}</p>
+                      <span className="mt-1 inline-block rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[11px] text-zinc-500">
+                        {topChannel[1].n} venda{topChannel[1].n === 1 ? "" : "s"}
+                      </span>
+                      <p className="mt-2.5 text-xl font-semibold tabular-nums tracking-tight text-emerald-600">
+                        {brl(topChannel[1].revenue)}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-zinc-500">
+                        {topChannelLeads > 0
+                          ? `Conversão: ${topChannel[1].n} de ${topChannelLeads} lead${topChannelLeads === 1 ? "" : "s"} (${Math.round((topChannel[1].n / topChannelLeads) * 100)}%)`
+                          : "Faturamento das vendas do canal"}
+                      </p>
+                    </div>
+                  )}
                   {biggest && (
                     <HighlightCard
                       icon={Trophy}

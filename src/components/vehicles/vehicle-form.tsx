@@ -1,7 +1,7 @@
 "use client";
 
 import { CpfCnpjInput } from "@/components/ui/cpf-cnpj-input";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { ChevronRight, Loader2, Search, ShieldAlert, ShieldCheck } from "lucide-react";
 import { lookupPlate, savePlateApiToken } from "@/lib/actions/plate";
 import type { PlateData } from "@/lib/plate-lookup";
@@ -46,6 +46,23 @@ function MoreDetails({
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
 }) {
+  // desktop: sempre aberto, sem a setinha (o celular continua recolhível)
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  if (desktop) {
+    return (
+      <div className="mt-4">
+        <p className="mb-3 text-[13px] font-medium text-zinc-600">Mais detalhes (opcional)</p>
+        {children}
+      </div>
+    );
+  }
   return (
     <details className="group mt-4" open={open} onToggle={(e) => onOpenChange(e.currentTarget.open)}>
       <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-zinc-600 transition-colors hover:text-zinc-900 [&::-webkit-details-marker]:hidden">
@@ -360,7 +377,8 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
           )}
         </section>
 
-        <section>
+        {/* desktop: a Entrada fica num card (balão) para se destacar */}
+        <section className="lg:rounded-2xl lg:border lg:border-zinc-200 lg:bg-zinc-50/50 lg:p-5">
           <SectionTitle hint={editing ? undefined : "Consignado = carro de terceiro na loja, sem dinheiro saindo do caixa."}>
             Entrada
           </SectionTitle>

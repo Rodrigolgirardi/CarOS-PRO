@@ -4,6 +4,7 @@ import {
   FileText,
   Handshake,
   LayoutDashboard,
+  ListTodo,
   Settings,
   Users,
   Wallet,
@@ -25,6 +26,7 @@ export const MAIN: NavItemData[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/veiculos", label: "Veículos", icon: Car },
   { href: "/vendas", label: "Vendas", icon: Handshake, desktopLabel: "Clientes", desktopIcon: Users },
+  { href: "/tarefas", label: "Minhas tarefas", icon: ListTodo, desktopOnly: true },
   { href: "/vendedores", label: "Vendedores", icon: BadgePercent },
 ];
 

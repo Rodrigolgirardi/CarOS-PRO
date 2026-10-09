@@ -43,7 +43,7 @@ export async function LeadsPanel({ deals, status, busca }: { deals: DealRow[]; s
   }
 
   return (
-    <div className="space-y-4 lg:max-w-3xl">
+    <div className="space-y-4 lg:mx-auto lg:max-w-3xl">
       <div className="flex items-center gap-2">
         <NewDealButton vehicles={await vehicleOptions()} customers={await customerOptions()} label="Novo lead" />
         <div className="min-w-0 flex-1">

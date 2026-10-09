@@ -14,6 +14,7 @@ SELECT
   COALESCE(pl.n, 0) AS platforms_count,
   pl.names         AS platforms_list,
   COALESCE(p.price, 0) + COALESCE(c.total, 0) AS total_cost,
+  sd.id           AS sold_deal_id,
   sd.sale_price    AS sold_price,
   sd.sold_date     AS sold_date,
   sd.customer_id   AS buyer_id,

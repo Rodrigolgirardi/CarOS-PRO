@@ -3,6 +3,7 @@ import { Car, Clock, Megaphone, Plus, TriangleAlert } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { ChipInner, chipCls } from "@/components/ui/action-chip";
 import { VehicleStatusBadge } from "@/components/ui/badge";
+import { ConfirmButton } from "@/components/ui/confirm";
 import { LinkButton } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LinkTabs } from "@/components/ui/tabs";
@@ -17,6 +18,7 @@ import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
 import { PlatformsHover } from "@/components/vehicles/platforms-hover";
 import { VehicleRowActions } from "@/components/vehicles/vehicle-row-actions";
 import { VehicleSearch } from "@/components/vehicles/vehicle-search";
+import { undoSale } from "@/lib/actions/deals";
 import { brl, pct } from "@/lib/format";
 import { vehicleMetrics, vehicleLabel } from "@/lib/metrics";
 import { commissionRule, listCommissionRules } from "@/lib/queries/commissions";
@@ -305,6 +307,23 @@ export default async function VehiclesPage({
                     </Link>
                   </Td>
                   <Td>
+                    {/* vendido: desfazer a venda (volta o carro ao estoque, com confirmação) */}
+                    {v.status === "vendido" && v.sold_deal_id != null && (
+                      <ConfirmButton
+                        action={undoSale.bind(null, v.sold_deal_id)}
+                        title={`Desfazer a venda do ${label}?`}
+                        description="O carro volta para o estoque e os recebimentos e a comissão dessa venda são apagados."
+                        confirmLabel="Desfazer venda"
+                        variant="danger"
+                        className="h-auto! py-1 text-[11px] leading-tight"
+                      >
+                        <span className="text-center">
+                          Desfazer
+                          <br />
+                          venda
+                        </span>
+                      </ConfirmButton>
+                    )}
                     {/* venda direto da linha: o modal já vem com este carro */}
                     {v.status !== "vendido" && (
                       <QuickSaleButton

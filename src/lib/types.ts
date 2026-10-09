@@ -242,6 +242,7 @@ export interface VehicleRow extends Vehicle {
   platforms_count: number;
   platforms_list: string | null; // nomes separados por "|"
   total_cost: number;
+  sold_deal_id: number | null;
   sold_price: number | null;
   sold_date: string | null;
   buyer_id: number | null;

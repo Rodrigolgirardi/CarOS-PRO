@@ -91,7 +91,7 @@ export default async function DocumentsPage({
                       {d.vehicle_label}
                     </Link>
                   ) : (
-                    <span className="text-zinc-300">—</span>
+                    <span className="text-zinc-400">—</span>
                   )}
                 </Td>
                 <Td className="max-w-[160px] truncate">
@@ -100,7 +100,7 @@ export default async function DocumentsPage({
                       {d.customer_name}
                     </Link>
                   ) : (
-                    <span className="text-zinc-300">—</span>
+                    <span className="text-zinc-400">—</span>
                   )}
                 </Td>
                 <Td right className="text-zinc-500">

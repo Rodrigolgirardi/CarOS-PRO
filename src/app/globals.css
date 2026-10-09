@@ -2,6 +2,8 @@
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* sombra padrão de card — usar shadow-card em todo card de nível de página */
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.03);
 }
 
 @layer base {

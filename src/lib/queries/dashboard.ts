@@ -65,10 +65,14 @@ export interface DashboardData {
   recent: EventRow[];
 }
 
-export async function dashboardData(): Promise<DashboardData> {
+export async function dashboardData(opts?: { year?: number; monthKey?: string }): Promise<DashboardData> {
   const stockRows = await listVehicles("estoque");
   const soldRows = await listVehicles("vendido");
-  const monthStart = monthStartISO();
+  // mês do resumo (YYYY-MM): por padrão, o mês atual
+  const monthKey = opts?.monthKey ?? monthStartISO().slice(0, 7);
+  const monthStart = `${monthKey}-01`;
+  const lastDay = new Date(Number(monthKey.slice(0, 4)), Number(monthKey.slice(5, 7)), 0).getDate();
+  const monthEnd = `${monthKey}-${String(lastDay).padStart(2, "0")}`;
 
   let invested = 0;
   let saleValue = 0;
@@ -80,11 +84,11 @@ export async function dashboardData(): Promise<DashboardData> {
   const slices: StockVehicleSlice[] = [];
   for (const v of stockRows) {
     const m = vehicleMetrics(v);
-    invested += v.total_cost;
+    invested += m.totalCost; // consignado: inclui o repasse combinado
     slices.push({
       id: v.id,
       label: `${v.brand} ${v.model}`,
-      invested: v.total_cost,
+      invested: m.totalCost,
       purchase: v.purchase_price ?? 0,
       sale: v.sale_price,
       profit: v.sale_price != null ? (m.profit ?? v.sale_price - m.totalCost) : null,
@@ -110,17 +114,14 @@ export async function dashboardData(): Promise<DashboardData> {
     }
   }
 
-  // série mensal: últimos 12 meses, incluindo meses sem venda
+  // série mensal: o ano escolhido inteiro, de janeiro a dezembro
   const MONTHS_PT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-  const now = new Date();
+  const chartYear = opts?.year ?? new Date().getFullYear();
   const monthly: MonthlyPoint[] = [];
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const showYear = i === 11 || d.getMonth() === 0;
+  for (let mo = 0; mo < 12; mo++) {
     monthly.push({
-      key,
-      label: `${MONTHS_PT[d.getMonth()]}${showYear ? `/${String(d.getFullYear()).slice(2)}` : ""}`,
+      key: `${chartYear}-${String(mo + 1).padStart(2, "0")}`,
+      label: MONTHS_PT[mo],
       sales: 0,
       revenue: 0,
       profit: 0,
@@ -142,7 +143,7 @@ export async function dashboardData(): Promise<DashboardData> {
     if (bucket) bucket.spend = cm.outflow;
   }
 
-  const monthSold = soldRows.filter((v) => v.sold_date && v.sold_date >= monthStart);
+  const monthSold = soldRows.filter((v) => v.sold_date && v.sold_date >= monthStart && v.sold_date <= monthEnd);
   let revenue = 0;
   let profit = 0;
   for (const v of monthSold) {
@@ -181,7 +182,7 @@ export async function dashboardData(): Promise<DashboardData> {
       revenue,
       profit,
       margin: revenue > 0 ? profit / revenue : null,
-      spend: (await cashflow(monthStart)).outflow,
+      spend: (await cashflow(monthStart, monthEnd)).outflow,
     },
     monthly,
     attention: {

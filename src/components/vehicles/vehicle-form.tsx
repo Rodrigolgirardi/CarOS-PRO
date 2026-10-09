@@ -14,6 +14,7 @@ import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { FormError, SubmitButton, useAction } from "@/components/ui/form";
 import { Modal } from "@/components/ui/modal";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { useToast } from "@/components/ui/toast";
 import { BrandLogo } from "./brand-logo";
 import { VehiclePhoto } from "./vehicle-photo";
@@ -378,7 +379,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
               <Input name="origin_cpf" defaultValue={vehicle?.origin_cpf ?? ""} placeholder="000.000.000-00" />
             </Field>
             <Field label="WhatsApp">
-              <Input name="origin_whatsapp" defaultValue={vehicle?.origin_whatsapp ?? ""} placeholder="(11) 99999-0000" />
+              <PhoneInput name="origin_whatsapp" defaultValue={vehicle?.origin_whatsapp ?? ""} placeholder="(11) 99999-0000" />
             </Field>
             <Field label="E-mail">
               <Input type="email" name="origin_email" defaultValue={vehicle?.origin_email ?? ""} placeholder="nome@email.com" />

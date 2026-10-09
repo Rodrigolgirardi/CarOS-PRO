@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { CheckCircle2, Loader2, ScanSearch } from "lucide-react";
+import { TriangleAlert, CheckCircle2, Loader2, ScanSearch } from "lucide-react";
 import { checkPlate, lookupPlate, savePlateApiToken, type PlateCheck } from "@/lib/actions/plate";
 import { brl } from "@/lib/format";
 import type { PlateData } from "@/lib/plate-lookup";
@@ -15,7 +15,7 @@ import { useToast } from "@/components/ui/toast";
 import { BrandLogo } from "@/components/vehicles/brand-logo";
 
 /** Consulta avulsa de placa — o resultado completo vai para o Banco de dados. */
-export function PlateLookupButton() {
+export function PlateLookupButton({ chip }: { chip?: boolean } = {}) {
   const [open, setOpen] = useState(false);
   const [result, setResult] = useState<{ data: PlateData; cached: boolean } | null>(null);
   const [needsToken, setNeedsToken] = useState(false);
@@ -31,11 +31,13 @@ export function PlateLookupButton() {
     setCheck(null);
     checkTimer.current = setTimeout(async () => {
       const r = await checkPlate(value);
-      setCheck(r);
+      // só mostra se a placa digitada ainda for a mesma (evita aviso "fantasma")
+      if (plateRef.current?.value === value) setCheck(r);
     }, 350);
   };
 
-  const doLookup = () =>
+  const doLookup = () => {
+    if (pending) return; // evita Enter repetido disparar consultas pagas em dobro
     startLookup(async () => {
       const r = await lookupPlate(plateRef.current?.value ?? "");
       if (!r.ok) {
@@ -45,6 +47,7 @@ export function PlateLookupButton() {
       }
       setResult({ data: r.data, cached: r.cached ?? false });
     });
+  };
 
   const tokenForm = useAction(savePlateApiToken, {
     onSuccess: () => {
@@ -54,6 +57,7 @@ export function PlateLookupButton() {
   });
 
   const close = () => {
+    if (checkTimer.current) clearTimeout(checkTimer.current);
     setOpen(false);
     setResult(null);
     setNeedsToken(false);
@@ -65,10 +69,21 @@ export function PlateLookupButton() {
 
   return (
     <>
-      <Button variant="danger-solid" onClick={() => setOpen(true)}>
-        <ScanSearch size={14} />
-        Consulta placa
-      </Button>
+      {chip ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex w-auto items-center justify-center gap-2 rounded-2xl border border-red-300 bg-white px-5 py-2.5 text-[13px] font-semibold text-red-600 transition-colors hover:bg-red-50"
+        >
+          <ScanSearch size={15} className="shrink-0" />
+          Consulta placa
+        </button>
+      ) : (
+        <Button variant="danger-solid" onClick={() => setOpen(true)}>
+          <ScanSearch size={14} />
+          Consulta placa
+        </Button>
+      )}
       <Modal
         open={open}
         onClose={close}
@@ -176,15 +191,18 @@ export function PlateLookupButton() {
                     Já está no seu banco de dados — consultar é grátis.
                   </p>
                 ) : (
-                  <p className="text-zinc-400">Placa nova — a consulta vai usar a API (cobrada).</p>
+                  <p className="flex items-center gap-1.5 font-medium text-amber-700">
+                    <TriangleAlert size={13} className="shrink-0" />
+                    Placa nova — esta consulta é cobrada pelo provedor.
+                  </p>
                 )}
               </div>
             )}
 
             {needsToken && (
               <form action={tokenForm.formAction} className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50/60 p-4">
-                <Field label="Token do provedor" required hint="Fica salvo apenas no banco local deste computador.">
-                  <Input name="token" required autoFocus autoComplete="off" placeholder="Cole aqui o seu token" />
+                <Field label="Chave de acesso do serviço de placas" required hint="Você recebe essa chave ao assinar o apiplacas.com.br. Ela fica guardada no seu CarOS.">
+                  <Input name="token" required autoFocus autoComplete="off" placeholder="Cole aqui a chave" />
                 </Field>
                 <FormError state={tokenForm.state} />
                 <div className="flex items-center justify-between gap-2">

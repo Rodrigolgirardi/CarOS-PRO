@@ -87,11 +87,12 @@ export async function createDeal(prev: ActionState, formData: FormData): Promise
 
   await tx(async () => {
     const r = await run(
-      "INSERT INTO deals (vehicle_id, customer_id, stage, proposed_price, notes) VALUES (?,?,?,?,?)",
+      "INSERT INTO deals (vehicle_id, customer_id, stage, proposed_price, channel, notes) VALUES (?,?,?,?,?,?)",
       vehicleId,
       customerId,
       stage,
       stage === "proposta" ? proposed : null,
+      f.s("channel"),
       f.s("notes")
     );
     if (stage === "proposta") {

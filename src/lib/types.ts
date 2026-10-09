@@ -120,7 +120,8 @@ export interface Customer {
   email: string | null;
   city: string | null;
   notes: string | null;
-  kind: CustomerKind; // comprador (compra carro) ou consignante (deixou carro na loja)
+  kind: CustomerKind;
+  source: string | null; // canal/marketplace de onde o cliente veio // comprador (compra carro) ou consignante (deixou carro na loja)
   status: CustomerStatus;
   is_demo: number;
   created_at: string;
@@ -248,6 +249,18 @@ export interface VehicleRow extends Vehicle {
 
 export interface DealRow extends Deal {
   customer_name: string;
+  customer_phone: string | null;
+  customer_email: string | null;
+  customer_city: string | null;
+  customer_cpf: string | null;
+  customer_status: CustomerStatus;
+  customer_kind: CustomerKind;
+  customer_notes: string | null;
+  customer_source: string | null;
+  vehicle_brand: string;
+  vehicle_year_fab: number | null;
+  vehicle_year_model: number | null;
+  vehicle_transmission: string | null;
   vehicle_label: string; // "Honda HR-V EXL"
   vehicle_status: VehicleStatus;
   vehicle_photo: string | null;

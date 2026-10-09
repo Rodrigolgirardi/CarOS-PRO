@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 function InfoCard({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white">
+    <section className="rounded-2xl border border-zinc-200 bg-white shadow-card">
       <header className="flex items-center justify-between gap-3 border-b border-zinc-100 px-5 py-3">
         <h3 className="text-[13px] font-semibold text-zinc-900">{title}</h3>
         {action}
@@ -65,7 +65,7 @@ function InfoCard({ title, action, children }: { title: string; action?: React.R
 function Cell({ label, value, className }: { label: string; value: React.ReactNode; className?: string }) {
   return (
     <div className={className}>
-      <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-400">{label}</dt>
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">{label}</dt>
       <dd className="mt-0.5 break-words text-[13px] font-medium text-zinc-900">{value ?? "—"}</dd>
     </div>
   );
@@ -125,7 +125,7 @@ export default async function VehiclePage({
       <div className="mb-6">
         <Link
           href="/veiculos"
-          className="text-xs font-medium text-zinc-400 transition-colors hover:text-zinc-700"
+          className="text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-700"
         >
           ← Veículos
         </Link>
@@ -135,7 +135,7 @@ export default async function VehiclePage({
             <div className="min-w-0">
               <h1 className="truncate text-xl font-semibold tracking-tight text-zinc-900">
                 {vehicle.brand} {vehicle.model}
-                {vehicle.version && <span className="font-normal text-zinc-400"> {vehicle.version}</span>}
+                {vehicle.version && <span className="font-normal text-zinc-500"> {vehicle.version}</span>}
               </h1>
               <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-zinc-500">
                 {vehicle.year_fab && (
@@ -153,7 +153,7 @@ export default async function VehiclePage({
                 )}
               </p>
               {/* status + ações, coladas na foto; Lead e Vendido sempre lado a lado */}
-              <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2 max-lg:[&_button]:h-7 max-lg:[&_button]:gap-1 max-lg:[&_button]:px-2 max-lg:[&_button]:text-xs">
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span
                   title={VEHICLE_STATUS[vehicle.status].label}
                   className={`size-2.5 shrink-0 rounded-full ${DOT_CLASS[VEHICLE_STATUS[vehicle.status].tone]}`}
@@ -220,7 +220,7 @@ export default async function VehiclePage({
         <Stat
           label={sold ? "Lucro" : "Lucro potencial"}
           value={m.profit == null ? "—" : brl(m.profit)}
-          valueClassName={m.profit == null ? "text-zinc-300" : m.profit >= 0 ? "text-emerald-600" : "text-red-600"}
+          valueClassName={m.profit == null ? "text-zinc-400" : m.profit >= 0 ? "text-emerald-600" : "text-red-600"}
           sub={sold ? "Venda − custo total" : "Se vender pelo preço anunciado"}
         />
         <Stat label="Margem" value={pct(m.margin)} sub={m.days != null ? `${m.days} dias em estoque` : undefined} />
@@ -370,7 +370,7 @@ export default async function VehiclePage({
             <TBody>
               {costs.length === 0 && (
                 <Tr>
-                  <Td className="py-6 text-center text-zinc-400" colSpan={5}>
+                  <Td className="py-6 text-center text-zinc-500" colSpan={5}>
                     Nenhum custo lançado ainda.
                   </Td>
                 </Tr>
@@ -436,7 +436,7 @@ export default async function VehiclePage({
             </div>
             <TaskCreateButton vehicleId={id} />
           </div>
-          <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white">
+          <div className="divide-y divide-zinc-100 rounded-2xl border border-zinc-200 bg-white shadow-card">
             {sortedTasks.map((t: Task) => {
               const done = t.status === "concluida";
               const overdue = !done && t.due_date != null && daysUntil(t.due_date) < 0;
@@ -444,13 +444,13 @@ export default async function VehiclePage({
                 <div key={t.id} className="group flex items-center gap-3 px-4 py-2.5">
                   <TaskCheck id={t.id} done={done} label={TASK_TYPE[t.type].label} />
                   <div className="min-w-0 flex-1">
-                    <p className={`text-[13px] font-medium ${done ? "text-zinc-400 line-through" : "text-zinc-800"}`}>
+                    <p className={`text-[13px] font-medium ${done ? "text-zinc-500 line-through" : "text-zinc-800"}`}>
                       {TASK_TYPE[t.type].label}
                       {t.description && (
-                        <span className={`font-normal ${done ? "text-zinc-300" : "text-zinc-500"}`}> — {t.description}</span>
+                        <span className={`font-normal ${done ? "text-zinc-400" : "text-zinc-500"}`}> — {t.description}</span>
                       )}
                     </p>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 text-xs text-zinc-400">
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 text-xs text-zinc-500">
                       {t.assignee && <span>{t.assignee}</span>}
                       {t.due_date && !done && (
                         <span className={`inline-flex items-center gap-1 ${overdue ? "font-medium text-red-500" : ""}`}>
@@ -477,7 +477,7 @@ export default async function VehiclePage({
             <UploadDocButton vehicleId={id} customers={customers} />
           </div>
           {docs.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50/30 px-6 py-10 text-center text-[13px] text-zinc-400">
+            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/30 px-6 py-10 text-center text-[13px] text-zinc-500 shadow-card">
               Nenhum documento anexado — CRLV, ATPV-e, contrato, laudo…
             </div>
           ) : (
@@ -587,9 +587,9 @@ export default async function VehiclePage({
       )}
 
       {tab === "historico" && (
-        <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
+        <div className="rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-card">
           {events.length === 0 ? (
-            <p className="py-6 text-center text-[13px] text-zinc-400">Nada registrado ainda.</p>
+            <p className="py-6 text-center text-[13px] text-zinc-500">Nada registrado ainda.</p>
           ) : (
             <ol>
               {events.map((e, i) => {
@@ -603,8 +603,8 @@ export default async function VehiclePage({
                     <div className="flex min-w-0 flex-1 items-baseline justify-between gap-4">
                       <div className="min-w-0">
                         <p className="text-[13px] text-zinc-800">{e.description}</p>
-                        <p className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-400">
-                          <Badge tone={meta.tone} className="px-1.5 py-0 text-[10px]">
+                        <p className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500">
+                          <Badge tone={meta.tone} className="px-1.5 py-0 text-[11px]">
                             {meta.label}
                           </Badge>
                           {fmtDate(e.date)}
@@ -622,7 +622,7 @@ export default async function VehiclePage({
             </ol>
           )}
           {events.length > 0 && (
-            <p className="mt-2 flex items-center gap-1.5 border-t border-zinc-100 pt-3 text-xs text-zinc-400">
+            <p className="mt-2 flex items-center gap-1.5 border-t border-zinc-100 pt-3 text-xs text-zinc-500">
               <History size={12} />
               Tudo que acontece com o veículo é registrado automaticamente.
             </p>

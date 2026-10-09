@@ -75,7 +75,7 @@ export default async function SellersPage() {
           <h2 className="text-[13px] font-semibold text-zinc-900">Comissões padrão por operação</h2>
           <AddRuleButton />
         </div>
-        <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white">
+        <div className="divide-y divide-zinc-100 rounded-2xl border border-zinc-200 bg-white shadow-card">
           {rules.map((rule) => (
             <CommissionRuleRow key={rule.key} rule={rule} />
           ))}

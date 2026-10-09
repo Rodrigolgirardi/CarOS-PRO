@@ -39,7 +39,7 @@ export function MonthSelect({ years, active }: MonthSelectProps) {
           value={active.slice(5, 7)}
           aria-label="Filtrar por mês"
           onChange={(e) => go(year, e.target.value)}
-          className="h-8 px-2 text-xs"
+          className="h-10 lg:h-8 px-2 text-xs"
         >
           {MESES.map((nome, i) => (
             <option key={nome} value={String(i + 1).padStart(2, "0")}>
@@ -57,7 +57,7 @@ export function MonthSelect({ years, active }: MonthSelectProps) {
             setYear(y);
             go(y, active.slice(5, 7));
           }}
-          className="h-8 px-2 text-xs"
+          className="h-10 lg:h-8 px-2 text-xs"
         >
           {years.map((y) => (
             <option key={y} value={y}>

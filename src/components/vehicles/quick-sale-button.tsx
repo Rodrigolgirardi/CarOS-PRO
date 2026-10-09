@@ -8,6 +8,7 @@ import { SALE_CHANNELS } from "@/lib/labels";
 import type { CustomerOption } from "@/lib/queries/customers";
 import type { VehicleOption } from "@/lib/queries/vehicles";
 import type { Seller } from "@/lib/types";
+import { ChipInner, chipCls } from "@/components/ui/action-chip";
 import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select } from "@/components/ui/field";
@@ -25,7 +26,7 @@ interface QuickSaleButtonProps {
 }
 
 /** Botão verde "Vendido": registra a venda escolhendo o carro no modal. */
-export function QuickSaleButton({ vehicles, sellers, customers, defaultCommission, fixedVehicleId }: QuickSaleButtonProps) {
+export function QuickSaleButton({ vehicles, sellers, customers, defaultCommission, fixedVehicleId, chip }: QuickSaleButtonProps & { chip?: boolean }) {
   const [open, setOpen] = useState(false);
   const [vehicleId, setVehicleId] = useState(fixedVehicleId != null ? String(fixedVehicleId) : "");
   const [sellerId, setSellerId] = useState("");
@@ -48,10 +49,16 @@ export function QuickSaleButton({ vehicles, sellers, customers, defaultCommissio
 
   return (
     <>
+      {chip ? (
+        <button type="button" onClick={() => setOpen(true)} disabled={vehicles.length === 0} className={chipCls("emerald", "justify-center! px-2 disabled:opacity-50")}>
+          <ChipInner icon={BadgeCheck} label="Venda" color="emerald" compact />
+        </button>
+      ) : (
       <Button variant="success" onClick={() => setOpen(true)} disabled={vehicles.length === 0}>
         <BadgeCheck size={14} />
         Vendido
       </Button>
+      )}
       <Modal
         open={open}
         onClose={() => setOpen(false)}

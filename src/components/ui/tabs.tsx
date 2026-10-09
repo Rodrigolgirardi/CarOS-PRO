@@ -30,7 +30,7 @@ export function LinkTabs({
             key={t.key}
             href={t.href}
             className={cn(
-              "-mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-1 py-2 text-xs transition-colors sm:px-2.5 sm:text-[13px]",
+              "-mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-1.5 py-2.5 text-[13px] transition-colors sm:px-2.5",
               active
                 ? "border-zinc-900 font-medium text-zinc-900"
                 : "border-transparent text-zinc-500 hover:text-zinc-800"

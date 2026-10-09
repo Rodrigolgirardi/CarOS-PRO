@@ -48,7 +48,7 @@ export function AccessForm({ login, authEnabled }: AccessFormProps) {
         </div>
         <FormError state={save.state} />
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-zinc-500">
             {authEnabled ? "Vale para todos os aparelhos." : "Com senha, o CarOS pede login para abrir."}
           </p>
           <SubmitButton>{authEnabled ? "Salvar" : "Ativar proteção"}</SubmitButton>
@@ -58,7 +58,7 @@ export function AccessForm({ login, authEnabled }: AccessFormProps) {
       {authEnabled && (
         <form action={disable.formAction} className="space-y-2 border-t border-zinc-100 px-5 py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-zinc-400">Desativar a proteção (abrir sem senha):</p>
+            <p className="text-xs text-zinc-500">Desativar a proteção (abrir sem senha):</p>
             <div className="flex items-center gap-2">
               <div className="w-40">
                 <Input

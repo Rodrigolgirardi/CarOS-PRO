@@ -25,7 +25,7 @@ export function StatusSelect({ id, status }: { id: number; status: VehicleStatus
             if (!r.ok) toast(r.error ?? "Não foi possível alterar.", "error");
           })
         }
-        className="h-7 px-2 pr-6 text-[11px]"
+        className="h-9 lg:h-7 px-2 pr-6 text-[11px]"
       >
       {(Object.keys(VEHICLE_STATUS) as VehicleStatus[])
         .filter((s) => s !== "vendido")

@@ -43,7 +43,7 @@ export function Modal({ open, onClose, title, description, children, wide }: Mod
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "w-full animate-[pop-in_.16s_ease-out] rounded-xl border border-zinc-200 bg-white shadow-xl shadow-zinc-900/5",
+          "w-full animate-[pop-in_.16s_ease-out] rounded-2xl border border-zinc-200 bg-white shadow-xl shadow-black/10",
           wide ? "max-w-2xl" : "max-w-md"
         )}
       >

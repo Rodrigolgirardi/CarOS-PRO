@@ -6,6 +6,7 @@ import { addCostForVehicle } from "@/lib/actions/costs";
 import { todayISO } from "@/lib/format";
 import { COST_CATEGORY } from "@/lib/labels";
 import type { VehicleOption } from "@/lib/queries/vehicles";
+import { ChipInner, chipCls } from "@/components/ui/action-chip";
 import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select } from "@/components/ui/field";
@@ -13,7 +14,7 @@ import { FormError, SubmitButton, useAction } from "@/components/ui/form";
 import { Modal } from "@/components/ui/modal";
 
 /** Lançamento rápido de gasto a partir da lista: escolhe o veículo no próprio modal. */
-export function AddExpenseButton({ vehicles }: { vehicles: VehicleOption[] }) {
+export function AddExpenseButton({ vehicles, chip }: { vehicles: VehicleOption[]; chip?: boolean }) {
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState(""); // "" | "admin" | id do veículo
   const admin = target === "admin";
@@ -23,10 +24,16 @@ export function AddExpenseButton({ vehicles }: { vehicles: VehicleOption[] }) {
 
   return (
     <>
-      <Button variant="warning" onClick={() => setOpen(true)}>
-        <Receipt size={14} />
-        Adicionar saída
-      </Button>
+      {chip ? (
+        <button type="button" onClick={() => setOpen(true)} className={chipCls("orange", "justify-center! px-2")}>
+          <ChipInner icon={Receipt} label="Saída" color="orange" compact />
+        </button>
+      ) : (
+        <Button variant="warning" onClick={() => setOpen(true)}>
+          <Receipt size={14} />
+          Adicionar saída
+        </Button>
+      )}
       <Modal
         open={open}
         onClose={() => setOpen(false)}

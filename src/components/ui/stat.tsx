@@ -10,18 +10,18 @@ interface StatProps {
 /** Número de destaque: rótulo em cima, valor grande tabular, contexto embaixo. */
 export function Stat({ label, value, sub, valueClassName }: StatProps) {
   return (
-    <div className="flex min-w-0 flex-col justify-center bg-white px-3.5 py-2.5 sm:px-5 sm:py-4">
+    <div className="flex min-w-0 flex-col justify-center bg-white px-3 py-2 sm:px-5 sm:py-4">
       <p className="truncate text-[11px] font-medium text-zinc-500 sm:text-xs">{label}</p>
       {/* a cor padrão só entra quando não há cor customizada (evita conflito de precedência CSS) */}
       <p
         className={cn(
-          "mt-0.5 text-base font-semibold tracking-tight tabular-nums sm:mt-1.5 sm:text-xl",
+          "mt-0.5 text-[15px] font-semibold tracking-tight tabular-nums sm:mt-1.5 sm:text-xl",
           valueClassName ?? "text-zinc-900"
         )}
       >
         {value}
       </p>
-      {sub != null && <p className="mt-0.5 truncate text-[11px] text-zinc-400 sm:text-xs">{sub}</p>}
+      {sub != null && <p className="truncate text-[11px] text-zinc-500 sm:mt-0.5 sm:text-xs">{sub}</p>}
     </div>
   );
 }
@@ -32,7 +32,7 @@ export function Stat({ label, value, sub, valueClassName }: StatProps) {
  */
 export function StatGrid({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("grid gap-px overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100", className)}>
+    <div className={cn("grid gap-px overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 shadow-card", className)}>
       {children}
     </div>
   );

@@ -7,6 +7,7 @@ import { todayISO } from "@/lib/format";
 import type { Seller } from "@/lib/types";
 import type { CommissionRule } from "@/lib/queries/commissions";
 import type { CustomerOption } from "@/lib/queries/customers";
+import { ChipInner, chipCls } from "@/components/ui/action-chip";
 import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select } from "@/components/ui/field";
@@ -21,7 +22,7 @@ interface AddIncomeButtonProps {
 }
 
 /** Entrada avulsa: documentação, financiamento, venda de moto… com comissão sugerida pelo tipo. */
-export function AddIncomeButton({ customers, sellers, rules }: AddIncomeButtonProps) {
+export function AddIncomeButton({ customers, sellers, rules, chip }: AddIncomeButtonProps & { chip?: boolean }) {
   const [open, setOpen] = useState(false);
   const [typeKey, setTypeKey] = useState("");
   const { state, formAction } = useAction(addIncome, { onSuccess: () => setOpen(false) });
@@ -31,10 +32,16 @@ export function AddIncomeButton({ customers, sellers, rules }: AddIncomeButtonPr
 
   return (
     <>
-      <Button variant="info" onClick={() => setOpen(true)}>
-        <Banknote size={14} />
-        Adicionar entrada
-      </Button>
+      {chip ? (
+        <button type="button" onClick={() => setOpen(true)} className={chipCls("blue", "justify-center! px-2")}>
+          <ChipInner icon={Banknote} label="Entrada" color="blue" compact />
+        </button>
+      ) : (
+        <Button variant="info" onClick={() => setOpen(true)}>
+          <Banknote size={14} />
+          Adicionar entrada
+        </Button>
+      )}
       <Modal
         open={open}
         onClose={() => setOpen(false)}

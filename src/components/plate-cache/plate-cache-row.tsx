@@ -90,7 +90,7 @@ export function PlateCacheRow({ row, data }: { row: Row; data: PlateData | null 
 
               {data.fipe.length > 0 && (
                 <section>
-                  <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                  <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                     FIPE {data.fipe.length > 1 && !data.chosenFipe && "— qual é a versão deste carro?"}
                   </h3>
                   <ul className="max-w-2xl divide-y divide-zinc-100 rounded-lg border border-zinc-200 bg-white">
@@ -129,7 +129,7 @@ export function PlateCacheRow({ row, data }: { row: Row; data: PlateData | null 
 
               {(data.details.length > 0 || data.chassis || data.city) && (
                 <section>
-                  <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                  <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                     Tudo que a consulta retornou
                   </h3>
                   <dl className="grid grid-cols-1 gap-x-10 rounded-lg border border-zinc-200 bg-white px-4 py-1 sm:grid-cols-2 xl:grid-cols-3">

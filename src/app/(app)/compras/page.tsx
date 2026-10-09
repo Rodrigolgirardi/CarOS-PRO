@@ -72,7 +72,7 @@ export default async function PurchasesPage() {
                       <span className="block truncate font-medium text-zinc-900 group-hover:underline group-hover:underline-offset-2">
                         {v.brand} {v.model}
                       </span>
-                      <span className="block truncate text-xs text-zinc-400">{v.version ?? "—"}</span>
+                      <span className="block truncate text-xs text-zinc-500">{v.version ?? "—"}</span>
                     </span>
                   </Link>
                 </Td>

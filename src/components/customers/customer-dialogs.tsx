@@ -4,45 +4,51 @@ import { useState, useTransition } from "react";
 import { MessageSquarePlus, Pencil, Plus, Trash2 } from "lucide-react";
 import { addContact, deleteCustomer, saveCustomer, setCustomerStatus } from "@/lib/actions/customers";
 import { todayISO } from "@/lib/format";
-import { CUSTOMER_STATUS } from "@/lib/labels";
+import { SALE_CHANNELS, CUSTOMER_STATUS } from "@/lib/labels";
 import type { Customer, CustomerStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { FormError, SubmitButton, useAction } from "@/components/ui/form";
 import { ConfirmButton } from "@/components/ui/confirm";
 import { Modal } from "@/components/ui/modal";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { useToast } from "@/components/ui/toast";
 
-function CustomerFields({ customer }: { customer?: Customer }) {
+export function CustomerFields({ customer }: { customer?: Customer }) {
   return (
     <>
-      <div className="grid grid-cols-[1fr_170px] gap-4">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
         <Field label="Nome" required>
           <Input name="name" defaultValue={customer?.name} placeholder="João Pereira" required autoFocus />
         </Field>
-        <Field label="Tipo" hint="Consignante = deixou carro na loja.">
+        <Field label="Tipo">
           <Select name="kind" defaultValue={customer?.kind ?? "comprador"}>
             <option value="comprador">Comprador</option>
             <option value="consignante">Consignante</option>
           </Select>
         </Field>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
         <Field label="CPF/CNPJ">
           <Input name="cpf_cnpj" defaultValue={customer?.cpf_cnpj ?? ""} inputMode="numeric" />
         </Field>
         <Field label="Telefone">
-          <Input name="phone" defaultValue={customer?.phone ?? ""} placeholder="(11) 99999-0000" />
+          <PhoneInput name="phone" defaultValue={customer?.phone ?? ""} placeholder="(11) 99999-0000" />
         </Field>
-        <Field label="E-mail">
-          <Input name="email" type="email" defaultValue={customer?.email ?? ""} />
+        <Field label="Marketplace / canal">
+          <Select name="source" defaultValue={customer?.source ?? ""}>
+            <option value="">—</option>
+            {SALE_CHANNELS.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </Select>
         </Field>
         <Field label="Cidade">
           <Input name="city" defaultValue={customer?.city ?? ""} />
         </Field>
       </div>
       <Field label="Observações">
-        <Textarea name="notes" defaultValue={customer?.notes ?? ""} placeholder="Procura SUV automático até R$ 120 mil…" />
+        <Textarea name="notes" rows={2} defaultValue={customer?.notes ?? ""} placeholder="Procura SUV automático até R$ 120 mil…" />
       </Field>
     </>
   );

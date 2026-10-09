@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Car, Megaphone, Plus, TriangleAlert } from "lucide-react";
+import { Car, Clock, Megaphone, Plus, TriangleAlert } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { ChipInner, chipCls } from "@/components/ui/action-chip";
 import { VehicleStatusBadge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -52,25 +53,38 @@ export default async function VehiclesPage({
     <>
       <PageHeader title="Veículos" description="Seu estoque, do jeito que ele está agora." />
 
-      {/* ações principais: no celular, grade 2×2 + consulta de placa sozinha e centralizada */}
-      <div className="mb-5 space-y-2 lg:flex lg:flex-wrap lg:items-center lg:gap-2 lg:space-y-0">
-        <div className="grid grid-cols-2 gap-2 max-lg:[&_a]:h-9 max-lg:[&_a]:w-full max-lg:[&_button]:h-9 max-lg:[&_button]:w-full lg:contents">
-          <LinkButton href="/compras/nova" variant="primary">
-            <Plus size={14} />
-            Adicionar veículo
-          </LinkButton>
-          <QuickSaleButton
-            vehicles={await vehicleOptions()}
-            sellers={await sellerOptions()}
-            customers={await customerOptions()}
-            defaultCommission={await commissionRule("venda_carro")}
-          />
-          <AddExpenseButton vehicles={await vehicleOptions()} />
-          <AddIncomeButton customers={await customerOptions()} sellers={await sellerOptions()} rules={await listCommissionRules()} />
+      {/* celular: chips (visual das Ações rápidas) · desktop: botões clássicos */}
+      <div className="mb-5 grid grid-cols-4 gap-2 lg:hidden">
+        <Link href="/compras/nova" className={chipCls("violet", "justify-center! px-2")}>
+          <ChipInner icon={Plus} label="Veículo" color="violet" compact />
+        </Link>
+        <QuickSaleButton
+          vehicles={await vehicleOptions()}
+          sellers={await sellerOptions()}
+          customers={await customerOptions()}
+          defaultCommission={await commissionRule("venda_carro")}
+          chip
+        />
+        <AddExpenseButton vehicles={await vehicleOptions()} chip />
+        <AddIncomeButton customers={await customerOptions()} sellers={await sellerOptions()} rules={await listCommissionRules()} chip />
+        <div className="col-span-4 flex justify-center">
+          <PlateLookupButton chip />
         </div>
-        <div className="flex justify-center lg:contents">
-          <PlateLookupButton />
-        </div>
+      </div>
+      <div className="mb-5 hidden flex-wrap items-center gap-2 lg:flex">
+        <LinkButton href="/compras/nova" variant="primary">
+          <Plus size={14} />
+          Adicionar veículo
+        </LinkButton>
+        <AddExpenseButton vehicles={await vehicleOptions()} />
+        <AddIncomeButton customers={await customerOptions()} sellers={await sellerOptions()} rules={await listCommissionRules()} />
+        <PlateLookupButton />
+        <QuickSaleButton
+          vehicles={await vehicleOptions()}
+          sellers={await sellerOptions()}
+          customers={await customerOptions()}
+          defaultCommission={await commissionRule("venda_carro")}
+        />
       </div>
 
       <LinkTabs
@@ -122,14 +136,21 @@ export default async function VehiclesPage({
                 <Link
                   key={v.id}
                   href={`/veiculos/${v.id}`}
-                  className="block rounded-xl border border-zinc-200 bg-white p-4 active:bg-zinc-50"
+                  className="block rounded-2xl border border-zinc-200 bg-white p-4 shadow-card active:bg-zinc-50"
                 >
                   <span className="flex items-center gap-3.5">
                     <VehiclePhoto photo={v.photo} brand={v.brand} size="md" />
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2">
-                        <span className="truncate text-[15px] font-medium text-zinc-900">
-                          {v.brand} {v.model}
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="truncate text-[15px] font-medium text-zinc-900">
+                            {v.brand} {v.model}
+                          </span>
+                          {v.plate && (
+                            <span className="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px] text-zinc-600">
+                              {v.plate}
+                            </span>
+                          )}
                         </span>
                         <VehicleStatusBadge status={v.status} />
                       </span>
@@ -139,20 +160,15 @@ export default async function VehiclesPage({
                             {String(v.year_fab).slice(-2)}/{String(v.year_model ?? v.year_fab).slice(-2)}
                           </span>
                         )}
-                        {v.plate && (
-                          <span className="rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px] text-zinc-600">
-                            {v.plate}
-                          </span>
-                        )}
                         <span
-                          className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                          className={`rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
                             v.consignado === 1 ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700"
                           }`}
                         >
                           {v.consignado === 1 ? "Consignado" : "Próprio"}
                         </span>
                         <span
-                          className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                          className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
                             v.platforms_count > 0 ? "bg-sky-50 text-sky-700" : "bg-red-50 text-red-600"
                           }`}
                         >
@@ -163,12 +179,22 @@ export default async function VehiclesPage({
                           )}
                           {v.platforms_count === 1 ? "1 plataforma" : `${v.platforms_count} plataformas`}
                         </span>
+                        {!m.sold && m.days != null && (
+                          <span
+                            className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
+                              m.days > 60 ? "bg-amber-50 text-amber-700" : "bg-zinc-100 text-zinc-500"
+                            }`}
+                          >
+                            <Clock size={10} />
+                            {m.days} {m.days === 1 ? "dia" : "dias"}
+                          </span>
+                        )}
                       </span>
                     </span>
                   </span>
                   <span className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-zinc-100 bg-zinc-100">
                     <span className="block bg-zinc-50/60 px-2.5 py-2">
-                      <span className="block text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+                      <span className="block text-[11px] font-medium uppercase tracking-wide text-zinc-500">
                         {v.consignado === 1 ? "Repasse" : "Compra"}
                       </span>
                       <span className="mt-0.5 block text-[13px] font-medium text-zinc-700">
@@ -180,19 +206,19 @@ export default async function VehiclesPage({
                       </span>
                     </span>
                     <span className="block bg-zinc-50/60 px-2.5 py-2">
-                      <span className="block text-[10px] font-medium uppercase tracking-wide text-zinc-400">Venda</span>
+                      <span className="block text-[11px] font-medium uppercase tracking-wide text-zinc-500">Venda</span>
                       <span className="mt-0.5 block text-[13px] font-semibold text-zinc-900">{brl(m.priceRef)}</span>
                     </span>
                     <span className="block bg-zinc-50/60 px-2.5 py-2">
-                      <span className="block text-[10px] font-medium uppercase tracking-wide text-zinc-400">Margem</span>
+                      <span className="block text-[11px] font-medium uppercase tracking-wide text-zinc-500">Margem</span>
                       <span
                         className={`mt-0.5 block text-[13px] font-semibold ${
-                          m.profit == null ? "text-zinc-300" : m.profit >= 0 ? "text-emerald-600" : "text-red-600"
+                          m.profit == null ? "text-zinc-400" : m.profit >= 0 ? "text-emerald-600" : "text-red-600"
                         }`}
                       >
                         {m.profit == null ? "—" : brl(m.profit)}
                         {m.profit != null && m.margin != null && (
-                          <span className="ml-1 text-[10px] font-medium opacity-80">({pct(m.margin)})</span>
+                          <span className="ml-1 text-[11px] font-medium opacity-80">({pct(m.margin)})</span>
                         )}
                       </span>
                     </span>
@@ -235,14 +261,14 @@ export default async function VehiclesPage({
                             {v.brand} {v.model}
                           </span>
                           <span
-                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
                               v.consignado === 1 ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700"
                             }`}
                           >
                             {v.consignado === 1 ? "Consignado" : "Próprio"}
                           </span>
                         </span>
-                        <span className="block truncate text-xs text-zinc-400">{v.version ?? "—"}</span>
+                        <span className="block truncate text-xs text-zinc-500">{v.version ?? "—"}</span>
                       </span>
                     </Link>
                   </Td>
@@ -257,7 +283,7 @@ export default async function VehiclesPage({
                         {v.plate}
                       </span>
                     ) : (
-                      <span className="text-zinc-300">—</span>
+                      <span className="text-zinc-400">—</span>
                     )}
                   </Td>
                   <Td right className="text-zinc-500">
@@ -267,7 +293,7 @@ export default async function VehiclesPage({
                     {brl(v.purchase_price)}
                   </Td>
                   <Td right className="text-zinc-500">
-                    {v.fipe_price != null ? brl(v.fipe_price) : <span className="text-zinc-300">—</span>}
+                    {v.fipe_price != null ? brl(v.fipe_price) : <span className="text-zinc-400">—</span>}
                   </Td>
                   <Td right className="font-medium text-zinc-900">
                     {brl(m.totalCost)}
@@ -275,7 +301,7 @@ export default async function VehiclesPage({
                   <Td right className="text-zinc-900">
                     {brl(m.priceRef)}
                   </Td>
-                  <Td right className={m.profit == null ? "text-zinc-300" : m.profit >= 0 ? "font-medium text-emerald-600" : "font-medium text-red-600"}>
+                  <Td right className={m.profit == null ? "text-zinc-400" : m.profit >= 0 ? "font-medium text-emerald-600" : "font-medium text-red-600"}>
                     {m.profit == null ? "—" : brl(m.profit)}
                   </Td>
                   <Td right className="text-zinc-500">

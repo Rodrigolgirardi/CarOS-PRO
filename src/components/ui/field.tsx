@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 
 export const controlCls =
-  "h-8 w-full rounded-md border border-zinc-200 bg-white px-2.5 text-[13px] text-zinc-900 outline-none transition-[border-color,box-shadow] placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5 disabled:bg-zinc-50 disabled:text-zinc-400";
+  "h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-base lg:h-8 lg:px-2.5 lg:text-[13px] text-zinc-900 outline-none transition-[border-color,box-shadow] placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5 disabled:bg-zinc-50 disabled:text-zinc-400";
 
 interface FieldProps {
   label: string;

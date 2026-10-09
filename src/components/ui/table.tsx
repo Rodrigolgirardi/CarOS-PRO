@@ -11,7 +11,7 @@ export function Table({
   flush?: boolean;
 }) {
   return (
-    <div className={cn("overflow-x-auto bg-white", !flush && "rounded-xl border border-zinc-200", className)}>
+    <div className={cn("overflow-x-auto bg-white", !flush && "rounded-2xl border border-zinc-200 shadow-card", className)}>
       <table className="w-full text-[13px]">{children}</table>
     </div>
   );

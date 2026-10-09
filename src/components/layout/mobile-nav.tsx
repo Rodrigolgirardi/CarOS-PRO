@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 import { MAIN, MANAGE, type NavItemData } from "@/components/layout/nav-items";
 
 const ALL = [...MAIN, ...MANAGE];
-const TAB_HREFS = ["/", "/veiculos", "/vendas", "/financeiro"];
+const TAB_HREFS = ["/", "/vendas", "/veiculos", "/financeiro"];
 // nomes curtos só na barra de baixo (a sidebar do computador mantém os originais)
 const TAB_LABELS: Record<string, string> = { "/vendas": "Leads" };
 const TABS = TAB_HREFS.map((h) => ALL.find((i) => i.href === h)!)
@@ -28,12 +28,12 @@ function TabButton({ item }: { item: NavItemData }) {
     <Link
       href={href}
       className={cn(
-        "flex flex-col items-center justify-center gap-0.5 transition-colors",
-        active ? "text-zinc-900" : "text-zinc-400"
+        "flex flex-col items-center justify-center gap-1 transition-colors",
+        active ? "text-zinc-900" : "text-zinc-500"
       )}
     >
       <Icon size={20} strokeWidth={active ? 2 : 1.75} />
-      <span className={cn("text-[10px] leading-none", active ? "font-semibold" : "font-medium")}>{label}</span>
+      <span className={cn("text-[11px] leading-none", active ? "font-semibold" : "font-medium")}>{label}</span>
     </Link>
   );
 }
@@ -52,7 +52,7 @@ export function MobileTabBar() {
   return (
     <>
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden">
-        <div className="grid h-14 grid-cols-5">
+        <div className="grid h-16 grid-cols-5">
           {TABS.map((item) => (
             <TabButton key={item.href} item={item} />
           ))}
@@ -61,18 +61,18 @@ export function MobileTabBar() {
             onClick={() => setMoreOpen(true)}
             className={cn(
               "flex flex-col items-center justify-center gap-0.5 transition-colors",
-              moreActive || moreOpen ? "text-zinc-900" : "text-zinc-400"
+              moreActive || moreOpen ? "text-zinc-900" : "text-zinc-500"
             )}
           >
             <MoreHorizontal size={20} strokeWidth={moreActive ? 2 : 1.75} />
-            <span className={cn("text-[10px] leading-none", moreActive ? "font-semibold" : "font-medium")}>Mais</span>
+            <span className={cn("text-[11px] leading-none", moreActive ? "font-semibold" : "font-medium")}>Mais</span>
           </button>
         </div>
       </nav>
       {moreOpen &&
         createPortal(
           <div className="fixed inset-0 z-50 lg:hidden">
-            <div className="absolute inset-0 bg-zinc-900/30 backdrop-blur-[2px]" onClick={() => setMoreOpen(false)} />
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setMoreOpen(false)} />
             <div className="absolute inset-x-0 bottom-0 animate-[sheet-in_.18s_ease-out] rounded-t-2xl bg-white px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3 shadow-xl">
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-zinc-200" />
               <div className="space-y-1">

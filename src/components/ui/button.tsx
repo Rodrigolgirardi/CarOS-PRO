@@ -28,9 +28,10 @@ const VARIANTS: Record<ButtonVariant, string> = {
   "danger-solid": "border-transparent bg-red-600 text-white hover:bg-red-500",
 };
 
+// mobile-first: alvo de toque de 40/36px no celular; densidade clássica volta no desktop (lg+)
 const SIZES: Record<ButtonSize, string> = {
-  sm: "h-7 gap-1 px-2.5 text-xs",
-  md: "h-8 gap-1.5 px-3 text-[13px]",
+  sm: "h-9 gap-1 px-3 text-xs lg:h-7 lg:px-2.5",
+  md: "h-10 gap-1.5 px-4 text-[13px] lg:h-8 lg:px-3",
 };
 
 export function buttonCls(variant: ButtonVariant = "secondary", size: ButtonSize = "md", className?: string) {

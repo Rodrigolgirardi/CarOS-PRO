@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { BadgeCheck, Clock, Percent, Trophy } from "lucide-react";
-import { PageHeader } from "@/components/layout/page-header";
 import { CustomersPanel } from "@/components/customers/customers-panel";
+import { LeadsPanel } from "@/components/deals/leads-panel";
+import { SaleExpandRow } from "@/components/deals/sale-expand-row";
 import { SaleRow } from "@/components/deals/sale-row";
+import { BrandLogo } from "@/components/vehicles/brand-logo";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Stat, StatGrid } from "@/components/ui/stat";
-import { Chips } from "@/components/ui/tabs";
 import { Table, TBody, Th, THead } from "@/components/ui/table";
 import { brl, fmtDate, pct } from "@/lib/format";
 import { listDeals } from "@/lib/queries/deals";
 import type { DealRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Vendas" };
+export const metadata = { title: "Leads" };
 
 const daysToSell = (d: DealRow): number | null => {
   if (!d.sold_date || !d.purchase_date) return null;
@@ -36,7 +36,7 @@ function HighlightCard({
   return (
     <Link
       href={`/veiculos/${deal.vehicle_id}`}
-      className="group rounded-xl border border-zinc-200 bg-white p-5 transition-colors hover:border-zinc-300"
+      className="group rounded-2xl border border-zinc-200 bg-white p-5 shadow-card transition-colors hover:border-zinc-300"
     >
       <p className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
         <Icon size={14} className="text-zinc-400" />
@@ -46,20 +46,26 @@ function HighlightCard({
         {deal.vehicle_label}
       </p>
       {deal.vehicle_plate && (
-        <span className="mt-1 inline-block rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">
+        <span className="mt-1 inline-block rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px] text-zinc-500">
           {deal.vehicle_plate}
         </span>
       )}
       <p className="mt-2.5 text-xl font-semibold tabular-nums tracking-tight text-emerald-600">{value}</p>
-      <p className="mt-0.5 truncate text-xs text-zinc-400">{sub}</p>
+      <p className="mt-0.5 truncate text-xs text-zinc-500">{sub}</p>
     </Link>
   );
 }
 
-export default async function SalesPage({ searchParams }: { searchParams: Promise<{ tab?: string; status?: string }> }) {
-  const { tab: tabParam, status } = await searchParams;
-  const tab = ["destaques", "relatorio", "clientes"].includes(tabParam ?? "") ? tabParam! : "vendas";
-  const sold = (await listDeals())
+export default async function SalesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string; status?: string; busca?: string }>;
+}) {
+  const { tab: tabParam, status, busca } = await searchParams;
+  const tabRaw = tabParam === "clientes" ? "consignantes" : tabParam; // links antigos
+  const tab = ["vendas", "consignantes", "relatorio"].includes(tabRaw ?? "") ? tabRaw! : "leads";
+  const allDeals = await listDeals();
+  const sold = allDeals
     .filter((d) => d.stage === "vendido" || d.stage === "entregue")
     .sort((a, b) => ((a.sold_date ?? "") < (b.sold_date ?? "") ? 1 : -1));
 
@@ -75,101 +81,67 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader
-        title="Vendas"
-        description="Cada carro vendido fica registrado aqui — clique na linha para ver ou alterar a venda."
-      />
-
-      <Chips
-        className="mb-4"
-        activeKey={tab}
-        items={[
-          { key: "vendas", label: "Vendas", count: sold.length, href: "/vendas" },
-          { key: "destaques", label: "Destaques", href: "/vendas?tab=destaques" },
+      {/* abas no mesmo visual dos cards indicadores */}
+      <div className="mb-4 grid grid-cols-4 gap-2 sm:max-w-xl sm:gap-2.5">
+        {[
+          { key: "leads", label: "Leads", href: "/vendas" },
+          { key: "vendas", label: "Vendas", count: sold.length, href: "/vendas?tab=vendas" },
+          { key: "consignantes", label: "Consignantes", href: "/vendas?tab=consignantes" },
           { key: "relatorio", label: "Relatório", href: "/vendas?tab=relatorio" },
-          { key: "clientes", label: "Clientes", href: "/vendas?tab=clientes" },
-        ]}
-      />
+        ].map((t) => {
+          const active = t.key === tab;
+          return (
+            <Link
+              key={t.key}
+              href={t.href}
+              className={`flex items-center justify-center gap-1.5 rounded-2xl border px-2 py-2.5 text-[12px] font-semibold transition-colors sm:text-[13px] ${
+                active
+                  ? "border-violet-100 bg-violet-50 text-violet-700"
+                  : "border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
+              }`}
+            >
+              {t.label}
+              {t.count != null && t.count > 0 && (
+                <span
+                  className={`rounded-full px-1.5 py-px text-[11px] tabular-nums ${
+                    active ? "bg-violet-100 text-violet-700" : "bg-zinc-100 text-zinc-500"
+                  }`}
+                >
+                  {t.count}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
 
-      {tab === "clientes" ? (
-        <CustomersPanel status={status} />
-      ) : sold.length === 0 ? (
-        <EmptyState
-          icon={BadgeCheck}
-          title="Nenhuma venda registrada"
-          description="Venda pelo botão verde “Vendido” na tela de Veículos e o carro aparece aqui."
-        />
+      {tab === "leads" ? (
+        <LeadsPanel deals={allDeals} status={status} busca={busca} />
+      ) : tab === "consignantes" ? (
+        <CustomersPanel status="consignantes" />
       ) : tab === "relatorio" ? (
         (() => {
-          const priced = sold.filter((d) => d.sale_price != null);
-          const revenue = priced.reduce((s, d) => s + (d.sale_price ?? 0), 0);
-          const profit = priced.reduce((s, d) => s + ((d.sale_price ?? 0) - d.vehicle_total_cost), 0);
-          const ticket = priced.length > 0 ? Math.round(revenue / priced.length) : null;
-          const marginAvg = revenue > 0 ? profit / revenue : null;
-          const daysList = sold.map(daysToSell).filter((n): n is number => n != null);
-          const daysAvg = daysList.length > 0 ? Math.round(daysList.reduce((a, b) => a + b, 0) / daysList.length) : null;
-
-          const byChannel = new Map<string, { count: number; revenue: number }>();
-          for (const d of sold) {
-            const key = d.channel?.trim() || "Sem canal";
-            const b = byChannel.get(key) ?? { count: 0, revenue: 0 };
-            b.count += 1;
-            b.revenue += d.sale_price ?? 0;
-            byChannel.set(key, b);
+          // ---- leads por canal/marketplace
+          const byChannel = new Map<string, number>();
+          for (const d of allDeals) {
+            const k = d.channel?.trim() || "Sem canal";
+            byChannel.set(k, (byChannel.get(k) ?? 0) + 1);
           }
-          const channels = [...byChannel.entries()].sort((a, b) => b[1].count - a[1].count);
-          const topChannel = channels[0] ?? null;
-          const maxCount = Math.max(...channels.map(([, c]) => c.count), 1);
+          const channels = [...byChannel.entries()].sort((a, b) => b[1] - a[1]);
+          const totalLeads = allDeals.length;
+          const maxChannel = Math.max(...channels.map(([, n]) => n), 1);
 
-          return (
-            <div className="space-y-6">
-              <StatGrid className="grid-cols-2 md:grid-cols-4">
-                <Stat
-                  label="Canal mais vendido"
-                  value={topChannel ? topChannel[0] : "—"}
-                  sub={topChannel ? `${topChannel[1].count} de ${sold.length} venda(s)` : undefined}
-                />
-                <Stat label="Ticket médio" value={brl(ticket)} sub={`${priced.length} venda(s) com valor`} />
-                <Stat
-                  label="Margem média"
-                  value={pct(marginAvg)}
-                  valueClassName={marginAvg != null && marginAvg < 0 ? "text-red-600" : "text-emerald-600"}
-                  sub="Lucro ÷ faturamento"
-                />
-                <Stat
-                  label="Prazo médio de venda"
-                  value={daysAvg != null ? `${daysAvg} dias` : "—"}
-                  sub="Da compra à venda"
-                />
-              </StatGrid>
+          // ---- carros mais procurados (nº de leads por carro)
+          const byCar = new Map<number, { label: string; brand: string; count: number }>();
+          for (const d of allDeals) {
+            const cur = byCar.get(d.vehicle_id) ?? { label: d.vehicle_label, brand: d.vehicle_brand, count: 0 };
+            cur.count += 1;
+            byCar.set(d.vehicle_id, cur);
+          }
+          const cars = [...byCar.values()].sort((a, b) => b.count - a.count).slice(0, 5);
+          const maxCar = Math.max(...cars.map((c) => c.count), 1);
 
-              <section className="max-w-xl">
-                <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Vendas por canal</h2>
-                <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white">
-                  {channels.map(([name, c]) => (
-                    <div key={name} className="flex items-center gap-3 px-4 py-2.5">
-                      <span className="w-28 shrink-0 truncate text-[13px] font-medium text-zinc-800">{name}</span>
-                      <span className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
-                        <span
-                          className="block h-full rounded-full bg-blue-600"
-                          style={{ width: `${(c.count / maxCount) * 100}%` }}
-                        />
-                      </span>
-                      <span className="w-16 shrink-0 text-right text-xs tabular-nums text-zinc-500">
-                        {c.count} venda{c.count === 1 ? "" : "s"}
-                      </span>
-                      <span className="w-24 shrink-0 text-right text-[13px] font-medium tabular-nums text-zinc-900">
-                        {brl(c.revenue)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </div>
-          );
-        })()
-      ) : tab === "destaques" ? (
-        (() => {
+          // ---- destaques das vendas
           const priced = sold.filter((d) => d.sale_price != null);
           const biggest = priced.length
             ? priced.reduce((a, b) => ((b.sale_price ?? 0) > (a.sale_price ?? 0) ? b : a))
@@ -184,39 +156,125 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
           const fastest = withDays.length
             ? withDays.reduce((a, b) => ((daysToSell(b) ?? Infinity) < (daysToSell(a) ?? Infinity) ? b : a))
             : null;
+
           return (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {biggest && (
-                <HighlightCard
-                  icon={Trophy}
-                  title="Maior valor de venda"
-                  deal={biggest}
-                  value={brl(biggest.sale_price)}
-                  sub={`${biggest.customer_name} · ${fmtDate(biggest.sold_date)}`}
-                />
-              )}
-              {bestMargin && (
-                <HighlightCard
-                  icon={Percent}
-                  title="Maior margem"
-                  deal={bestMargin}
-                  value={pct(margin(bestMargin))}
-                  sub={`Lucro de ${brl((bestMargin.sale_price ?? 0) - bestMargin.vehicle_total_cost)} em ${brl(bestMargin.sale_price)}`}
-                />
-              )}
-              {fastest && (
-                <HighlightCard
-                  icon={Clock}
-                  title="Vendido mais rápido"
-                  deal={fastest}
-                  value={`${daysToSell(fastest)} dia(s)`}
-                  sub={`Comprado em ${fmtDate(fastest.purchase_date)}, vendido em ${fmtDate(fastest.sold_date)}`}
-                />
+            <div className="space-y-5">
+              <section className="rounded-2xl border border-zinc-200 bg-white">
+                <h2 className="border-b border-zinc-100 px-4 py-3 text-[15px] font-semibold tracking-tight text-zinc-900">
+                  Leads por canal
+                </h2>
+                {totalLeads === 0 ? (
+                  <p className="px-4 py-6 text-[13px] text-zinc-500">Nenhum lead registrado ainda.</p>
+                ) : (
+                  <div className="divide-y divide-zinc-100">
+                    {channels.map(([name, n]) => (
+                      <div key={name} className="flex items-center gap-3 px-4 py-2.5">
+                        <span className="w-28 shrink-0 truncate text-[13px] font-medium text-zinc-800 sm:w-36">
+                          {name}
+                        </span>
+                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
+                          <span
+                            className="block h-full rounded-full bg-violet-500"
+                            style={{ width: `${(n / maxChannel) * 100}%` }}
+                          />
+                        </span>
+                        <span className="w-8 shrink-0 text-right text-[13px] font-medium tabular-nums text-zinc-900">
+                          {n}
+                        </span>
+                        <span className="w-10 shrink-0 text-right text-xs tabular-nums text-zinc-500">
+                          {Math.round((n / totalLeads) * 100)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="rounded-2xl border border-zinc-200 bg-white">
+                <h2 className="border-b border-zinc-100 px-4 py-3 text-[15px] font-semibold tracking-tight text-zinc-900">
+                  Carros mais procurados
+                </h2>
+                {cars.length === 0 ? (
+                  <p className="px-4 py-6 text-[13px] text-zinc-500">Os carros aparecem aqui conforme os leads chegam.</p>
+                ) : (
+                  <div className="divide-y divide-zinc-100">
+                    {cars.map((c) => (
+                      <div key={c.label} className="flex items-center gap-3 px-4 py-2.5">
+                        <BrandLogo brand={c.brand} size={16} />
+                        <span className="w-32 shrink-0 truncate text-[13px] font-medium text-zinc-800 sm:w-44">
+                          {c.label}
+                        </span>
+                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
+                          <span
+                            className="block h-full rounded-full bg-blue-600"
+                            style={{ width: `${(c.count / maxCar) * 100}%` }}
+                          />
+                        </span>
+                        <span className="w-14 shrink-0 text-right text-xs tabular-nums text-zinc-500">
+                          {c.count} lead{c.count === 1 ? "" : "s"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {(biggest || bestMargin || fastest) && (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  {biggest && (
+                    <HighlightCard
+                      icon={Trophy}
+                      title="Maior faturamento"
+                      deal={biggest}
+                      value={brl(biggest.sale_price)}
+                      sub={`${biggest.customer_name} · ${fmtDate(biggest.sold_date)}`}
+                    />
+                  )}
+                  {bestMargin && (
+                    <HighlightCard
+                      icon={Percent}
+                      title="Maior margem"
+                      deal={bestMargin}
+                      value={pct(margin(bestMargin))}
+                      sub={`Lucro de ${brl((bestMargin.sale_price ?? 0) - bestMargin.vehicle_total_cost)}`}
+                    />
+                  )}
+                  {fastest && (
+                    <HighlightCard
+                      icon={Clock}
+                      title="Saída mais rápida"
+                      deal={fastest}
+                      value={`${daysToSell(fastest)} dia(s)`}
+                      sub={`Comprado em ${fmtDate(fastest.purchase_date)}, vendido em ${fmtDate(fastest.sold_date)}`}
+                    />
+                  )}
+                </div>
               )}
             </div>
           );
         })()
+      ) : sold.length === 0 ? (
+        <EmptyState
+          icon={BadgeCheck}
+          title="Nenhuma venda registrada"
+          description="Venda pelo botão verde “Vendido” na tela de Veículos e o carro aparece aqui."
+        />
       ) : (
+        <>
+          {/* celular: lista compacta (toque no > para detalhes) */}
+          <div className="lg:hidden">
+            <div className="divide-y divide-zinc-100 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+              {sold.map((d) => (
+                <SaleExpandRow key={d.id} deal={d} />
+              ))}
+            </div>
+            <p className="mt-2 px-1 text-xs text-zinc-500">
+              Total · {sold.length} venda(s) ·{" "}
+              <span className="font-semibold tabular-nums text-zinc-900">{brl(totals.revenue)}</span>
+            </p>
+          </div>
+          {/* desktop: tabela completa */}
+          <div className="hidden lg:block">
         <Table>
           <THead>
             <Th>Data</Th>
@@ -257,6 +315,8 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
             </tr>
           </tfoot>
         </Table>
+          </div>
+        </>
       )}
     </>
   );

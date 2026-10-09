@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { createDeal } from "@/lib/actions/deals";
 import { brl } from "@/lib/format";
+import { SALE_CHANNELS } from "@/lib/labels";
 import type { CustomerOption } from "@/lib/queries/customers";
 import type { VehicleOption } from "@/lib/queries/vehicles";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { FormError, SubmitButton, useAction } from "@/components/ui/form";
 import { Modal } from "@/components/ui/modal";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 interface NewDealButtonProps {
   vehicles: VehicleOption[]; // apenas não vendidos
@@ -60,7 +62,7 @@ export function NewDealButton({ vehicles, customers, vehicleId, label = "Nova ne
                 <Input name="new_customer_name" placeholder="Marcos Vieira" required autoFocus />
               </Field>
               <Field label="Telefone">
-                <Input name="new_customer_phone" placeholder="(11) 99999-0000" />
+                <PhoneInput name="new_customer_phone" placeholder="(11) 99999-0000" />
               </Field>
             </div>
           )}
@@ -120,6 +122,14 @@ export function NewDealButton({ vehicles, customers, vehicleId, label = "Nova ne
               <CurrencyInput name="proposed_price" required autoFocus />
             </Field>
           )}
+          <Field label="Plataforma" hint="De onde veio esse lead.">
+            <Select name="channel" defaultValue="">
+              <option value="">—</option>
+              {SALE_CHANNELS.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </Select>
+          </Field>
           <Field label="Observações">
             <Textarea name="notes" placeholder="Procura carro automático, quer fechar este mês…" />
           </Field>

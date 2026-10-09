@@ -62,7 +62,7 @@ function Headline({
       <p className={`mt-1 text-xl font-semibold tracking-tight tabular-nums ${valueClassName ?? "text-zinc-900"}`}>
         {value}
       </p>
-      {sub && <p className="mt-0.5 truncate text-xs text-zinc-400">{sub}</p>}
+      {sub && <p className="mt-0.5 truncate text-xs text-zinc-500">{sub}</p>}
     </div>
   );
 }
@@ -85,7 +85,7 @@ export function StockChart({ vehicles }: { vehicles: StockVehicleSlice[] }) {
   const scale = Math.max(...vehicles.map((v) => v.invested + Math.max(v.profit ?? 0, 0)), 1);
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5">
+    <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-card">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Headline dot="bg-blue-600" label="Capital investido" value={brl(investedAll)} sub="Compra + custos" />
         <Headline
@@ -105,7 +105,7 @@ export function StockChart({ vehicles }: { vehicles: StockVehicleSlice[] }) {
       {priced.length > 0 && (
         <div className="mt-4">
           <Bar invested={investedPriced} profit={profit} scale={investedPriced + Math.max(profit, 0)} h="h-3.5" />
-          <p className="mt-1.5 text-[11px] text-zinc-400">
+          <p className="mt-1.5 text-[11px] text-zinc-500">
             A barra soma o valor de venda dos veículos com preço definido: investido + lucro.
           </p>
         </div>
@@ -118,7 +118,7 @@ export function StockChart({ vehicles }: { vehicles: StockVehicleSlice[] }) {
           { label: "Margem s/ venda", value: pct(margin), hint: "Lucro potencial ÷ valor de venda" },
         ].map((m) => (
           <div key={m.label} className="bg-white px-3 py-2.5" title={m.hint}>
-            <dt className="truncate text-[11px] font-medium text-zinc-400">{m.label}</dt>
+            <dt className="truncate text-[11px] font-medium text-zinc-500">{m.label}</dt>
             <dd className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-900">{m.value}</dd>
           </div>
         ))}
@@ -143,7 +143,7 @@ export function StockChart({ vehicles }: { vehicles: StockVehicleSlice[] }) {
                 >
                   <span
                     className={`mb-1 text-center text-[11px] font-medium tabular-nums ${
-                      v.profit == null ? "text-zinc-300" : v.profit >= 0 ? "text-emerald-600" : "text-red-600"
+                      v.profit == null ? "text-zinc-400" : v.profit >= 0 ? "text-emerald-600" : "text-red-600"
                     }`}
                   >
                     {v.profit == null ? "—" : pct(vRoi, 0)}

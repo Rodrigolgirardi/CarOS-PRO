@@ -118,7 +118,7 @@ export default async function FinancePage({
             </div>
 
             {entries.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-zinc-200 px-6 py-10 text-center text-[13px] text-zinc-400">
+              <p className="rounded-2xl border border-dashed border-zinc-200 px-6 py-10 text-center text-[13px] text-zinc-500 shadow-card">
                 Nenhuma movimentação para esse filtro.
               </p>
             ) : (
@@ -128,7 +128,7 @@ export default async function FinancePage({
                   {entries.map((e, i) => {
                     const kind = KIND_LABEL[e.kind] ?? KIND_LABEL.conta;
                     return (
-                      <div key={`m-${e.kind}-${i}`} className="rounded-xl border border-zinc-200 bg-white p-3.5">
+                      <div key={`m-${e.kind}-${i}`} className="rounded-2xl border border-zinc-200 bg-white p-3.5 shadow-card">
                         <div className="flex items-center justify-between gap-2">
                           <span className="flex items-center gap-2">
                             <span className="text-xs text-zinc-500">{fmtDate(e.date)}</span>
@@ -165,7 +165,7 @@ export default async function FinancePage({
                               <BrandLogo brand={e.vehicle_label} size={14} />
                               <span className="truncate text-xs font-medium text-zinc-700">{e.vehicle_label}</span>
                               {e.vehicle_plate && (
-                                <span className="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600">
+                                <span className="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px] text-zinc-600">
                                   {e.vehicle_plate}
                                 </span>
                               )}
@@ -213,7 +213,7 @@ export default async function FinancePage({
                               <span className="truncate font-medium text-zinc-800">{e.vehicle_label}</span>
                             </Link>
                           ) : (
-                            <span className="text-zinc-300">—</span>
+                            <span className="text-zinc-400">—</span>
                           )}
                         </Td>
                         <Td>
@@ -222,7 +222,7 @@ export default async function FinancePage({
                               {e.vehicle_plate}
                             </span>
                           ) : (
-                            <span className="text-zinc-300">—</span>
+                            <span className="text-zinc-400">—</span>
                           )}
                         </Td>
                         <Td className="max-w-[280px]">
@@ -281,7 +281,7 @@ export default async function FinancePage({
         const profitPot = stock.reduce((s, d) => s + (d.profit ?? 0), 0);
 
         const Card = ({ d }: { d: (typeof dre)[number] }) => (
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-card">
             <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3">
               <div className="min-w-0">
                 <Link
@@ -291,7 +291,7 @@ export default async function FinancePage({
                   {d.label}
                 </Link>
                 {d.plate && (
-                  <span className="mt-0.5 inline-block rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">
+                  <span className="mt-0.5 inline-block rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px] text-zinc-500">
                     {d.plate}
                   </span>
                 )}
@@ -311,7 +311,7 @@ export default async function FinancePage({
               ))}
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-zinc-500">{d.sold ? "Valor de venda" : "Venda prevista (anúncio)"}</dt>
-                <dd className={`font-medium tabular-nums ${d.sale != null ? "text-emerald-600" : "text-zinc-300"}`}>
+                <dd className={`font-medium tabular-nums ${d.sale != null ? "text-emerald-600" : "text-zinc-400"}`}>
                   {d.sale != null ? `+ ${brl(d.sale)}` : "sem preço"}
                 </dd>
               </div>
@@ -319,7 +319,7 @@ export default async function FinancePage({
                 <dt className="font-semibold text-zinc-900">{d.profit != null && d.profit < 0 ? "Prejuízo" : "Lucro"}</dt>
                 <dd
                   className={`text-sm font-semibold tabular-nums ${
-                    d.profit == null ? "text-zinc-300" : d.profit >= 0 ? "text-emerald-600" : "text-red-600"
+                    d.profit == null ? "text-zinc-400" : d.profit >= 0 ? "text-emerald-600" : "text-red-600"
                   }`}
                 >
                   {d.profit == null ? "—" : brl(d.profit)}
@@ -376,7 +376,7 @@ export default async function FinancePage({
             )}
 
             {dre.length === 0 && (
-              <p className="rounded-xl border border-dashed border-zinc-200 px-6 py-10 text-center text-[13px] text-zinc-400">
+              <p className="rounded-2xl border border-dashed border-zinc-200 px-6 py-10 text-center text-[13px] text-zinc-500 shadow-card">
                 A DRE aparece aqui conforme você registra compras, custos e vendas.
               </p>
             )}
@@ -406,7 +406,7 @@ export default async function FinancePage({
             </div>
 
             {rows.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-zinc-200 px-6 py-10 text-center text-[13px] text-zinc-400">
+              <p className="rounded-2xl border border-dashed border-zinc-200 px-6 py-10 text-center text-[13px] text-zinc-500 shadow-card">
                 Nenhuma conta aqui. 🎉
               </p>
             ) : (
@@ -427,14 +427,14 @@ export default async function FinancePage({
                         <DueCell due={p.due_date} pending={p.status === "pendente"} />
                       </Td>
                       <Td className="max-w-[280px] truncate font-medium text-zinc-800">{p.description}</Td>
-                      <Td>{p.category ? <Badge>{p.category}</Badge> : <span className="text-zinc-300">—</span>}</Td>
+                      <Td>{p.category ? <Badge>{p.category}</Badge> : <span className="text-zinc-400">—</span>}</Td>
                       <Td className="max-w-[180px] truncate">
                         {p.vehicle_id ? (
                           <Link href={`/veiculos/${p.vehicle_id}`} className="text-zinc-600 underline-offset-2 hover:underline">
                             {p.vehicle_label}
                           </Link>
                         ) : (
-                          <span className="text-zinc-300">—</span>
+                          <span className="text-zinc-400">—</span>
                         )}
                       </Td>
                       <Td right className="font-medium">
@@ -492,7 +492,7 @@ export default async function FinancePage({
             </div>
 
             {rows.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-zinc-200 px-6 py-10 text-center text-[13px] text-zinc-400">
+              <p className="rounded-2xl border border-dashed border-zinc-200 px-6 py-10 text-center text-[13px] text-zinc-500 shadow-card">
                 Nenhuma conta aqui.
               </p>
             ) : (
@@ -519,7 +519,7 @@ export default async function FinancePage({
                             {r.customer_name}
                           </Link>
                         ) : (
-                          <span className="text-zinc-300">—</span>
+                          <span className="text-zinc-400">—</span>
                         )}
                       </Td>
                       <Td>

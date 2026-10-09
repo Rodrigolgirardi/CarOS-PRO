@@ -16,7 +16,7 @@ export function PageHeader({ title, description, actions, backHref, backLabel }:
         {backHref && (
           <Link
             href={backHref}
-            className="mb-1.5 inline-flex items-center gap-1 text-xs font-medium text-zinc-400 transition-colors hover:text-zinc-700"
+            className="mb-1.5 inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-700"
           >
             <ArrowLeft size={12} />
             {backLabel ?? "Voltar"}

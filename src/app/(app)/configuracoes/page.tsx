@@ -29,7 +29,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       {tab === "banco" ? (
         <PlateCachePanel />
       ) : (
-        <div className="max-w-2xl divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white">
+        <div className="max-w-2xl divide-y divide-zinc-100 rounded-2xl border border-zinc-200 bg-white shadow-card">
           {tab === "seguranca" ? (
             <AccessForm login={profile.login} authEnabled={profile.authEnabled} />
           ) : (

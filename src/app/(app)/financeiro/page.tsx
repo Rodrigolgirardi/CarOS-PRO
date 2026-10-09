@@ -345,13 +345,13 @@ export default async function FinancePage({
               <Stat
                 label="Lucro potencial"
                 value={brl(profitPot)}
-                valueClassName={profitPot >= 0 ? "text-emerald-600" : "text-red-600"}
+                valueClassName={profitPot >= 0 ? "text-emerald-600 lg:text-zinc-900" : "text-red-600"}
                 sub="Estoque atual"
               />
               <Stat
                 label="Resultado total"
                 value={brl(profitReal + profitPot)}
-                valueClassName={profitReal + profitPot >= 0 ? "text-emerald-600" : "text-red-600"}
+                valueClassName={profitReal + profitPot >= 0 ? "text-emerald-600 lg:text-zinc-900" : "text-red-600"}
                 sub="Realizado + potencial"
               />
             </StatGrid>

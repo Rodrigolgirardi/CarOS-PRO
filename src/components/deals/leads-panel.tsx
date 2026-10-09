@@ -1,4 +1,4 @@
-import { LeadExpandRow } from "@/components/deals/lead-expand-row";
+import { LeadExpandRow, LeadTableHeader } from "@/components/deals/lead-expand-row";
 import { LeadSearch } from "@/components/deals/lead-search";
 import { NewDealButton } from "@/components/deals/new-deal-button";
 import { customerOptions } from "@/lib/queries/customers";
@@ -43,7 +43,7 @@ export async function LeadsPanel({ deals, status, busca }: { deals: DealRow[]; s
   }
 
   return (
-    <div className="space-y-4 lg:mx-auto lg:max-w-3xl">
+    <div className="space-y-4 lg:mx-auto lg:max-w-5xl">
       <div className="flex items-center gap-2">
         <NewDealButton vehicles={await vehicleOptions()} customers={await customerOptions()} label="Novo lead" />
         <div className="min-w-0 flex-1">
@@ -57,11 +57,23 @@ export async function LeadsPanel({ deals, status, busca }: { deals: DealRow[]; s
           {q ? "Nenhum lead encontrado para essa busca." : "Nenhum lead neste filtro — registre um pelo botão Novo lead."}
         </p>
       ) : (
-        <div className="space-y-2.5">
-          {rows.map((d) => (
-            <LeadExpandRow key={d.id} deal={d} docs={docsByCustomer.get(d.customer_id) ?? []} />
-          ))}
-        </div>
+        <>
+          {/* celular: cartões */}
+          <div className="space-y-2.5 lg:hidden">
+            {rows.map((d) => (
+              <LeadExpandRow key={d.id} deal={d} docs={docsByCustomer.get(d.customer_id) ?? []} />
+            ))}
+          </div>
+          {/* desktop: tabela — Nome | Contato | Canal | Veículo | Data/hora */}
+          <div className="hidden overflow-hidden rounded-2xl border border-zinc-200 bg-white lg:block">
+            <LeadTableHeader />
+            <div className="divide-y divide-zinc-100">
+              {rows.map((d) => (
+                <LeadExpandRow key={d.id} deal={d} docs={docsByCustomer.get(d.customer_id) ?? []} layout="row" />
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

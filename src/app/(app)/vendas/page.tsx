@@ -82,7 +82,7 @@ export default async function SalesPage({
   return (
     <>
       {/* abas no mesmo visual dos cards indicadores */}
-      <div className="mb-4 grid grid-cols-4 gap-2 sm:max-w-xl sm:gap-2.5 lg:mx-auto lg:max-w-3xl">
+      <div className="mb-4 grid grid-cols-4 gap-2 sm:max-w-xl sm:gap-2.5 lg:mx-auto lg:max-w-5xl">
         {[
           { key: "leads", label: "Leads", href: "/vendas" },
           { key: "vendas", label: "Vendas", count: sold.length, href: "/vendas?tab=vendas" },

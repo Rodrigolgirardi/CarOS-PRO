@@ -25,7 +25,7 @@ export async function CustomersPanel({ status }: { status?: string }) {
   }
 
   return (
-    <div className="divide-y divide-zinc-100 overflow-hidden rounded-2xl border border-zinc-200 bg-white lg:mx-auto lg:max-w-3xl">
+    <div className="divide-y divide-zinc-100 overflow-hidden rounded-2xl border border-zinc-200 bg-white lg:mx-auto lg:max-w-5xl">
       {customers.map((c) => (
         <CustomerExpandRow key={c.id} customer={c} consignorView={filter === "consignantes"} />
       ))}

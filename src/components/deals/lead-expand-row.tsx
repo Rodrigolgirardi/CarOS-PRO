@@ -63,6 +63,30 @@ function relativeDate(createdAt: string): string {
   return `${datePart.slice(8, 10)}/${datePart.slice(5, 7)}/${datePart.slice(0, 4)}`;
 }
 
+/** Desktop: sempre data e hora — "Hoje, 14:20" · "05/10/2026, 09:15". */
+function dateTime(createdAt: string): string {
+  const rel = relativeDate(createdAt);
+  const hhmm = createdAt.split(" ")[1]?.slice(0, 5);
+  return rel.includes(",") || !hhmm ? rel : `${rel}, ${hhmm}`;
+}
+
+/** Colunas da tabela de leads no desktop (cabeçalho e linhas usam a mesma grade). */
+export const LEAD_ROW_GRID = "grid grid-cols-[1.4fr_1fr_0.9fr_1.6fr_0.9fr_16px] items-center gap-4";
+
+/** Cabeçalho da tabela de leads (desktop). */
+export function LeadTableHeader() {
+  return (
+    <div className={`${LEAD_ROW_GRID} border-b border-zinc-200 bg-zinc-50/60 px-4 py-2 text-xs font-medium text-zinc-500`}>
+      <span>Nome do lead</span>
+      <span>Contato</span>
+      <span>Canal do lead</span>
+      <span>Veículo de interesse</span>
+      <span>Data/hora do lead</span>
+      <span />
+    </div>
+  );
+}
+
 /** CPF 000.000.000-00 · CNPJ 00.000.000/0000-00. */
 function fmtCpfCnpj(raw: string | null): string | null {
   if (!raw) return null;
@@ -82,7 +106,16 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 /** Card de lead que expande os detalhes para baixo. */
-export function LeadExpandRow({ deal: d, docs = [] }: { deal: DealRow; docs?: DocRow[] }) {
+export function LeadExpandRow({
+  deal: d,
+  docs = [],
+  layout = "card",
+}: {
+  deal: DealRow;
+  docs?: DocRow[];
+  /** "row": linha de tabela (desktop) — "card": cartão (celular) */
+  layout?: "card" | "row";
+}) {
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const { state, formAction } = useAction(saveCustomer.bind(null, d.customer_id), {
@@ -113,9 +146,85 @@ export function LeadExpandRow({ deal: d, docs = [] }: { deal: DealRow; docs?: Do
     .filter(Boolean)
     .join(" · ");
   const phoneDigits = (d.customer_phone ?? "").replace(/\D/g, "");
+  const toggle = () => setOpen((o) => !o);
+  const row = layout === "row";
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-colors hover:border-zinc-300">
+    <div
+      className={
+        row
+          ? "bg-white"
+          : "rounded-2xl border border-zinc-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-colors hover:border-zinc-300"
+      }
+    >
+      {row ? (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={toggle}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") toggle();
+          }}
+          className={`${LEAD_ROW_GRID} cursor-pointer px-4 py-3 transition-colors hover:bg-zinc-50`}
+        >
+          {/* nome (o pontinho colorido é o status do lead) */}
+          <span className="flex min-w-0 items-center gap-2">
+            <span
+              title={stage.label}
+              className={`size-2 shrink-0 rounded-full ${
+                {
+                  emerald: "bg-emerald-500",
+                  amber: "bg-amber-400",
+                  blue: "bg-blue-500",
+                  teal: "bg-teal-400",
+                  red: "bg-red-500",
+                  violet: "bg-violet-400",
+                  zinc: "bg-zinc-400",
+                }[stage.tone]
+              }`}
+            />
+            <span className="truncate text-[13px] font-semibold text-zinc-900">{d.customer_name}</span>
+            <button
+              type="button"
+              aria-label="Editar cliente"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditOpen(true);
+              }}
+              className="grid size-6 shrink-0 place-items-center rounded-md text-zinc-300 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+            >
+              <Pencil size={13} />
+            </button>
+          </span>
+          {/* contato */}
+          <span className="min-w-0">
+            {phoneDigits ? (
+              <a
+                href={`https://wa.me/55${phoneDigits}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 truncate text-[13px] text-zinc-600 hover:text-emerald-600"
+              >
+                <WhatsAppIcon size={12} className="shrink-0 text-emerald-500" />
+                {fmtPhone(d.customer_phone)}
+              </a>
+            ) : (
+              <span className="text-[13px] text-zinc-400">—</span>
+            )}
+          </span>
+          {/* canal */}
+          <span className="truncate text-[13px] text-zinc-700">{d.channel ?? d.customer_source ?? "—"}</span>
+          {/* veículo de interesse */}
+          <span className="flex min-w-0 items-center gap-2">
+            <BrandLogo brand={d.vehicle_brand} size={16} />
+            <span className="truncate text-[13px] font-medium text-zinc-800">{d.vehicle_label}</span>
+          </span>
+          {/* data/hora */}
+          <span className="truncate text-[13px] tabular-nums text-zinc-500">{dateTime(d.created_at)}</span>
+          <ChevronRight size={15} className={`text-zinc-300 transition-transform ${open ? "rotate-90" : ""}`} />
+        </div>
+      ) : (
       <div
         role="button"
         tabIndex={0}
@@ -193,6 +302,7 @@ export function LeadExpandRow({ deal: d, docs = [] }: { deal: DealRow; docs?: Do
           </span>
         </div>
       </div>
+      )}
 
       {open && (
         <div className="space-y-3 border-t border-zinc-100 bg-zinc-50/50 px-3.5 py-3.5">

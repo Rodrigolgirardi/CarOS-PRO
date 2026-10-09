@@ -388,8 +388,23 @@ export default async function VehiclePage({
                     ) : null
                   }
                 />
-                <Cell label="Pagamento" value={vehicle.purchase_payment} />
-                <Cell label="Preço de compra" value={brl(vehicle.purchase_price)} className="col-span-2" />
+                {vehicle.consignado === 1 ? (
+                  <>
+                    {/* celular: como era · desktop: consignado mostra o repasse combinado */}
+                    <Cell label="Pagamento" value={vehicle.purchase_payment} className="lg:hidden" />
+                    <Cell label="Preço de compra" value={brl(vehicle.purchase_price)} className="col-span-2 lg:hidden" />
+                    <Cell
+                      label="Valor de repasse"
+                      value={vehicle.consignor_value != null ? brl(vehicle.consignor_value) : null}
+                      className="hidden lg:block"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Cell label="Pagamento" value={vehicle.purchase_payment} />
+                    <Cell label="Preço de compra" value={brl(vehicle.purchase_price)} className="col-span-2" />
+                  </>
+                )}
               </dl>
               {vehicle.purchase_notes && (
                 <p className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-[13px] leading-relaxed text-zinc-600">

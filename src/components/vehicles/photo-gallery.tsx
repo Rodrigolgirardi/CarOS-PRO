@@ -63,11 +63,11 @@ export function PhotoGallery({ vehicleId, photos, coverFileName }: PhotoGalleryP
           {photos.map((photo) => {
             const isCover = photo.file_name === coverFileName;
             return (
+              <div key={photo.id} className="relative">
               <button
-                key={photo.id}
                 type="button"
                 onClick={() => setSelectedId(photo.id)}
-                className="relative aspect-square overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-zinc-900/30 active:opacity-80"
+                className="relative block aspect-square w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-zinc-900/30 active:opacity-80"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -83,6 +83,19 @@ export function PhotoGallery({ vehicleId, photos, coverFileName }: PhotoGalleryP
                   </span>
                 )}
               </button>
+              {/* só no desktop: lixeira direto na miniatura (no celular, toca na foto) */}
+              <div className="absolute right-1.5 top-1.5 hidden lg:block">
+                <ConfirmButton
+                  action={() => deleteVehiclePhoto(photo.id)}
+                  title="Excluir foto"
+                  description="A foto será removida da galeria do veículo. Essa ação não pode ser desfeita."
+                  variant="danger-solid"
+                  className="size-8! rounded-full! p-0! shadow-md"
+                >
+                  <Trash2 size={15} />
+                </ConfirmButton>
+              </div>
+              </div>
             );
           })}
         </div>

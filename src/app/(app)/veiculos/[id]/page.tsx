@@ -22,7 +22,7 @@ import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/table";
 import { deleteDocument } from "@/lib/actions/documents";
 import { brl, daysUntil, fmtBytes, fmtDate, fmtKm, pct } from "@/lib/format";
 import {
-  COST_CATEGORY,
+  costLabel,
   DEFAULT_CHECKLIST,
   DOC_TYPE,
   DOT_CLASS,
@@ -34,6 +34,7 @@ import {
 } from "@/lib/labels";
 import { vehicleLabel, vehicleMetrics } from "@/lib/metrics";
 import { commissionRule } from "@/lib/queries/commissions";
+import { listCustomTypes } from "@/lib/queries/custom-types";
 import { customerOptions } from "@/lib/queries/customers";
 import { sellerOptions } from "@/lib/queries/sellers";
 import { dealsForVehicle } from "@/lib/queries/deals";
@@ -106,7 +107,7 @@ export default async function VehiclePage({
   const sold = vehicle.status === "vendido";
 
   // todas as abas da ficha em paralelo: uma ida ao banco em vez de dez em fila
-  const [costs, photos, tasks, docs, events, deals, customers, vehicles, platforms, sellers, saleCommission] =
+  const [costs, photos, tasks, docs, events, deals, customers, vehicles, platforms, sellers, saleCommission, customSaida] =
     await Promise.all([
       vehicleCosts(id),
       listVehiclePhotos(id),
@@ -119,6 +120,7 @@ export default async function VehiclePage({
       vehiclePlatforms(id),
       sellerOptions(),
       commissionRule("venda_carro"),
+      listCustomTypes("saida"),
     ]);
 
   const pendingTasks = tasks.filter((t) => t.status === "pendente").length;
@@ -457,7 +459,7 @@ export default async function VehiclePage({
       {tab === "custos" && (
         <div className="space-y-3">
           <div className="flex justify-end">
-            <AddCostButton vehicleId={id} />
+            <AddCostButton vehicleId={id} extraCategories={customSaida.map((t) => t.label)} />
           </div>
           <Table>
             <THead>
@@ -479,14 +481,14 @@ export default async function VehiclePage({
                 <Tr key={c.id}>
                   <Td className="text-zinc-500">{fmtDate(c.date)}</Td>
                   <Td>
-                    <Badge>{COST_CATEGORY[c.category]}</Badge>
+                    <Badge>{costLabel(c.category)}</Badge>
                   </Td>
                   <Td className="max-w-[360px] truncate text-zinc-600">{c.description ?? "—"}</Td>
                   <Td right className="font-medium">
                     {brl(c.amount)}
                   </Td>
                   <Td className="w-20">
-                    <CostRowActions cost={c} />
+                    <CostRowActions cost={c} extraCategories={customSaida.map((t) => t.label)} />
                   </Td>
                 </Tr>
               ))}

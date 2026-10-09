@@ -18,7 +18,14 @@ const revalidate = () => revalidatePath("/", "layout");
 export async function addIncome(prev: ActionState, formData: FormData): Promise<ActionState> {
   const f = fields(formData);
   // venda de veículo não entra aqui (o botão Venda já lança no caixa)
-  const type = INCOME_TYPES.find((t) => t.key === f.s("income_type"));
+  const typeKey = f.s("income_type");
+  // tipo fixo ou criado em Configurações → Entradas e saídas (o valor é o próprio nome)
+  const custom = typeKey
+    ? await get<{ label: string }>("SELECT label FROM custom_types WHERE kind = 'entrada' AND label = ?", typeKey)
+    : undefined;
+  const type =
+    INCOME_TYPES.find((t) => t.key === typeKey) ??
+    (custom ? { key: custom.label, label: custom.label, rule: null, commission: true, example: "" } : undefined);
   if (!type) return err("Escolha o tipo de recebimento.");
   const detail = f.s("description");
   const description = detail ? `${type.label} — ${detail}` : type.label;

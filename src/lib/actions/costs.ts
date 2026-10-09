@@ -3,16 +3,23 @@
 import { revalidatePath } from "next/cache";
 import { get, run, tx } from "../db";
 import { brl, todayISO } from "../format";
-import { COST_CATEGORY } from "../labels";
+import { COST_CATEGORY, costLabel } from "../labels";
 import type { ActionState, Cost } from "../types";
 import { err, fields, logEvent, ok } from "./util";
+
+/** Categoria fixa (Frete, Peças…) ou criada em Configurações → Entradas e saídas. */
+async function validCategory(category: string | null): Promise<boolean> {
+  if (!category) return false;
+  if (category in COST_CATEGORY) return true;
+  return !!(await get<{ id: number }>("SELECT id FROM custom_types WHERE kind = 'saida' AND label = ?", category));
+}
 
 export async function addCost(vehicleId: number, prev: ActionState, formData: FormData): Promise<ActionState> {
   const f = fields(formData);
   const category = f.s("category");
   const amount = f.cents("amount");
   const date = f.s("date") ?? todayISO();
-  if (!category || !(category in COST_CATEGORY)) return err("Escolha a categoria do custo.");
+  if (!(await validCategory(category))) return err("Escolha a categoria do custo.");
   if (amount == null || amount <= 0) return err("Informe o valor do custo.");
 
   const description = f.s("description");
@@ -26,7 +33,7 @@ export async function addCost(vehicleId: number, prev: ActionState, formData: Fo
   );
   await logEvent({
     type: "custo",
-    description: `Custo adicionado — ${COST_CATEGORY[category as keyof typeof COST_CATEGORY]}${description ? `: ${description}` : ""}`,
+    description: `Custo adicionado — ${costLabel(category!)}${description ? `: ${description}` : ""}`,
     vehicle: vehicleId,
     amount,
     date,
@@ -75,7 +82,7 @@ export async function updateCost(costId: number, prev: ActionState, formData: Fo
   const category = f.s("category");
   const amount = f.cents("amount");
   const date = f.s("date") ?? cost.date;
-  if (!category || !(category in COST_CATEGORY)) return err("Escolha a categoria do custo.");
+  if (!(await validCategory(category))) return err("Escolha a categoria do custo.");
   if (amount == null || amount <= 0) return err("Informe o valor do custo.");
   const description = f.s("description");
 
@@ -94,7 +101,7 @@ export async function updateCost(costId: number, prev: ActionState, formData: Fo
     if (amount !== cost.amount || category !== cost.category) {
       await logEvent({
         type: "custo",
-        description: `Custo atualizado — ${COST_CATEGORY[category as keyof typeof COST_CATEGORY]}${description ? `: ${description}` : ""}${
+        description: `Custo atualizado — ${costLabel(category!)}${description ? `: ${description}` : ""}${
           amount !== cost.amount ? ` (${brl(cost.amount)} → ${brl(amount)})` : ""
         }`,
         vehicle: cost.vehicle_id,
@@ -115,7 +122,7 @@ export async function deleteCost(costId: number): Promise<{ ok: boolean; error?:
   await run("DELETE FROM costs WHERE id = ?", costId);
   await logEvent({
     type: "custo",
-    description: `Custo removido — ${COST_CATEGORY[cost.category]} (${brl(cost.amount)})`,
+    description: `Custo removido — ${costLabel(cost.category)} (${brl(cost.amount)})`,
     vehicle: cost.vehicle_id,
   });
   revalidatePath("/", "layout");

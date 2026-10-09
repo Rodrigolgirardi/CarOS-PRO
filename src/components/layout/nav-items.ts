@@ -4,6 +4,7 @@ import {
   FileText,
   Handshake,
   LayoutDashboard,
+  Settings,
   Users,
   Wallet,
   type LucideIcon,
@@ -16,6 +17,8 @@ export interface NavItemData {
   /** nome/ícone na barra lateral do desktop, quando diferente do celular */
   desktopLabel?: string;
   desktopIcon?: LucideIcon;
+  /** só na barra lateral do computador (o celular acessa pelo menu do perfil) */
+  desktopOnly?: boolean;
 }
 
 export const MAIN: NavItemData[] = [
@@ -28,4 +31,5 @@ export const MAIN: NavItemData[] = [
 export const MANAGE: NavItemData[] = [
   { href: "/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/documentos", label: "Documentos", icon: FileText },
+  { href: "/configuracoes", label: "Configurações", icon: Settings, desktopOnly: true },
 ];

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { addCost, deleteCost, updateCost } from "@/lib/actions/costs";
 import { brl, todayISO } from "@/lib/format";
-import { COST_CATEGORY } from "@/lib/labels";
+import { COST_CATEGORY, costLabel } from "@/lib/labels";
 import type { Cost } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
@@ -13,7 +13,7 @@ import { FormError, SubmitButton, useAction } from "@/components/ui/form";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 
-function CostFields({ cost }: { cost?: Cost }) {
+function CostFields({ cost, extraCategories = [] }: { cost?: Cost; extraCategories?: string[] }) {
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
@@ -21,6 +21,12 @@ function CostFields({ cost }: { cost?: Cost }) {
           <Select name="category" defaultValue={cost?.category ?? "manutencao"} required>
             {Object.entries(COST_CATEGORY).map(([key, label]) => (
               <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+            {/* tipos criados em Configurações → Entradas e saídas */}
+            {extraCategories.map((label) => (
+              <option key={label} value={label}>
                 {label}
               </option>
             ))}
@@ -42,7 +48,7 @@ function CostFields({ cost }: { cost?: Cost }) {
   );
 }
 
-export function AddCostButton({ vehicleId }: { vehicleId: number }) {
+export function AddCostButton({ vehicleId, extraCategories }: { vehicleId: number; extraCategories?: string[] }) {
   const [open, setOpen] = useState(false);
   const { state, formAction } = useAction(addCost.bind(null, vehicleId), {
     onSuccess: () => setOpen(false),
@@ -62,7 +68,7 @@ export function AddCostButton({ vehicleId }: { vehicleId: number }) {
         description="O custo entra direto no cálculo do custo total e do lucro."
       >
         <form action={formAction} className="space-y-4">
-          <CostFields />
+          <CostFields extraCategories={extraCategories} />
           <FormError state={state} />
           <div className="flex justify-end gap-2">
             <Button onClick={() => setOpen(false)}>Cancelar</Button>
@@ -75,7 +81,7 @@ export function AddCostButton({ vehicleId }: { vehicleId: number }) {
 }
 
 /** Ações da linha de custo: lápis (editar) + lixeira. */
-export function CostRowActions({ cost }: { cost: Cost }) {
+export function CostRowActions({ cost, extraCategories }: { cost: Cost; extraCategories?: string[] }) {
   const [editOpen, setEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -114,7 +120,7 @@ export function CostRowActions({ cost }: { cost: Cost }) {
 
       <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Editar custo">
         <form action={formAction} className="space-y-4">
-          <CostFields cost={cost} />
+          <CostFields cost={cost} extraCategories={extraCategories} />
           <FormError state={state} />
           <div className="flex justify-end gap-2">
             <Button onClick={() => setEditOpen(false)}>Cancelar</Button>
@@ -127,7 +133,7 @@ export function CostRowActions({ cost }: { cost: Cost }) {
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         title="Remover custo?"
-        description={`${COST_CATEGORY[cost.category]} de ${brl(cost.amount)} será removido do custo total do veículo.`}
+        description={`${costLabel(cost.category)} de ${brl(cost.amount)} será removido do custo total do veículo.`}
       >
         <div className="flex justify-end gap-2">
           <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>

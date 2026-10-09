@@ -20,18 +20,25 @@ interface AddIncomeButtonProps {
   sellers: Seller[];
   /** regras da aba Comissões — o tipo escolhido sugere a comissão */
   rules: CommissionRule[];
+  /** tipos de entrada criados em Configurações */
+  extraTypes?: string[];
 }
 
 /**
  * Entrada avulsa (financiamento, despachante, aporte, empréstimo…). Venda de
  * veículo NÃO entra aqui: o botão Venda já lança o recebimento no caixa.
  */
-export function AddIncomeButton({ customers, sellers, rules, chip }: AddIncomeButtonProps & { chip?: boolean }) {
+export function AddIncomeButton({ customers, sellers, rules, chip, extraTypes = [] }: AddIncomeButtonProps & { chip?: boolean }) {
   const [open, setOpen] = useState(false);
   const [typeKey, setTypeKey] = useState("");
   const { state, formAction } = useAction(addIncome, { onSuccess: () => setOpen(false) });
 
-  const type = INCOME_TYPES.find((t) => t.key === typeKey);
+  // tipos criados pelo usuário: o valor do select é o próprio nome, sem comissão sugerida
+  const type =
+    INCOME_TYPES.find((t) => t.key === typeKey) ??
+    (extraTypes.includes(typeKey)
+      ? { key: typeKey, label: typeKey, rule: null, commission: true, example: "Descreva a entrada" }
+      : undefined);
   const suggested = type?.rule ? (rules.find((r) => r.key === type.rule)?.amount ?? null) : null;
   // aporte e empréstimo não são serviço vendido: sem comissão nem vendedor
   const withCommission = type?.commission ?? true;
@@ -64,6 +71,11 @@ export function AddIncomeButton({ customers, sellers, rules, chip }: AddIncomeBu
                 {INCOME_TYPES.map((t) => (
                   <option key={t.key} value={t.key}>
                     {t.label}
+                  </option>
+                ))}
+                {extraTypes.map((label) => (
+                  <option key={label} value={label}>
+                    {label}
                   </option>
                 ))}
               </Select>

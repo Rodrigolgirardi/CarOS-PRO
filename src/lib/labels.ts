@@ -223,3 +223,7 @@ export const INCOME_TYPES: {
   { key: "emprestimo", label: "Empréstimo", rule: null, commission: false, example: "Banco X — 12 parcelas" },
   { key: "outros", label: "Outros", rule: "outros", commission: true, example: "Descreva a entrada" },
 ];
+
+/** Nome da categoria de custo: as fixas pelo mapa; as criadas em Configurações já são o próprio nome. */
+export const costLabel = (category: string): string =>
+  (COST_CATEGORY as Record<string, string>)[category] ?? category;

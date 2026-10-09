@@ -5,18 +5,21 @@ import { LinkButton } from "@/components/ui/button";
 import { AddExpenseButton } from "@/components/vehicles/add-expense-button";
 import { QuickSaleButton } from "@/components/vehicles/quick-sale-button";
 import { commissionRule, listCommissionRules } from "@/lib/queries/commissions";
+import { listCustomTypes } from "@/lib/queries/custom-types";
 import { customerOptions } from "@/lib/queries/customers";
 import { sellerOptions } from "@/lib/queries/sellers";
 import { vehicleOptions } from "@/lib/queries/vehicles";
 
 /** "Atalhos rápidos" do Dashboard (desktop): os mesmos botões da tela de Veículos. */
 export async function QuickShortcuts() {
-  const [vehicles, sellers, customers, rules, saleCommission] = await Promise.all([
+  const [vehicles, sellers, customers, rules, saleCommission, saidas, entradas] = await Promise.all([
     vehicleOptions(),
     sellerOptions(),
     customerOptions(),
     listCommissionRules(),
     commissionRule("venda_carro"),
+    listCustomTypes("saida"),
+    listCustomTypes("entrada"),
   ]);
 
   return (
@@ -27,8 +30,13 @@ export async function QuickShortcuts() {
           <Plus size={14} />
           Adicionar veículo
         </LinkButton>
-        <AddExpenseButton vehicles={vehicles} />
-        <AddIncomeButton customers={customers} sellers={sellers} rules={rules} />
+        <AddExpenseButton vehicles={vehicles} extraCategories={saidas.map((t) => t.label)} />
+        <AddIncomeButton
+          customers={customers}
+          sellers={sellers}
+          rules={rules}
+          extraTypes={entradas.map((t) => t.label)}
+        />
         <PlateLookupButton />
         <QuickSaleButton vehicles={vehicles} sellers={sellers} customers={customers} defaultCommission={saleCommission} />
       </div>

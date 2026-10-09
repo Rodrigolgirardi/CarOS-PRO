@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 import { logout } from "@/lib/actions/settings";
 import { MAIN, MANAGE, type NavItemData } from "@/components/layout/nav-items";
 
-const ALL = [...MAIN, ...MANAGE];
+const ALL = [...MAIN, ...MANAGE].filter((i) => !i.desktopOnly);
 const TAB_HREFS = ["/", "/vendas", "/veiculos", "/financeiro"];
 // nomes curtos só na barra de baixo (a sidebar do computador mantém os originais)
 const TAB_LABELS: Record<string, string> = { "/vendas": "Leads" };

@@ -14,7 +14,16 @@ import { FormError, SubmitButton, useAction } from "@/components/ui/form";
 import { Modal } from "@/components/ui/modal";
 
 /** Lançamento rápido de gasto a partir da lista: escolhe o veículo no próprio modal. */
-export function AddExpenseButton({ vehicles, chip }: { vehicles: VehicleOption[]; chip?: boolean }) {
+export function AddExpenseButton({
+  vehicles,
+  chip,
+  extraCategories = [],
+}: {
+  vehicles: VehicleOption[];
+  chip?: boolean;
+  /** tipos de saída criados em Configurações */
+  extraCategories?: string[];
+}) {
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState(""); // "" | "admin" | id do veículo
   const admin = target === "admin";
@@ -65,6 +74,12 @@ export function AddExpenseButton({ vehicles, chip }: { vehicles: VehicleOption[]
                 <Select name="category" defaultValue="manutencao" required>
                   {Object.entries(COST_CATEGORY).map(([key, label]) => (
                     <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                  {/* tipos criados em Configurações → Entradas e saídas */}
+                  {extraCategories.map((label) => (
+                    <option key={label} value={label}>
                       {label}
                     </option>
                   ))}

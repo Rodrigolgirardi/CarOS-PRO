@@ -22,6 +22,7 @@ import { undoSale } from "@/lib/actions/deals";
 import { brl, pct } from "@/lib/format";
 import { vehicleMetrics, vehicleLabel } from "@/lib/metrics";
 import { commissionRule, listCommissionRules } from "@/lib/queries/commissions";
+import { listCustomTypes } from "@/lib/queries/custom-types";
 import { listVehicles, vehicleCounts, vehicleOptions, type VehicleFilter } from "@/lib/queries/vehicles";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +48,7 @@ export default async function VehiclesPage({
   const valid = TABS.some((t) => t.key === filtro) || LINK_ONLY.includes(filtro ?? "");
   const filter = (valid ? filtro : "cadastrado") as VehicleFilter;
   // tudo em paralelo e uma vez só (os modais de venda/saída/entrada reusam as mesmas listas)
-  const [allRows, counts, vehOptions, sellers, customers, rules, saleCommission] = await Promise.all([
+  const [allRows, counts, vehOptions, sellers, customers, rules, saleCommission, saidas, entradas] = await Promise.all([
     listVehicles(filter),
     vehicleCounts(),
     vehicleOptions(),
@@ -55,6 +56,8 @@ export default async function VehiclesPage({
     customerOptions(),
     listCommissionRules(),
     commissionRule("venda_carro"),
+    listCustomTypes("saida"),
+    listCustomTypes("entrada"),
   ]);
   // busca por marca/modelo/versão e placa (com e sem caracteres especiais)
   const q = busca?.trim() ? norm(busca.trim()) : null;
@@ -94,8 +97,14 @@ export default async function VehiclesPage({
           defaultCommission={saleCommission}
           chip
         />
-        <AddExpenseButton vehicles={vehOptions} chip />
-        <AddIncomeButton customers={customers} sellers={sellers} rules={rules} chip />
+        <AddExpenseButton vehicles={vehOptions} extraCategories={saidas.map((t) => t.label)} chip />
+        <AddIncomeButton
+          customers={customers}
+          sellers={sellers}
+          rules={rules}
+          extraTypes={entradas.map((t) => t.label)}
+          chip
+        />
         <div className="col-span-4 flex justify-center">
           <PlateLookupButton chip />
         </div>

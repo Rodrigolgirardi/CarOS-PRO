@@ -66,13 +66,33 @@ export interface DashboardData {
 }
 
 export async function dashboardData(opts?: { year?: number; monthKey?: string }): Promise<DashboardData> {
-  const stockRows = await listVehicles("estoque");
-  const soldRows = await listVehicles("vendido");
   // mês do resumo (YYYY-MM): por padrão, o mês atual
   const monthKey = opts?.monthKey ?? monthStartISO().slice(0, 7);
   const monthStart = `${monthKey}-01`;
   const lastDay = new Date(Number(monthKey.slice(0, 4)), Number(monthKey.slice(5, 7)), 0).getDate();
   const monthEnd = `${monthKey}-${String(lastDay).padStart(2, "0")}`;
+
+  // tudo que é independente vai ao banco em paralelo (eram ~13 idas em fila — a tela levava segundos)
+  const [stockRows, soldRows, flowAll, flowMonth, docsPending, payables, receivables, recent] = await Promise.all([
+    listVehicles("estoque"),
+    listVehicles("vendido"),
+    cashflow(null),
+    cashflow(monthStart, monthEnd),
+    get<{ n: number }>(
+      `SELECT COUNT(DISTINCT vehicle_id) AS n FROM tasks
+       WHERE status = 'pendente' AND type IN ('documentacao', 'transferencia')`
+    ).then((r) => r!),
+    get<{ total: number; overdue: number }>(
+      `SELECT COALESCE(SUM(amount), 0) AS total,
+              COALESCE(SUM(CASE WHEN due_date < to_char(now() AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD') THEN 1 ELSE 0 END), 0) AS overdue
+       FROM payables WHERE status = 'pendente'`
+    ).then((r) => r!),
+    get<{ n: number; total: number }>(
+      `SELECT COUNT(*) AS n, COALESCE(SUM(amount), 0) AS total
+       FROM receivables WHERE status = 'pendente' AND deal_id IS NOT NULL`
+    ).then((r) => r!),
+    recentEvents(9),
+  ]);
 
   let invested = 0;
   let saleValue = 0;
@@ -137,7 +157,6 @@ export async function dashboardData(opts?: { year?: number; monthKey?: string })
     bucket.revenue += m.priceRef ?? 0;
     bucket.profit += m.profit ?? 0;
   }
-  const flowAll = await cashflow(null);
   for (const cm of flowAll.monthly) {
     const bucket = byMonth.get(cm.key);
     if (bucket) bucket.spend = cm.outflow;
@@ -151,20 +170,6 @@ export async function dashboardData(opts?: { year?: number; monthKey?: string })
     if (m.priceRef != null) revenue += m.priceRef;
     if (m.profit != null) profit += m.profit;
   }
-
-  const docsPending = (await get<{ n: number }>(
-    `SELECT COUNT(DISTINCT vehicle_id) AS n FROM tasks
-     WHERE status = 'pendente' AND type IN ('documentacao', 'transferencia')`
-  ))!;
-  const payables = (await get<{ total: number; overdue: number }>(
-    `SELECT COALESCE(SUM(amount), 0) AS total,
-            COALESCE(SUM(CASE WHEN due_date < to_char(now() AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD') THEN 1 ELSE 0 END), 0) AS overdue
-     FROM payables WHERE status = 'pendente'`
-  ))!;
-  const receivables = (await get<{ n: number; total: number }>(
-    `SELECT COUNT(*) AS n, COALESCE(SUM(amount), 0) AS total
-     FROM receivables WHERE status = 'pendente' AND deal_id IS NOT NULL`
-  ))!;
 
   return {
     stock: {
@@ -182,7 +187,7 @@ export async function dashboardData(opts?: { year?: number; monthKey?: string })
       revenue,
       profit,
       margin: revenue > 0 ? profit / revenue : null,
-      spend: (await cashflow(monthStart, monthEnd)).outflow,
+      spend: flowMonth.outflow,
     },
     monthly,
     attention: {
@@ -194,7 +199,7 @@ export async function dashboardData(opts?: { year?: number; monthKey?: string })
       receivablesPending: receivables.n,
       receivablesPendingTotal: receivables.total,
     },
-    recent: await recentEvents(9),
+    recent,
   };
 }
 

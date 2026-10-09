@@ -40,11 +40,16 @@ export async function createSession(): Promise<string> {
 export async function isValidSession(token: string | null | undefined): Promise<boolean> {
   if (!token) return false;
   const hash = tokenHash(token);
-  const row = await get<{ token_hash: string }>("SELECT token_hash FROM auth_sessions WHERE token_hash = ?", hash);
-  if (row) return true;
-  // sessão antiga (modelo de sessão única) continua valendo até o próximo logout
-  const legacy = await getMeta("auth_session");
-  return legacy != null && legacy === hash;
+  // sessão por dispositivo OU a sessão antiga (modelo único) — uma ida só ao banco
+  const row = await get<{ ok: number }>(
+    `SELECT 1 AS ok FROM auth_sessions WHERE token_hash = ?
+     UNION ALL
+     SELECT 1 AS ok FROM meta WHERE key = 'auth_session' AND value = ?
+     LIMIT 1`,
+    hash,
+    hash
+  );
+  return row != null;
 }
 
 /** Encerra só a sessão deste navegador. */

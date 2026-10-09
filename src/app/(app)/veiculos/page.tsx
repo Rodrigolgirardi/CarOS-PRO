@@ -43,7 +43,16 @@ export default async function VehiclesPage({
   const LINK_ONLY = ["parados", "todos", "estoque", "para_arrumar"];
   const valid = TABS.some((t) => t.key === filtro) || LINK_ONLY.includes(filtro ?? "");
   const filter = (valid ? filtro : "cadastrado") as VehicleFilter;
-  const allRows = await listVehicles(filter);
+  // tudo em paralelo e uma vez só (os modais de venda/saída/entrada reusam as mesmas listas)
+  const [allRows, counts, vehOptions, sellers, customers, rules, saleCommission] = await Promise.all([
+    listVehicles(filter),
+    vehicleCounts(),
+    vehicleOptions(),
+    sellerOptions(),
+    customerOptions(),
+    listCommissionRules(),
+    commissionRule("venda_carro"),
+  ]);
   // busca por marca/modelo/versão e placa (com e sem caracteres especiais)
   const q = busca?.trim() ? norm(busca.trim()) : null;
   const qAlnum = q ? q.replace(/[^a-z0-9]/g, "") : "";
@@ -55,7 +64,6 @@ export default async function VehiclesPage({
         return plate.includes(q) || (qAlnum !== "" && plate.replace(/[^a-z0-9]/g, "").includes(qAlnum));
       })
     : allRows;
-  const counts = await vehicleCounts();
   const tabCount: Record<string, number> = {
     estoque: counts.todos - (counts.vendido ?? 0),
     para_cadastrar: counts.para_cadastrar ?? 0,
@@ -74,14 +82,14 @@ export default async function VehiclesPage({
           <ChipInner icon={Plus} label="Veículo" color="violet" compact />
         </Link>
         <QuickSaleButton
-          vehicles={await vehicleOptions()}
-          sellers={await sellerOptions()}
-          customers={await customerOptions()}
-          defaultCommission={await commissionRule("venda_carro")}
+          vehicles={vehOptions}
+          sellers={sellers}
+          customers={customers}
+          defaultCommission={saleCommission}
           chip
         />
-        <AddExpenseButton vehicles={await vehicleOptions()} chip />
-        <AddIncomeButton customers={await customerOptions()} sellers={await sellerOptions()} rules={await listCommissionRules()} chip />
+        <AddExpenseButton vehicles={vehOptions} chip />
+        <AddIncomeButton customers={customers} sellers={sellers} rules={rules} chip />
         <div className="col-span-4 flex justify-center">
           <PlateLookupButton chip />
         </div>
@@ -91,14 +99,14 @@ export default async function VehiclesPage({
           <Plus size={14} />
           Adicionar veículo
         </LinkButton>
-        <AddExpenseButton vehicles={await vehicleOptions()} />
-        <AddIncomeButton customers={await customerOptions()} sellers={await sellerOptions()} rules={await listCommissionRules()} />
+        <AddExpenseButton vehicles={vehOptions} />
+        <AddIncomeButton customers={customers} sellers={sellers} rules={rules} />
         <PlateLookupButton />
         <QuickSaleButton
-          vehicles={await vehicleOptions()}
-          sellers={await sellerOptions()}
-          customers={await customerOptions()}
-          defaultCommission={await commissionRule("venda_carro")}
+          vehicles={vehOptions}
+          sellers={sellers}
+          customers={customers}
+          defaultCommission={saleCommission}
         />
       </div>
 

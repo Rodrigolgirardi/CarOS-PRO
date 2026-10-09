@@ -58,9 +58,12 @@ export interface DreVehicle {
 }
 
 export async function dreData(): Promise<DreVehicle[]> {
-  const grouped = await all<{ vehicle_id: number; category: CostCategory; total: number }>(
-    "SELECT vehicle_id, category, SUM(amount) AS total FROM costs GROUP BY vehicle_id, category"
-  );
+  const [grouped, vehicles] = await Promise.all([
+    all<{ vehicle_id: number; category: CostCategory; total: number }>(
+      "SELECT vehicle_id, category, SUM(amount) AS total FROM costs GROUP BY vehicle_id, category"
+    ),
+    listVehicles("todos"),
+  ]);
   const costsByVehicle = new Map<number, DreCostLine[]>();
   for (const g of grouped) {
     const list = costsByVehicle.get(g.vehicle_id) ?? [];
@@ -68,7 +71,7 @@ export async function dreData(): Promise<DreVehicle[]> {
     costsByVehicle.set(g.vehicle_id, list);
   }
 
-  return (await listVehicles("todos")).map((v) => {
+  return vehicles.map((v) => {
     const m = vehicleMetrics(v);
     const costs = (costsByVehicle.get(v.id) ?? []).sort((a, b) => b.total - a.total);
     // consignado ainda não vendido: o repasse combinado entra como custo previsto
@@ -92,12 +95,14 @@ export async function dreData(): Promise<DreVehicle[]> {
 }
 
 export async function openTotals(): Promise<{ payables: number; payablesCount: number; receivables: number; receivablesCount: number }> {
-  const p = (await get<{ total: number; n: number }>(
-    "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS n FROM payables WHERE status = 'pendente'"
-  ))!;
-  const r = (await get<{ total: number; n: number }>(
-    "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS n FROM receivables WHERE status = 'pendente'"
-  ))!;
+  const [p, r] = await Promise.all([
+    get<{ total: number; n: number }>(
+      "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS n FROM payables WHERE status = 'pendente'"
+    ).then((x) => x!),
+    get<{ total: number; n: number }>(
+      "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS n FROM receivables WHERE status = 'pendente'"
+    ).then((x) => x!),
+  ]);
   return { payables: p.total, payablesCount: p.n, receivables: r.total, receivablesCount: r.n };
 }
 
@@ -132,51 +137,54 @@ export interface Cashflow {
 /** Fluxo de caixa: entradas = recebimentos; saídas = compras + custos + contas pagas. */
 export async function cashflow(fromISO: string | null, toISO?: string | null): Promise<Cashflow> {
   const VLABEL = "TRIM(v.brand || ' ' || v.model || ' ' || COALESCE(v.version, ''))";
-  const received = await all<{
-    id: number;
-    date: string;
-    description: string;
-    amount: number;
-    vehicle_id: number | null;
-    label: string | null;
-    plate: string | null;
-  }>(
-    `SELECT re.id, re.received_date AS date, re.description, re.amount, d.vehicle_id, ${VLABEL} AS label, v.plate
-     FROM receivables re
-     LEFT JOIN deals d ON d.id = re.deal_id
-     LEFT JOIN vehicles v ON v.id = d.vehicle_id
-     WHERE re.status = 'recebido'`
-  );
-  const purchases = await all<{ id: number; date: string; amount: number; vehicle_id: number; label: string; plate: string | null }>(
-    `SELECT p.id, p.date, p.price AS amount, p.vehicle_id, ${VLABEL} AS label, v.plate
-     FROM purchases p JOIN vehicles v ON v.id = p.vehicle_id`
-  );
-  const costs = await all<{
-    id: number;
-    date: string;
-    amount: number;
-    vehicle_id: number;
-    category: string;
-    description: string | null;
-    label: string;
-    plate: string | null;
-  }>(
-    `SELECT c.id, c.date, c.amount, c.vehicle_id, c.category, c.description, ${VLABEL} AS label, v.plate
-     FROM costs c JOIN vehicles v ON v.id = c.vehicle_id`
-  );
-  const paid = await all<{
-    id: number;
-    date: string;
-    description: string;
-    amount: number;
-    vehicle_id: number | null;
-    label: string | null;
-    plate: string | null;
-  }>(
-    `SELECT pa.id, pa.paid_date AS date, pa.description, pa.amount, pa.vehicle_id, ${VLABEL} AS label, v.plate
-     FROM payables pa LEFT JOIN vehicles v ON v.id = pa.vehicle_id
-     WHERE pa.status = 'pago' AND pa.paid_date IS NOT NULL`
-  );
+  // as quatro fontes do extrato em paralelo: uma ida ao banco em vez de quatro em fila
+  const [received, purchases, costs, paid] = await Promise.all([
+    all<{
+      id: number;
+      date: string;
+      description: string;
+      amount: number;
+      vehicle_id: number | null;
+      label: string | null;
+      plate: string | null;
+    }>(
+      `SELECT re.id, re.received_date AS date, re.description, re.amount, d.vehicle_id, ${VLABEL} AS label, v.plate
+       FROM receivables re
+       LEFT JOIN deals d ON d.id = re.deal_id
+       LEFT JOIN vehicles v ON v.id = d.vehicle_id
+       WHERE re.status = 'recebido'`
+    ),
+    all<{ id: number; date: string; amount: number; vehicle_id: number; label: string; plate: string | null }>(
+      `SELECT p.id, p.date, p.price AS amount, p.vehicle_id, ${VLABEL} AS label, v.plate
+       FROM purchases p JOIN vehicles v ON v.id = p.vehicle_id`
+    ),
+    all<{
+      id: number;
+      date: string;
+      amount: number;
+      vehicle_id: number;
+      category: string;
+      description: string | null;
+      label: string;
+      plate: string | null;
+    }>(
+      `SELECT c.id, c.date, c.amount, c.vehicle_id, c.category, c.description, ${VLABEL} AS label, v.plate
+       FROM costs c JOIN vehicles v ON v.id = c.vehicle_id`
+    ),
+    all<{
+      id: number;
+      date: string;
+      description: string;
+      amount: number;
+      vehicle_id: number | null;
+      label: string | null;
+      plate: string | null;
+    }>(
+      `SELECT pa.id, pa.paid_date AS date, pa.description, pa.amount, pa.vehicle_id, ${VLABEL} AS label, v.plate
+       FROM payables pa LEFT JOIN vehicles v ON v.id = pa.vehicle_id
+       WHERE pa.status = 'pago' AND pa.paid_date IS NOT NULL`
+    ),
+  ]);
 
   const entries: CashEntry[] = [
     ...received.map((r) => ({

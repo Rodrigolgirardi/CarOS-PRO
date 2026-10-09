@@ -69,15 +69,18 @@ export default async function FinancePage({
     ? (sp.status as FinanceStatusFilter)
     : "pendentes";
 
-  const totals = await openTotals();
-  const vehicles = await vehicleOptions({ includeSold: true });
-  const customers = await customerOptions();
+  const [totals, vehicles, customers, stockVehicles] = await Promise.all([
+    openTotals(),
+    vehicleOptions({ includeSold: true }),
+    customerOptions(),
+    vehicleOptions(),
+  ]);
 
   const tabHref = (t: string) => `/financeiro?tab=${t}`;
 
   return (
     <>
-      <PageHeader title="Financeiro" actions={<AddMovementButton vehicles={await vehicleOptions()} />} />
+      <PageHeader title="Financeiro" actions={<AddMovementButton vehicles={stockVehicles} />} />
 
       <LinkTabs
         className="mb-5"

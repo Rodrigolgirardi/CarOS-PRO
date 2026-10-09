@@ -105,18 +105,24 @@ export default async function VehiclePage({
   const label = vehicleLabel(vehicle);
   const sold = vehicle.status === "vendido";
 
-  const costs = await vehicleCosts(id);
-  const photos = await listVehiclePhotos(id);
-  const tasks = await tasksForVehicle(id);
-  const docs = await docsForVehicle(id);
-  const events = await eventsForVehicle(id);
-  const deals = await dealsForVehicle(id);
-  const customers = await customerOptions();
-  const vehicles = await vehicleOptions();
+  // todas as abas da ficha em paralelo: uma ida ao banco em vez de dez em fila
+  const [costs, photos, tasks, docs, events, deals, customers, vehicles, platforms, sellers, saleCommission] =
+    await Promise.all([
+      vehicleCosts(id),
+      listVehiclePhotos(id),
+      tasksForVehicle(id),
+      docsForVehicle(id),
+      eventsForVehicle(id),
+      dealsForVehicle(id),
+      customerOptions(),
+      vehicleOptions(),
+      vehiclePlatforms(id),
+      sellerOptions(),
+      commissionRule("venda_carro"),
+    ]);
 
   const pendingTasks = tasks.filter((t) => t.status === "pendente").length;
   const soldDeal = deals.find((d) => d.stage === "vendido" || d.stage === "entregue");
-  const platforms = await vehiclePlatforms(id);
 
   const sortedTasks = [...tasks].sort((a, b) => {
     const ia = DEFAULT_CHECKLIST.indexOf(a.type);
@@ -169,9 +175,9 @@ export default async function VehiclePage({
                     <NewDealButton vehicles={vehicles} customers={customers} vehicleId={id} label="Lead" />
                     <QuickSaleButton
                       vehicles={vehicles}
-                      sellers={await sellerOptions()}
+                      sellers={sellers}
                       customers={customers}
-                      defaultCommission={await commissionRule("venda_carro")}
+                      defaultCommission={saleCommission}
                       fixedVehicleId={id}
                     />
                     <ShareVehicleButton

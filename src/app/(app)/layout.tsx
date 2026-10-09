@@ -10,12 +10,11 @@ import { getProfile } from "@/lib/queries/profile";
 
 /** Área protegida: com login ativo e sem sessão válida, vai para /login. */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const profile = await getProfile();
+  // perfil e validação da sessão em paralelo: roda em toda navegação, cada ms conta
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  const [profile, sessionOk] = await Promise.all([getProfile(), isValidSession(token)]);
 
-  if (profile.authEnabled) {
-    const token = (await cookies()).get(SESSION_COOKIE)?.value;
-    if (!(await isValidSession(token))) redirect("/login");
-  }
+  if (profile.authEnabled && !sessionOk) redirect("/login");
 
   return (
     <div className="flex h-dvh overflow-hidden">

@@ -151,7 +151,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
 
   return (
     <>
-    <form ref={formRef} action={formAction} className="grid grid-cols-1 items-start gap-6 lg:gap-8 lg:grid-cols-[1fr_300px]">
+    <form ref={formRef} action={formAction} className="grid grid-cols-1 items-start gap-6 lg:gap-8">
       {/* valor FIPE em centavos — preenchido pela consulta de placa */}
       <input type="hidden" name="fipe_price_cents" value={fipePrice ?? ""} />
       <div className="min-w-0 space-y-6 md:space-y-8 lg:space-y-5">
@@ -491,7 +491,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
               />
             </Field>
             {!editing && (
-              <Field label="Custos estimados" hint="Só para a simulação ao lado — não é salvo." mobileHint className="md:col-span-2">
+              <Field label="Custos estimados" hint="Só para a simulação ao lado — não é salvo." mobileHint className="md:col-span-2 lg:hidden">
                 <CurrencyInput onCentsChange={setEstCosts} />
               </Field>
             )}
@@ -507,7 +507,8 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
         </div>
       </div>
 
-      <aside className="top-6 rounded-xl border border-zinc-200 bg-zinc-50/60 p-5 lg:sticky">
+      {/* simulação só no celular: no desktop o espaço fica para os campos */}
+      <aside className="top-6 rounded-xl border border-zinc-200 bg-zinc-50/60 p-5 lg:hidden">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Simulação</h3>
         <dl className="mt-4 space-y-2.5 text-[13px]">
           <div className="flex items-center justify-between gap-3">

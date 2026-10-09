@@ -290,19 +290,20 @@ export default async function VehiclesPage({
                     <Link href={`/veiculos/${v.id}`} className="flex items-center gap-2.5">
                       <VehiclePhoto photo={v.photo} brand={v.brand} size="sm" />
                       <span className="min-w-0">
-                        <span className="flex items-center gap-1.5">
-                          <span className="truncate font-medium text-zinc-900 group-hover:underline group-hover:underline-offset-2">
-                            {v.brand} {v.model}
-                          </span>
+                        <span className="block truncate font-medium text-zinc-900 group-hover:underline group-hover:underline-offset-2">
+                          {v.brand} {v.model}
+                        </span>
+                        {/* embaixo do modelo: Próprio/Consignado + versão */}
+                        <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
                           <span
-                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
+                            className={`shrink-0 rounded-full px-1.5 py-px text-[10px] font-medium ${
                               v.consignado === 1 ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700"
                             }`}
                           >
                             {v.consignado === 1 ? "Consignado" : "Próprio"}
                           </span>
+                          <span className="truncate text-xs text-zinc-500">{v.version ?? "—"}</span>
                         </span>
-                        <span className="block truncate text-xs text-zinc-500">{v.version ?? "—"}</span>
                       </span>
                     </Link>
                   </Td>

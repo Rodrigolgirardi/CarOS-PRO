@@ -33,7 +33,7 @@ export function ExtractSearch({ busca }: { busca: string | null }) {
           const value = e.target.value;
           debounce.current = setTimeout(() => apply(value.trim() || null), 400);
         }}
-        className="h-10 lg:h-8 pl-8 pr-8 text-[13px]"
+        className="h-10 lg:h-8 pl-8 pr-8 text-[13px] lg:pl-8! lg:pr-8!"
       />
       {busca && (
         <button

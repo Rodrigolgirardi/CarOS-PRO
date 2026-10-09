@@ -33,7 +33,7 @@ export function LeadSearch({ busca }: { busca: string | null }) {
           const value = e.target.value;
           debounce.current = setTimeout(() => apply(value.trim() || null), 400);
         }}
-        className="h-9 rounded-xl bg-zinc-50 pl-9 pr-8 text-[13px]"
+        className="h-9 rounded-xl bg-zinc-50 pl-9 pr-8 text-[13px] lg:pl-9! lg:pr-8!"
       />
       {busca && (
         <button

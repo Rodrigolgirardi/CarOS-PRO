@@ -34,7 +34,7 @@ export function VehicleSearch({ busca }: { busca: string | null }) {
           const value = e.target.value;
           debounce.current = setTimeout(() => apply(value.trim() || null), 400);
         }}
-        className="h-10 rounded-md bg-zinc-50 pl-9 pr-8 text-[13px] lg:h-8"
+        className="h-10 rounded-md bg-zinc-50 pl-9 pr-8 text-[13px] lg:h-8 lg:pl-9! lg:pr-8!"
       />
       {busca && (
         <button

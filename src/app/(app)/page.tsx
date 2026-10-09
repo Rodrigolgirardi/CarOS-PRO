@@ -15,6 +15,7 @@ import {
 import { AttentionActivity, buildAttentionItems } from "@/components/dashboard/attention-activity";
 import { MonthPick } from "@/components/dashboard/dashboard-filters";
 import { DesktopDashboard } from "@/components/dashboard/desktop-dashboard";
+import { QuickShortcuts } from "@/components/dashboard/quick-shortcuts";
 import { MonthlySalesChart } from "@/components/dashboard/monthly-chart";
 import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
 import { Badge } from "@/components/ui/badge";
@@ -305,6 +306,7 @@ export default async function DashboardPage({
 
       {/* desktop: layout clássico */}
       <div className="hidden lg:block">
+        <QuickShortcuts />
         <DesktopDashboard data={data} />
       </div>
     </>

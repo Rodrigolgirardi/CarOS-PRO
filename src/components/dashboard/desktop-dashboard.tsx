@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AttentionActivity, buildAttentionItems } from "@/components/dashboard/attention-activity";
 import { MonthlySalesChart } from "@/components/dashboard/monthly-chart";
+import { MonthlyTable } from "@/components/dashboard/monthly-table";
 import { BrandLogo } from "@/components/vehicles/brand-logo";
 import { Stat, StatGrid } from "@/components/ui/stat";
 import { brl, pct } from "@/lib/format";
@@ -21,8 +22,9 @@ export function DesktopDashboard({ data }: { data: DashboardData }) {
     <>
       <section>
         <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Vendas</h2>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_220px]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_250px_220px]">
           <MonthlySalesChart months={data.monthly} />
+          <MonthlyTable months={data.monthly} />
           <StatGrid className="grid-cols-2 lg:grid-cols-1 lg:grid-rows-3">
             <Stat
               label="Faturamento"

@@ -81,9 +81,11 @@ function SaleForm({ deal, onBack, onDone }: { deal: DealRow; onBack: () => void;
         <Field label="Vencimento do saldo" hint="Para o valor que falta receber.">
           <Input type="date" name="balance_due_date" defaultValue={addDaysISO(todayISO(), 7)} />
         </Field>
-        <Field label="Canal de venda">
-          <Select name="channel" defaultValue="">
-            <option value="">—</option>
+        <Field label="Canal de venda" required>
+          <Select name="channel" defaultValue={deal.channel ?? ""} required>
+            <option value="" disabled>
+              Escolha o canal…
+            </option>
             {SALE_CHANNELS.map((c) => (
               <option key={c}>{c}</option>
             ))}

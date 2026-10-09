@@ -29,7 +29,8 @@ interface QuickSaleButtonProps {
 export function QuickSaleButton({ vehicles, sellers, customers, defaultCommission, fixedVehicleId, chip, small }: QuickSaleButtonProps & { chip?: boolean; small?: boolean }) {
   const [open, setOpen] = useState(false);
   const [vehicleId, setVehicleId] = useState(fixedVehicleId != null ? String(fixedVehicleId) : "");
-  const [sellerId, setSellerId] = useState("");
+  // um vendedor só: já vem escolhido; com vários, a escolha é feita na hora
+  const [sellerId, setSellerId] = useState(sellers.length === 1 ? String(sellers[0]!.id) : "");
   const [price, setPrice] = useState<number | null>(null);
   const { state, formAction } = useAction(quickSale, {
     onSuccess: () => setOpen(false),
@@ -144,9 +145,11 @@ export function QuickSaleButton({ vehicles, sellers, customers, defaultCommissio
               ))}
             </Select>
           </Field>
-          <Field label="Canal de venda">
-            <Select name="channel" defaultValue="">
-              <option value="">—</option>
+          <Field label="Canal de venda" required>
+            <Select name="channel" defaultValue={""} required>
+              <option value="" disabled>
+                Escolha o canal…
+              </option>
               {SALE_CHANNELS.map((c) => (
                 <option key={c}>{c}</option>
               ))}

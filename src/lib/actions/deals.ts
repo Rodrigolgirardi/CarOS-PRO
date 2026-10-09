@@ -194,6 +194,7 @@ export async function registerSale(dealId: number, prev: ActionState, formData: 
   if (balance < 0) return err("Entrada + troca somam mais que o valor da venda.");
   if (down > 0 && down > salePrice) return err("A entrada não pode ser maior que o valor da venda.");
   const balanceDue = f.s("balance_due_date") ?? addDaysISO(soldDate, 7);
+  if (!f.s("channel") && !deal.channel) return err("Escolha o canal de venda.");
 
   await tx(async () => {
     await run(
@@ -351,6 +352,7 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
   const salePrice = f.cents("sale_price");
   if (salePrice == null || salePrice <= 0) return err("Informe o valor da venda.");
   const soldDate = f.s("sold_date") ?? todayISO();
+  if (!f.s("channel")) return err("Escolha o canal de venda.");
 
   const sellerId = f.id("seller_id");
   const seller = sellerId ? await get<Seller>("SELECT * FROM sellers WHERE id = ?", sellerId) : undefined;

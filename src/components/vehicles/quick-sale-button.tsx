@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { BadgeCheck } from "lucide-react";
+import { useState, useTransition } from "react";
+import { BadgeCheck, Loader2 } from "lucide-react";
+import { quickCreateCustomer } from "@/lib/actions/customers";
 import { quickSale } from "@/lib/actions/deals";
+import { PhoneInput } from "@/components/ui/phone-input";
+
+const NEW_CUSTOMER = "__novo__";
 import { brl, todayISO } from "@/lib/format";
 import { SALE_CHANNELS } from "@/lib/labels";
 import type { CustomerOption } from "@/lib/queries/customers";
@@ -35,6 +39,30 @@ export function QuickSaleButton({ vehicles, sellers, customers, defaultCommissio
   const { state, formAction } = useAction(quickSale, {
     onSuccess: () => setOpen(false),
   });
+
+  // cliente da venda: obrigatório; o genérico "Venda balcão" não aparece mais
+  const [customerList, setCustomerList] = useState(customers.filter((c) => c.name !== "Venda balcão"));
+  const [customerId, setCustomerId] = useState("");
+  const [newOpen, setNewOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newError, setNewError] = useState<string | null>(null);
+  const [creating, startCreating] = useTransition();
+  const createCustomer = () =>
+    startCreating(async () => {
+      const r = await quickCreateCustomer(newName, newPhone);
+      if (!r.ok || !r.customer) {
+        setNewError(r.error ?? "Não foi possível cadastrar.");
+        return;
+      }
+      const created = r.customer;
+      setCustomerList((list) => [...list, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setCustomerId(String(created.id));
+      setNewName("");
+      setNewPhone("");
+      setNewError(null);
+      setNewOpen(false);
+    });
 
   const vehicle = vehicles.find((v) => String(v.id) === vehicleId);
   const seller = sellers.find((s) => String(s.id) === sellerId);
@@ -135,10 +163,24 @@ export function QuickSaleButton({ vehicles, sellers, customers, defaultCommissio
               <CurrencyInput key={`${sellerId}-${priceCents ?? 0}`} name="commission" defaultCents={commissionSuggested} />
             </Field>
           </div>
-          <Field label="Cliente" hint="Opcional — sem cliente, a venda entra como balcão.">
-            <Select name="customer_id" defaultValue="">
-              <option value="">Venda balcão (sem cliente)</option>
-              {customers.map((c) => (
+          <Field label="Cliente" required>
+            <Select
+              name="customer_id"
+              required
+              value={customerId}
+              onChange={(e) => {
+                if (e.target.value === NEW_CUSTOMER) {
+                  setNewOpen(true); // a escolha só vale depois de cadastrar
+                  return;
+                }
+                setCustomerId(e.target.value);
+              }}
+            >
+              <option value="" disabled>
+                Escolha o cliente…
+              </option>
+              <option value={NEW_CUSTOMER}>+ Novo cliente</option>
+              {customerList.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -163,6 +205,26 @@ export function QuickSaleButton({ vehicles, sellers, customers, defaultCommissio
             </SubmitButton>
           </div>
         </form>
+      </Modal>
+
+      {/* popup do "+ Novo cliente": cadastra e já deixa escolhido na venda */}
+      <Modal open={newOpen} onClose={() => setNewOpen(false)} title="Novo cliente">
+        <div className="space-y-4">
+          <Field label="Nome" required>
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nome do comprador" autoFocus />
+          </Field>
+          <Field label="WhatsApp" required>
+            <PhoneInput value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="(11) 99999-0000" />
+          </Field>
+          {newError && <p className="rounded-md bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{newError}</p>}
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setNewOpen(false)}>Cancelar</Button>
+            <Button variant="primary" disabled={creating} onClick={createCustomer}>
+              {creating && <Loader2 size={13} className="animate-spin" />}
+              Cadastrar cliente
+            </Button>
+          </div>
+        </div>
       </Modal>
     </>
   );

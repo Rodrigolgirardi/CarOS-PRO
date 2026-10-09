@@ -86,3 +86,21 @@ export async function addContact(customerId: number, prev: ActionState, formData
   revalidate();
   return ok("Contato registrado.");
 }
+
+/** Cadastro rápido de comprador (popup "+ Novo cliente" da venda): nome e WhatsApp. */
+export async function quickCreateCustomer(
+  name: string,
+  phone: string
+): Promise<{ ok: boolean; error?: string; customer?: { id: number; name: string; city: string | null } }> {
+  const n = name.trim();
+  const digits = phone.replace(/\D/g, "");
+  if (!n) return { ok: false, error: "Informe o nome do cliente." };
+  if (digits.length < 10) return { ok: false, error: "Informe o WhatsApp com DDD." };
+  const { lastId } = await run(
+    "INSERT INTO customers (name, phone, kind) VALUES (?,?,'comprador')",
+    n,
+    phone.trim()
+  );
+  revalidate();
+  return { ok: true, customer: { id: lastId, name: n, city: null } };
+}

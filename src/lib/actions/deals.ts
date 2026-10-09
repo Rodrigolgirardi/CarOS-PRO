@@ -369,24 +369,12 @@ export async function quickSale(prev: ActionState, formData: FormData): Promise<
   }
   commission ??= 0;
 
-  // sem cliente escolhido, a venda entra num cliente genérico de balcão
-  let customerId = f.id("customer_id");
-  let customerName: string;
-  if (customerId) {
-    const c = await get<Customer>("SELECT * FROM customers WHERE id = ?", customerId);
-    if (!c) return err("Cliente não encontrado.");
-    customerName = c.name;
-  } else {
-    const generic = await get<Customer>("SELECT * FROM customers WHERE name = 'Venda balcão'");
-    customerId =
-      generic?.id ??
-      (
-        await run(
-          "INSERT INTO customers (name, status, notes) VALUES ('Venda balcão', 'vendido', 'Cliente genérico usado pelas vendas rápidas (botão Vendido).')"
-        )
-      ).lastId;
-    customerName = "Venda balcão";
-  }
+  // toda venda tem comprador identificado (não existe mais "venda balcão")
+  const customerId = f.id("customer_id");
+  if (!customerId) return err("Escolha o cliente (ou cadastre um novo).");
+  const buyer = await get<Customer>("SELECT * FROM customers WHERE id = ?", customerId);
+  if (!buyer) return err("Cliente não encontrado.");
+  const customerName = buyer.name;
 
   await tx(async () => {
     const dealId = (await run(

@@ -58,6 +58,7 @@ export function AddCostButton({ vehicleId }: { vehicleId: number }) {
         open={open}
         onClose={() => setOpen(false)}
         title="Adicionar custo"
+        large
         description="O custo entra direto no cálculo do custo total e do lucro."
       >
         <form action={formAction} className="space-y-4">

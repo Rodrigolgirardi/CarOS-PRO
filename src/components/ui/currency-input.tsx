@@ -57,7 +57,7 @@ export function CurrencyInput({
           setValue(formatted);
           onCentsChange?.(parseBRL(formatted));
         }}
-        className={cn(controlCls, "pl-8 tabular-nums")}
+        className={cn(controlCls, "pl-8 tabular-nums lg:pl-8!")}
       />
     </div>
   );

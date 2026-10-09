@@ -13,9 +13,11 @@ interface ModalProps {
   children: React.ReactNode;
   /** largura maior para formulários extensos */
   wide?: boolean;
+  /** só no desktop: card maior e mais espaçado (o celular não muda) */
+  large?: boolean;
 }
 
-export function Modal({ open, onClose, title, description, children, wide }: ModalProps) {
+export function Modal({ open, onClose, title, description, children, wide, large }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -44,12 +46,13 @@ export function Modal({ open, onClose, title, description, children, wide }: Mod
         aria-label={title}
         className={cn(
           "w-full animate-[pop-in_.16s_ease-out] rounded-2xl border border-zinc-200 bg-white shadow-xl shadow-black/10",
-          wide ? "max-w-2xl" : "max-w-md"
+          wide ? "max-w-2xl" : "max-w-md",
+          large && "lg:max-w-2xl"
         )}
       >
-        <div className="flex items-start justify-between gap-4 px-5 pb-0 pt-4">
+        <div className={cn("flex items-start justify-between gap-4 px-5 pb-0 pt-4", large && "lg:px-7 lg:pt-6")}>
           <div>
-            <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
+            <h2 className={cn("text-sm font-semibold text-zinc-900", large && "lg:text-base")}>{title}</h2>
             {description && <p className="mt-0.5 text-[13px] text-zinc-500">{description}</p>}
           </div>
           <button
@@ -61,7 +64,7 @@ export function Modal({ open, onClose, title, description, children, wide }: Mod
             <X size={15} />
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className={cn("p-5", large && "lg:px-7 lg:pb-7 lg:pt-6")}>{children}</div>
       </div>
     </div>,
     document.body

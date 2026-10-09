@@ -112,6 +112,12 @@ export interface ConsignmentRow {
   consignor_value: number | null;
   consignado_date: string | null;
   created_at: string;
+  plate: string | null;
+  cpf: string | null;
+  email: string | null;
+  sale_price: number | null; // preço anunciado
+  sold_price: number | null; // valor da venda, se já vendido
+  sold_date: string | null;
 }
 
 /** Aba Consignantes (desktop): uma linha por carro deixado na loja, do mais recente ao mais antigo. */
@@ -123,8 +129,11 @@ export async function listConsignments(): Promise<ConsignmentRow[]> {
               (SELECT cu.phone FROM customers cu
                 WHERE lower(trim(cu.name)) = lower(trim(split_part(COALESCE(v.consignor, ''), '—', 1)))
                 ORDER BY cu.id DESC LIMIT 1)) AS phone,
-            v.consignor_value, v.consignado_date, v.created_at
+            v.consignor_value, v.consignado_date, v.created_at,
+            v.plate, v.origin_cpf AS cpf, v.origin_email AS email, v.sale_price,
+            sd.sale_price AS sold_price, sd.sold_date
        FROM vehicles v
+       LEFT JOIN deals sd ON sd.vehicle_id = v.id AND sd.stage IN ('vendido', 'entregue')
       WHERE v.consignado = 1
       ORDER BY COALESCE(v.consignado_date, v.created_at) DESC, v.id DESC`
   );

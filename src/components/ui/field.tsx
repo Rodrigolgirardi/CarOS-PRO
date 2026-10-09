@@ -7,11 +7,13 @@ interface FieldProps {
   label: string;
   required?: boolean;
   hint?: string;
+  /** dica só no celular (no desktop a tela fica mais enxuta) */
+  mobileHint?: boolean;
   className?: string;
   children: React.ReactNode;
 }
 
-export function Field({ label, required, hint, className, children }: FieldProps) {
+export function Field({ label, required, hint, mobileHint, className, children }: FieldProps) {
   return (
     <label className={cn("block min-w-0", className)}>
       <span className="mb-1.5 block text-xs font-medium text-zinc-600">
@@ -19,7 +21,7 @@ export function Field({ label, required, hint, className, children }: FieldProps
         {required && <span className="text-zinc-400"> *</span>}
       </span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-zinc-400">{hint}</span>}
+      {hint && <span className={cn("mt-1 block text-xs text-zinc-400", mobileHint && "lg:hidden")}>{hint}</span>}
     </label>
   );
 }

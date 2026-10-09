@@ -154,11 +154,11 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
     <form ref={formRef} action={formAction} className="grid grid-cols-1 items-start gap-6 lg:gap-8 lg:grid-cols-[1fr_300px]">
       {/* valor FIPE em centavos — preenchido pela consulta de placa */}
       <input type="hidden" name="fipe_price_cents" value={fipePrice ?? ""} />
-      <div className="min-w-0 space-y-6 md:space-y-8">
+      <div className="min-w-0 space-y-6 md:space-y-8 lg:space-y-5">
         <section>
           <SectionTitle>Veículo</SectionTitle>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-4">
-            <Field label="Placa" className="md:col-span-2" hint="Busque para preencher os dados do veículo.">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-4 lg:grid-cols-8 lg:gap-x-3 lg:gap-y-3">
+            <Field label="Placa" className="md:col-span-2" hint="Busque para preencher os dados do veículo." mobileHint>
               <div className="flex gap-1.5">
                 <Input
                   ref={plateRef}
@@ -215,7 +215,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
             <Field label="Quilometragem" className="col-span-2">
               <Input name="km" defaultValue={vehicle?.km ?? ""} inputMode="numeric" placeholder="45.000" />
             </Field>
-            <Field label="Foto" className="col-span-2">
+            <Field label="Foto" className="col-span-2 lg:col-span-4">
               <div className="flex items-center gap-3">
                 {editing && <VehiclePhoto photo={vehicle.photo} size="sm" />}
                 <input
@@ -356,7 +356,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
             Entrada
           </SectionTitle>
           <input type="hidden" name="entry_type" value={entryType} />
-          <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-3 lg:grid-cols-5 lg:gap-x-3 lg:gap-y-3">
             <Field label="Tipo de entrada" className="col-span-2 md:col-span-1">
               <Select
                 value={entryType}
@@ -396,6 +396,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                 <Field
                   label="Repasse combinado"
                   hint="Quanto o dono recebe quando o carro vender — vira custo só na venda."
+                  mobileHint
                 >
                   <CurrencyInput
                     name="consignor_value"
@@ -403,7 +404,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                     onCentsChange={setPurchase}
                   />
                 </Field>
-                <Field label="Data de entrada" hint="Quando o carro chegou na loja.">
+                <Field label="Data de entrada" hint="Quando o carro chegou na loja." mobileHint>
                   <Input type="date" name="consignado_date" defaultValue={vehicle?.consignado_date ?? todayISO()} />
                 </Field>
               </>
@@ -481,7 +482,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
               />
             </Field>
             {!editing && (
-              <Field label="Custos estimados" hint="Só para a simulação ao lado — não é salvo." className="md:col-span-2">
+              <Field label="Custos estimados" hint="Só para a simulação ao lado — não é salvo." mobileHint className="md:col-span-2">
                 <CurrencyInput onCentsChange={setEstCosts} />
               </Field>
             )}

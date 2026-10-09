@@ -1,5 +1,6 @@
 "use client";
 
+import { CpfCnpjInput } from "@/components/ui/cpf-cnpj-input";
 import { useState, useTransition } from "react";
 import { MessageSquarePlus, Pencil, Plus, Trash2 } from "lucide-react";
 import { addContact, deleteCustomer, saveCustomer, setCustomerStatus } from "@/lib/actions/customers";
@@ -30,7 +31,7 @@ export function CustomerFields({ customer }: { customer?: Customer }) {
       </div>
       <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
         <Field label="CPF/CNPJ">
-          <Input name="cpf_cnpj" defaultValue={customer?.cpf_cnpj ?? ""} inputMode="numeric" />
+          <CpfCnpjInput name="cpf_cnpj" defaultValue={customer?.cpf_cnpj} />
         </Field>
         <Field label="Telefone">
           <PhoneInput name="phone" defaultValue={customer?.phone ?? ""} placeholder="(11) 99999-0000" />

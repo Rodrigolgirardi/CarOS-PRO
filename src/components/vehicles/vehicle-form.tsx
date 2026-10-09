@@ -1,5 +1,6 @@
 "use client";
 
+import { CpfCnpjInput } from "@/components/ui/cpf-cnpj-input";
 import { useRef, useState, useTransition } from "react";
 import { ChevronRight, Loader2, Search, ShieldAlert, ShieldCheck } from "lucide-react";
 import { lookupPlate, savePlateApiToken } from "@/lib/actions/plate";
@@ -425,7 +426,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
             {/* contato de quem vendeu/consignou — aparece na aba Dados do veículo */}
             <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-3">
               <Field label="CPF">
-                <Input name="origin_cpf" defaultValue={vehicle?.origin_cpf ?? ""} placeholder="000.000.000-00" />
+                <CpfCnpjInput name="origin_cpf" defaultValue={vehicle?.origin_cpf} />
               </Field>
               <Field label="WhatsApp">
                 <PhoneInput name="origin_whatsapp" defaultValue={vehicle?.origin_whatsapp ?? ""} placeholder="(11) 99999-0000" />

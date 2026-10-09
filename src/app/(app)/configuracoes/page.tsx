@@ -1,3 +1,5 @@
+import { AddRuleButton } from "@/components/commissions/add-rule-button";
+import { CommissionRuleRow } from "@/components/commissions/rule-row";
 import { PageHeader } from "@/components/layout/page-header";
 import { PlateCachePanel } from "@/components/plate-cache/plate-cache-panel";
 import { AccessForm } from "@/components/settings/access-form";
@@ -5,6 +7,7 @@ import { CustomTypesPanel } from "@/components/settings/custom-types-panel";
 import { FeedbackPanel } from "@/components/settings/feedback-panel";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { LinkTabs } from "@/components/ui/tabs";
+import { listCommissionRules } from "@/lib/queries/commissions";
 import { getProfile } from "@/lib/queries/profile";
 
 export const dynamic = "force-dynamic";
@@ -19,14 +22,15 @@ const BASE_TABS = [
 // desktop ganha as abas de tipos personalizados e feedback
 const DESKTOP_TABS = [
   ...BASE_TABS,
+  { key: "comissoes", label: "Comissões", href: "/configuracoes?tab=comissoes" },
   { key: "tipos", label: "Entradas e saídas", href: "/configuracoes?tab=tipos" },
   { key: "feedback", label: "Feedback", href: "/configuracoes?tab=feedback" },
 ];
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const { tab: tabParam } = await searchParams;
-  const tab = ["seguranca", "banco", "tipos", "feedback"].includes(tabParam ?? "") ? tabParam! : "perfil";
-  const profile = await getProfile();
+  const tab = ["seguranca", "banco", "comissoes", "tipos", "feedback"].includes(tabParam ?? "") ? tabParam! : "perfil";
+  const [profile, rules] = await Promise.all([getProfile(), listCommissionRules()]);
 
   return (
     <>
@@ -39,6 +43,21 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       </div>
       {tab === "banco" ? (
         <PlateCachePanel />
+      ) : tab === "comissoes" ? (
+        <section className="max-w-2xl">
+          <div className="mb-2.5 flex items-center justify-between gap-3">
+            <h2 className="text-[13px] font-semibold text-zinc-900">Comissões padrão por operação</h2>
+            <AddRuleButton />
+          </div>
+          <div className="divide-y divide-zinc-100 rounded-2xl border border-zinc-200 bg-white shadow-card">
+            {rules.map((rule) => (
+              <CommissionRuleRow key={rule.key} rule={rule} />
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-zinc-500">
+            Valor sugerido ao registrar uma venda ou entrada. Vendedor com comissão própria (em Vendedores) tem prioridade.
+          </p>
+        </section>
       ) : tab === "tipos" ? (
         <CustomTypesPanel />
       ) : tab === "feedback" ? (

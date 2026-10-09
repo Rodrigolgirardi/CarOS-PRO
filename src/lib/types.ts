@@ -155,6 +155,8 @@ export interface Seller {
   name: string;
   commission_pct: number | null; // % padrão sobre o valor da venda
   commission_fixed: number | null; // ou valor fixo em centavos por venda
+  phone: string | null; // WhatsApp
+  start_date: string | null; // quando entrou na loja (YYYY-MM-DD)
   created_at: string;
 }
 

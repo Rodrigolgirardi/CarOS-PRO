@@ -10,6 +10,8 @@ import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select } from "@/components/ui/field";
 import { FormError, SubmitButton, useAction } from "@/components/ui/form";
 import { Modal } from "@/components/ui/modal";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { todayISO } from "@/lib/format";
 
 function SellerFields({ seller }: { seller?: Seller }) {
   const [type, setType] = useState<"pct" | "fixed">(seller?.commission_fixed != null ? "fixed" : "pct");
@@ -18,6 +20,14 @@ function SellerFields({ seller }: { seller?: Seller }) {
       <Field label="Nome" required>
         <Input name="name" defaultValue={seller?.name ?? ""} placeholder="Carlos Andrade" required autoFocus={!seller} />
       </Field>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="WhatsApp">
+          <PhoneInput name="phone" defaultValue={seller?.phone ?? ""} placeholder="(11) 99999-0000" />
+        </Field>
+        <Field label="Data de entrada" hint="Quando começou na loja.">
+          <Input type="date" name="start_date" defaultValue={seller?.start_date ?? seller?.created_at?.slice(0, 10) ?? todayISO()} />
+        </Field>
+      </div>
       <div className="grid grid-cols-[150px_1fr] gap-4">
         <Field label="Tipo de comissão">
           <Select name="commission_type" value={type} onChange={(e) => setType(e.target.value as "pct" | "fixed")}>

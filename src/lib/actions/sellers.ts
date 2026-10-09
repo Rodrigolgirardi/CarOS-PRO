@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { get, run } from "../db";
+import { todayISO } from "../format";
 import type { ActionState, Seller } from "../types";
 import { err, fields, ok } from "./util";
 
@@ -26,7 +27,14 @@ export async function createSeller(prev: ActionState, formData: FormData): Promi
   const name = f.s("name");
   if (!name) return err("Informe o nome do vendedor.");
   const { pct, fixed } = parseCommission(f);
-  await run("INSERT INTO sellers (name, commission_pct, commission_fixed) VALUES (?, ?, ?)", name, pct, fixed);
+  await run(
+    "INSERT INTO sellers (name, commission_pct, commission_fixed, phone, start_date) VALUES (?, ?, ?, ?, ?)",
+    name,
+    pct,
+    fixed,
+    f.s("phone"),
+    f.s("start_date") ?? todayISO()
+  );
   revalidate();
   return ok("Vendedor cadastrado.");
 }
@@ -38,7 +46,15 @@ export async function updateSeller(id: number, prev: ActionState, formData: Form
   const name = f.s("name");
   if (!name) return err("Informe o nome do vendedor.");
   const { pct, fixed } = parseCommission(f);
-  await run("UPDATE sellers SET name = ?, commission_pct = ?, commission_fixed = ? WHERE id = ?", name, pct, fixed, id);
+  await run(
+    "UPDATE sellers SET name = ?, commission_pct = ?, commission_fixed = ?, phone = ?, start_date = ? WHERE id = ?",
+    name,
+    pct,
+    fixed,
+    f.s("phone"),
+    f.s("start_date") ?? seller.start_date,
+    id
+  );
   revalidate();
   return ok("Vendedor atualizado.");
 }

@@ -74,7 +74,8 @@ export default async function VehiclesPage({
   };
 
   return (
-    <>
+    // desktop: a página usa a largura do monitor (a tabela cabe sem rolagem lateral)
+    <div className="page-wide">
       <PageHeader title="Veículos" description="Seu estoque, do jeito que ele está agora." />
 
       {/* celular: chips (visual das Ações rápidas) · desktop: botões clássicos */}
@@ -285,7 +286,7 @@ export default async function VehiclesPage({
               const label = vehicleLabel(v);
               return (
                 <Tr key={v.id}>
-                  <Td className="max-w-[210px]">
+                  <Td className="max-w-[280px]">
                     <Link href={`/veiculos/${v.id}`} className="flex items-center gap-2.5">
                       <VehiclePhoto photo={v.photo} brand={v.brand} size="sm" />
                       <span className="min-w-0">
@@ -362,6 +363,6 @@ export default async function VehiclesPage({
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }

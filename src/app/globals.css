@@ -149,3 +149,12 @@ html.dark img.brand-logo {
   filter: brightness(0) invert(1);
   opacity: 0.85;
 }
+
+/* página larga (desktop): escapa do limite de 1200px do conteúdo e ocupa o monitor
+   — 304px = barra lateral (224) + respiros (64) + barra de rolagem (16) */
+@media (width >= 64rem) {
+  .page-wide {
+    width: min(1600px, calc(100vw - 304px));
+    margin-left: calc(50% - min(800px, calc(50vw - 152px)));
+  }
+}

@@ -343,7 +343,8 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                   <p className="px-4 pb-1 pt-2.5 text-[11px] font-medium uppercase tracking-wide text-zinc-400">
                     Tabela FIPE — clique numa versão para usar como preço de venda
                   </p>
-                  <div className="divide-y divide-zinc-100">
+                  {/* desktop: 2 versões por linha */}
+                  <div className="divide-y divide-zinc-100 lg:grid lg:grid-cols-2 lg:divide-y-0">
                     {info.fipe.map((f, i) => (
                       <button
                         type="button"
@@ -354,7 +355,9 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                           setFipePrice(f.valueCents);
                           toast(`Preço de venda preenchido com a FIPE: ${f.valueText}`);
                         }}
-                        className="flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-[13px] transition-colors hover:bg-zinc-50"
+                        className={`flex w-full items-center justify-between gap-3 border-zinc-100 px-4 py-2 text-left text-[13px] transition-colors hover:bg-zinc-50 ${
+                          i % 2 === 0 ? "lg:border-r" : ""
+                        } ${i < info.fipe.length - (info.fipe.length % 2 === 0 ? 2 : 1) ? "lg:border-b" : ""}`}
                       >
                         <span className="flex min-w-0 items-center gap-2">
                           <span className="truncate text-zinc-700">{f.model}</span>

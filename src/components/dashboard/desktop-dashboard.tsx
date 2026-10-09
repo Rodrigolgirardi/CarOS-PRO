@@ -61,24 +61,6 @@ export function DesktopDashboard({ data }: { data: DashboardData }) {
             <p className="px-4 py-6 text-[13px] text-zinc-500">Nenhum veículo em estoque.</p>
           ) : (
             <>
-              {/* distribuição do valor do estoque: uma fatia por carro, tom sobre tom (mais escuro = maior valor) */}
-              {stock.invested > 0 && (
-                <div className="border-b border-zinc-100 px-4 py-3">
-                  <div className="flex h-2.5 items-stretch gap-[2px]">
-                    {stock.vehicles.map((v, i) => (
-                      <div
-                        key={v.id}
-                        className={`min-w-[3px] rounded-[2px] first:rounded-l-full last:rounded-r-full ${stockShade(i)}`}
-                        style={{ width: `${(v.invested / stock.invested) * 100}%` }}
-                        title={`${v.label} — ${brl(v.invested)} (${pct(v.invested / stock.invested, 0)} do estoque)`}
-                      />
-                    ))}
-                  </div>
-                  <p className="mt-1.5 text-[11px] text-zinc-500">
-                    Cada fatia é um carro, na ordem da lista — tom mais escuro, maior valor.
-                  </p>
-                </div>
-              )}
               {/* 2 carros por linha */}
               <div className="grid grid-cols-2">
                 {stock.vehicles.map((v, i) => {

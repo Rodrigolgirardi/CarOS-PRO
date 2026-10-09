@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { NewTaskButton, TaskCard } from "@/components/my-tasks/my-tasks";
 import { PRIORITY } from "@/components/my-tasks/priority";
 import { listMyTasks, type MyTaskPriority } from "@/lib/queries/my-tasks";
+import { vehicleOptions } from "@/lib/queries/vehicles";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Minhas tarefas" };
@@ -45,7 +46,7 @@ function Column({
 
 /** Minhas tarefas: quadro pessoal estilo kanban — A fazer (por prioridade) e Feitos. */
 export default async function MyTasksPage() {
-  const { todo, done } = await listMyTasks();
+  const [{ todo, done }, vehicles] = await Promise.all([listMyTasks(), vehicleOptions({ includeSold: true })]);
   const byPriority = (p: MyTaskPriority) => todo.filter((t) => t.priority === p).length;
 
   return (
@@ -53,7 +54,7 @@ export default async function MyTasksPage() {
       <PageHeader
         title="Minhas tarefas"
         description="Suas missões do dia a dia. Marque o check quando terminar — a tarefa vai para Feitos."
-        actions={<NewTaskButton />}
+        actions={<NewTaskButton vehicles={vehicles} />}
       />
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         <Column
@@ -73,12 +74,12 @@ export default async function MyTasksPage() {
           }
         >
           {todo.map((t) => (
-            <TaskCard key={t.id} task={t} />
+            <TaskCard key={t.id} task={t} vehicles={vehicles} />
           ))}
         </Column>
         <Column title="Feitos" icon={CheckCheck} count={done.length} empty="As tarefas concluídas aparecem aqui.">
           {done.map((t) => (
-            <TaskCard key={t.id} task={t} />
+            <TaskCard key={t.id} task={t} vehicles={vehicles} />
           ))}
         </Column>
       </div>

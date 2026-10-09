@@ -16,12 +16,27 @@ export async function saveMyTask(id: number | null, prev: ActionState, formData:
   if (!title) return err("Escreva a tarefa.");
   if (!PRIORITIES.includes(priority)) return err("Escolha a prioridade.");
 
+  const vehicleId = f.id("vehicle_id"); // carro vinculado (opcional)
+
   if (id == null) {
-    await run("INSERT INTO my_tasks (title, notes, priority) VALUES (?,?,?)", title, f.s("notes"), priority);
+    await run(
+      "INSERT INTO my_tasks (title, notes, priority, vehicle_id) VALUES (?,?,?,?)",
+      title,
+      f.s("notes"),
+      priority,
+      vehicleId
+    );
     revalidate();
     return ok("Tarefa criada.");
   }
-  await run("UPDATE my_tasks SET title = ?, notes = ?, priority = ? WHERE id = ?", title, f.s("notes"), priority, id);
+  await run(
+    "UPDATE my_tasks SET title = ?, notes = ?, priority = ?, vehicle_id = ? WHERE id = ?",
+    title,
+    f.s("notes"),
+    priority,
+    vehicleId,
+    id
+  );
   revalidate();
   return ok("Tarefa atualizada.");
 }

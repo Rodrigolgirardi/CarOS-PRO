@@ -286,6 +286,7 @@ ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS origin_cpf TEXT;
 ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS origin_whatsapp TEXT;
 ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS origin_email TEXT;
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS source TEXT;
+ALTER TABLE my_tasks ADD COLUMN IF NOT EXISTS vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE SET NULL;
 `;
 
 declare global {

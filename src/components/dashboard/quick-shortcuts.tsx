@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { NewTaskButton } from "@/components/my-tasks/my-tasks";
 import { AddIncomeButton } from "@/components/finance/add-income-button";
 import { PlateLookupButton } from "@/components/plate-cache/plate-lookup-button";
 import { LinkButton } from "@/components/ui/button";
@@ -38,6 +39,7 @@ export async function QuickShortcuts() {
           extraTypes={entradas.map((t) => t.label)}
         />
         <PlateLookupButton />
+        <NewTaskButton vehicles={vehicles} variant="secondary" />
         <QuickSaleButton vehicles={vehicles} sellers={sellers} customers={customers} defaultCommission={saleCommission} />
       </div>
     </section>

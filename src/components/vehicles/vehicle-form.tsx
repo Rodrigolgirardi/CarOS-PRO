@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Loader2, Search, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ChevronRight, Loader2, Search, ShieldAlert, ShieldCheck } from "lucide-react";
 import { lookupPlate, savePlateApiToken } from "@/lib/actions/plate";
 import type { PlateData } from "@/lib/plate-lookup";
 import { createPurchase, updateVehicle } from "@/lib/actions/vehicles";
@@ -33,6 +33,29 @@ function SectionTitle({ children, hint }: { children: React.ReactNode; hint?: st
   );
 }
 
+// Bloco recolhível de campos opcionais. Usa <details> puro: mesmo fechado, os campos
+// continuam no DOM e são enviados no submit. O open é sincronizado com estado só para
+// podermos abrir o bloco por código (busca de placa / edição com campos preenchidos).
+function MoreDetails({
+  open,
+  onOpenChange,
+  children,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <details className="group mt-4" open={open} onToggle={(e) => onOpenChange(e.currentTarget.open)}>
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-zinc-600 transition-colors hover:text-zinc-900 [&::-webkit-details-marker]:hidden">
+        <ChevronRight size={14} className="text-zinc-400 transition-transform group-open:rotate-90" />
+        Mais detalhes (opcional)
+      </summary>
+      <div className="mt-3">{children}</div>
+    </details>
+  );
+}
+
 export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
   const editing = !!vehicle;
   const action = editing ? updateVehicle.bind(null, vehicle.id) : createPurchase;
@@ -54,6 +77,25 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
   const [brand, setBrand] = useState(vehicle?.brand ?? "");
   const [info, setInfo] = useState<PlateData | null>(null); // resultado extra da consulta de placa
   const [fipePrice, setFipePrice] = useState<number | null>(vehicle?.fipe_price ?? null);
+
+  // "Mais detalhes" começa aberto quando o veículo em edição já tem algum campo opcional preenchido
+  const [vehicleMoreOpen, setVehicleMoreOpen] = useState(
+    !!vehicle &&
+      !!(
+        vehicle.color ||
+        vehicle.transmission ||
+        vehicle.fuel ||
+        vehicle.renavam ||
+        vehicle.chassis ||
+        vehicle.laudo ||
+        vehicle.blindado != null ||
+        vehicle.leilao ||
+        vehicle.notes
+      )
+  );
+  const [entryMoreOpen, setEntryMoreOpen] = useState(
+    !!vehicle && !!(vehicle.origin_cpf || vehicle.origin_whatsapp || vehicle.origin_email || vehicle.purchase_notes)
+  );
 
   // consulta de placa (preenche marca/modelo/versão/ano/cor/combustível)
   const formRef = useRef<HTMLFormElement>(null);
@@ -84,6 +126,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
       set("color", d.color);
       set("fuel", d.fuel);
       set("chassis", d.chassis);
+      setVehicleMoreOpen(true); // cor/combustível/chassi ficam no bloco "Mais detalhes" — abre para mostrar o que foi preenchido
       setInfo(d);
       if (d.fipe[0]?.valueCents != null) setFipePrice(d.fipe[0].valueCents);
       toast(
@@ -135,15 +178,6 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                 </Button>
               </div>
             </Field>
-            <Field label="Chassi" className="md:col-span-2">
-              <Input
-                name="chassis"
-                defaultValue={vehicle?.chassis ?? ""}
-                placeholder="9BWZZZ377VT004251"
-                maxLength={17}
-                className="uppercase"
-              />
-            </Field>
             <Field label="Marca" required className="md:col-span-2">
               <div className="relative">
                 <Input
@@ -177,59 +211,10 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
             <Field label="Ano modelo">
               <Input name="year_model" defaultValue={vehicle?.year_model ?? ""} inputMode="numeric" placeholder="2022" />
             </Field>
-            <Field label="Quilometragem">
+            <Field label="Quilometragem" className="col-span-2">
               <Input name="km" defaultValue={vehicle?.km ?? ""} inputMode="numeric" placeholder="45.000" />
             </Field>
-            <Field label="Cor">
-              <Input name="color" defaultValue={vehicle?.color ?? ""} placeholder="Prata" />
-            </Field>
-            <Field label="Câmbio">
-              <Select name="transmission" defaultValue={vehicle?.transmission ?? ""}>
-                <option value="">—</option>
-                {TRANSMISSION_OPTIONS.map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Combustível">
-              <Select name="fuel" defaultValue={vehicle?.fuel ?? ""}>
-                <option value="">—</option>
-                {FUEL_OPTIONS.map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Renavam">
-              <Input name="renavam" defaultValue={vehicle?.renavam ?? ""} inputMode="numeric" />
-            </Field>
-            <Field label="Laudo cautelar">
-              <Select name="laudo" defaultValue={vehicle?.laudo ?? ""}>
-                <option value="">—</option>
-                {Object.entries(VEHICLE_LAUDO).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Blindado">
-              <Select name="blindado" defaultValue={vehicle?.blindado == null ? "" : String(vehicle.blindado)}>
-                <option value="">—</option>
-                <option value="1">Sim</option>
-                <option value="0">Não</option>
-              </Select>
-            </Field>
-            <Field label="Passagem por leilão">
-              <Select name="leilao" defaultValue={vehicle?.leilao ?? ""}>
-                <option value="">—</option>
-                {Object.entries(VEHICLE_LEILAO).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Foto" className="md:col-span-2">
+            <Field label="Foto" className="col-span-2">
               <div className="flex items-center gap-3">
                 {editing && <VehiclePhoto photo={vehicle.photo} size="sm" />}
                 <input
@@ -240,10 +225,73 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                 />
               </div>
             </Field>
-            <Field label="Observações" className="col-span-2 md:col-span-4">
-              <Textarea name="notes" defaultValue={vehicle?.notes ?? ""} placeholder="Único dono, revisões em dia…" />
-            </Field>
           </div>
+
+          <MoreDetails open={vehicleMoreOpen} onOpenChange={setVehicleMoreOpen}>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-4">
+              <Field label="Cor">
+                <Input name="color" defaultValue={vehicle?.color ?? ""} placeholder="Prata" />
+              </Field>
+              <Field label="Câmbio">
+                <Select name="transmission" defaultValue={vehicle?.transmission ?? ""}>
+                  <option value="">—</option>
+                  {TRANSMISSION_OPTIONS.map((o) => (
+                    <option key={o}>{o}</option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Combustível">
+                <Select name="fuel" defaultValue={vehicle?.fuel ?? ""}>
+                  <option value="">—</option>
+                  {FUEL_OPTIONS.map((o) => (
+                    <option key={o}>{o}</option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Renavam">
+                <Input name="renavam" defaultValue={vehicle?.renavam ?? ""} inputMode="numeric" />
+              </Field>
+              <Field label="Chassi" className="md:col-span-2">
+                <Input
+                  name="chassis"
+                  defaultValue={vehicle?.chassis ?? ""}
+                  placeholder="9BWZZZ377VT004251"
+                  maxLength={17}
+                  className="uppercase"
+                />
+              </Field>
+              <Field label="Laudo cautelar">
+                <Select name="laudo" defaultValue={vehicle?.laudo ?? ""}>
+                  <option value="">—</option>
+                  {Object.entries(VEHICLE_LAUDO).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Blindado">
+                <Select name="blindado" defaultValue={vehicle?.blindado == null ? "" : String(vehicle.blindado)}>
+                  <option value="">—</option>
+                  <option value="1">Sim</option>
+                  <option value="0">Não</option>
+                </Select>
+              </Field>
+              <Field label="Passagem por leilão">
+                <Select name="leilao" defaultValue={vehicle?.leilao ?? ""}>
+                  <option value="">—</option>
+                  {Object.entries(VEHICLE_LEILAO).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Observações" className="col-span-2 md:col-span-3">
+                <Textarea name="notes" defaultValue={vehicle?.notes ?? ""} placeholder="Único dono, revisões em dia…" />
+              </Field>
+            </div>
+          </MoreDetails>
 
           {info && (
             <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-white">
@@ -369,30 +417,37 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                     ))}
                   </Select>
                 </Field>
-                <Field label="Observações da compra" className="col-span-2 md:col-span-3">
-                  <Textarea name="purchase_notes" defaultValue={vehicle?.purchase_notes ?? ""} />
-                </Field>
               </>
             )}
-            {/* contato de quem vendeu/consignou — aparece na aba Dados do veículo */}
-            <Field label="CPF">
-              <Input name="origin_cpf" defaultValue={vehicle?.origin_cpf ?? ""} placeholder="000.000.000-00" />
-            </Field>
-            <Field label="WhatsApp">
-              <PhoneInput name="origin_whatsapp" defaultValue={vehicle?.origin_whatsapp ?? ""} placeholder="(11) 99999-0000" />
-            </Field>
-            <Field label="E-mail">
-              <Input type="email" name="origin_email" defaultValue={vehicle?.origin_email ?? ""} placeholder="nome@email.com" />
-            </Field>
-            <Field label="Contrato">
-              <input
-                type="file"
-                name="contract"
-                accept="application/pdf,image/*"
-                className="w-full text-xs text-zinc-500 file:mr-3 file:h-7 file:cursor-pointer file:rounded-md file:border file:border-zinc-200 file:bg-white file:px-2.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-50"
-              />
-            </Field>
           </div>
+
+          <MoreDetails open={entryMoreOpen} onOpenChange={setEntryMoreOpen}>
+            {/* contato de quem vendeu/consignou — aparece na aba Dados do veículo */}
+            <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-3">
+              <Field label="CPF">
+                <Input name="origin_cpf" defaultValue={vehicle?.origin_cpf ?? ""} placeholder="000.000.000-00" />
+              </Field>
+              <Field label="WhatsApp">
+                <PhoneInput name="origin_whatsapp" defaultValue={vehicle?.origin_whatsapp ?? ""} placeholder="(11) 99999-0000" />
+              </Field>
+              <Field label="E-mail">
+                <Input type="email" name="origin_email" defaultValue={vehicle?.origin_email ?? ""} placeholder="nome@email.com" />
+              </Field>
+              <Field label="Contrato">
+                <input
+                  type="file"
+                  name="contract"
+                  accept="application/pdf,image/*"
+                  className="w-full text-xs text-zinc-500 file:mr-3 file:h-7 file:cursor-pointer file:rounded-md file:border file:border-zinc-200 file:bg-white file:px-2.5 file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-50"
+                />
+              </Field>
+              {!consigned && (
+                <Field label="Observações da compra" className="col-span-2 md:col-span-2">
+                  <Textarea name="purchase_notes" defaultValue={vehicle?.purchase_notes ?? ""} />
+                </Field>
+              )}
+            </div>
+          </MoreDetails>
         </section>
 
         <section>

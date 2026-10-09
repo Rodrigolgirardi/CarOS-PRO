@@ -70,6 +70,7 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
       f.s("notes")
     );
     const vid = v.lastId;
+    if (photo) await run("INSERT INTO vehicle_photos (vehicle_id, file_name, sort) VALUES (?,?,0)", vid, photo);
     if (!consigned) {
       await run(
         "INSERT INTO purchases (vehicle_id, seller, date, price, payment_method, notes) VALUES (?,?,?,?,?,?)",
@@ -156,7 +157,12 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
   let photo = current.photo;
   if (photoFile) {
     photo = (await saveUpload(photoFile)).fileName;
-    deleteUpload(current.photo);
+    // a capa anterior continua na galeria do veículo — por isso o arquivo não é apagado
+    const next = await get<{ n: number }>(
+      "SELECT COALESCE(MAX(sort), -1) + 1 AS n FROM vehicle_photos WHERE vehicle_id = ?",
+      id
+    );
+    await run("INSERT INTO vehicle_photos (vehicle_id, file_name, sort) VALUES (?,?,?)", id, photo, next?.n ?? 0);
   }
   const salePrice = f.cents("sale_price");
 
@@ -240,9 +246,11 @@ export async function deleteVehicle(id: number): Promise<{ ok: boolean; error?: 
   const v = await get<Vehicle>("SELECT * FROM vehicles WHERE id = ?", id);
   if (!v) return err("Veículo não encontrado.");
   const docs = await all<{ file_name: string }>("SELECT file_name FROM documents WHERE vehicle_id = ?", id);
+  const gallery = await all<{ file_name: string }>("SELECT file_name FROM vehicle_photos WHERE vehicle_id = ?", id);
   await run("DELETE FROM vehicles WHERE id = ?", id); // cascade remove tudo relacionado
   for (const d of docs) deleteUpload(d.file_name);
-  deleteUpload(v.photo);
+  const files = new Set([v.photo, ...gallery.map((g) => g.file_name)].filter(Boolean));
+  for (const f of files) deleteUpload(f);
   revalidate();
   return ok("Veículo excluído.");
 }

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { brl } from "@/lib/format";
 import type { MonthlyPoint } from "@/lib/queries/dashboard";
 
@@ -5,9 +8,21 @@ import type { MonthlyPoint } from "@/lib/queries/dashboard";
  * Resultado mensal: faturamento (azul), custos (vermelho) e lucro (verde)
  * dos últimos 12 meses, na mesma escala, com eixo em valores "redondos".
  * Lucro negativo desce abaixo da linha zero. Trio validado para daltonismo.
+ * Tocar numa coluna seleciona o mês e mostra o resumo abaixo do gráfico.
  */
 export function MonthlySalesChart({ months, action }: { months: MonthlyPoint[]; action?: React.ReactNode }) {
   const net = (m: MonthlyPoint) => m.revenue - m.spend;
+  const hasMove = (m: MonthlyPoint) => m.revenue !== 0 || m.spend !== 0;
+
+  // mês atual começa selecionado se tiver movimentação; toque alterna a seleção
+  const [selected, setSelected] = useState<string | null>(() => {
+    const now = new Date();
+    const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const cur = months.find((m) => m.key === key);
+    return cur && hasMove(cur) ? cur.key : null;
+  });
+  const sel = selected ? (months.find((m) => m.key === selected) ?? null) : null;
+  const toggle = (key: string) => setSelected((s) => (s === key ? null : key));
 
   const rawMax = Math.max(
     ...months.map((m) => m.revenue),
@@ -117,12 +132,29 @@ export function MonthlySalesChart({ months, action }: { months: MonthlyPoint[]; 
             <div className="absolute inset-0 flex items-stretch gap-1 sm:gap-2">
               {months.map((m) => {
                 const lucro = net(m);
-                const empty = m.revenue === 0 && m.spend === 0;
+                const empty = !hasMove(m);
                 const hint = empty
                   ? `${m.label} — sem movimentação`
                   : `${m.label} — Faturamento ${brl(m.revenue)} (${m.sales} venda(s)) · Custos ${brl(m.spend)} · Lucro ${brl(lucro)}`;
+                const isSel = selected === m.key;
                 return (
-                  <div key={m.key} className="flex min-w-0 flex-1 justify-center gap-[2px]" title={hint}>
+                  <div
+                    key={m.key}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isSel}
+                    onClick={() => toggle(m.key)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggle(m.key);
+                      }
+                    }}
+                    className={`flex min-w-0 flex-1 cursor-pointer justify-center gap-[2px] rounded-md transition ${
+                      isSel ? "bg-zinc-900/[0.04] ring-1 ring-inset ring-zinc-300" : selected ? "opacity-40" : ""
+                    }`}
+                    title={hint}
+                  >
                     {!empty && (
                       <>
                         <Slot up={m.revenue} down={0} cls="bg-blue-600" />
@@ -137,13 +169,37 @@ export function MonthlySalesChart({ months, action }: { months: MonthlyPoint[]; 
           </div>
           <div className="mt-1.5 flex gap-1 sm:gap-2">
             {months.map((m) => (
-              <span key={m.key} className="min-w-0 flex-1 truncate text-center text-[11px] text-zinc-500">
+              <span
+                key={m.key}
+                onClick={() => toggle(m.key)}
+                className={`min-w-0 flex-1 cursor-pointer truncate text-center text-[11px] ${
+                  selected === m.key ? "font-semibold text-zinc-900" : "text-zinc-500"
+                }`}
+              >
                 {m.label}
               </span>
             ))}
           </div>
         </div>
       </div>
+
+      {sel && (
+        <p className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-[12px] text-zinc-600">
+          <strong className="font-semibold text-zinc-800">{sel.label}</strong>
+          {!hasMove(sel) ? (
+            <> · sem movimentação</>
+          ) : (
+            <>
+              {" "}
+              · Faturamento <span className="font-medium tabular-nums text-zinc-800">{brl(sel.revenue)}</span> ({sel.sales}{" "}
+              venda(s)) · Custos <span className="font-medium tabular-nums text-zinc-800">{brl(sel.spend)}</span> · Lucro{" "}
+              <span className={`font-semibold tabular-nums ${net(sel) >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                {brl(net(sel))}
+              </span>
+            </>
+          )}
+        </p>
+      )}
 
       {best && (
         <p className="mt-3 border-t border-zinc-100 pt-2.5 text-[11px] text-zinc-500">

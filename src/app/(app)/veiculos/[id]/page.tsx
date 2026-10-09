@@ -8,6 +8,9 @@ import { StatusSelect } from "@/components/vehicles/status-select";
 import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
 import { NewDealButton } from "@/components/deals/new-deal-button";
 import { QuickSaleButton } from "@/components/vehicles/quick-sale-button";
+import { PhotoGallery } from "@/components/vehicles/photo-gallery";
+import { PrepPanel } from "@/components/vehicles/prep-panel";
+import { ShareVehicleButton } from "@/components/vehicles/share-vehicle-button";
 import { UploadDocButton } from "@/components/documents/upload-doc-button";
 import { TaskCheck } from "@/components/tasks/task-check";
 import { TaskCreateButton, TaskEditButton } from "@/components/tasks/task-dialogs";
@@ -36,6 +39,7 @@ import { sellerOptions } from "@/lib/queries/sellers";
 import { dealsForVehicle } from "@/lib/queries/deals";
 import { docsForVehicle } from "@/lib/queries/documents";
 import { eventsForVehicle } from "@/lib/queries/events";
+import { listVehiclePhotos } from "@/lib/queries/photos";
 import { tasksForVehicle } from "@/lib/queries/tasks";
 import { getVehicle, vehicleCosts, vehicleOptions, vehiclePlatforms } from "@/lib/queries/vehicles";
 import { PlatformsChecklist } from "@/components/vehicles/platforms-checklist";
@@ -80,7 +84,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-const TABS = ["resumo", "plataformas", "custos", "operacoes", "documentos", "historico"] as const;
+const TABS = ["resumo", "plataformas", "custos", "preparacao", "operacoes", "documentos", "historico"] as const;
 type Tab = (typeof TABS)[number];
 
 export default async function VehiclePage({
@@ -102,6 +106,7 @@ export default async function VehiclePage({
   const sold = vehicle.status === "vendido";
 
   const costs = await vehicleCosts(id);
+  const photos = await listVehiclePhotos(id);
   const tasks = await tasksForVehicle(id);
   const docs = await docsForVehicle(id);
   const events = await eventsForVehicle(id);
@@ -169,6 +174,20 @@ export default async function VehiclePage({
                       defaultCommission={await commissionRule("venda_carro")}
                       fixedVehicleId={id}
                     />
+                    <ShareVehicleButton
+                      label={label}
+                      yearLabel={
+                        vehicle.year_fab
+                          ? `${String(vehicle.year_fab).slice(-2)}/${String(vehicle.year_model ?? vehicle.year_fab).slice(-2)}`
+                          : null
+                      }
+                      km={vehicle.km}
+                      color={vehicle.color}
+                      transmission={vehicle.transmission}
+                      fuel={vehicle.fuel}
+                      salePrice={vehicle.sale_price}
+                      photoUrl={vehicle.photo ? `/api/uploads/${encodeURIComponent(vehicle.photo)}` : null}
+                    />
                   </span>
                 )}
               </div>
@@ -234,6 +253,7 @@ export default async function VehiclePage({
           { key: "resumo", label: "Resumo", href: `/veiculos/${id}` },
           { key: "plataformas", label: "Plataformas", count: platforms.length, href: `/veiculos/${id}?tab=plataformas` },
           { key: "custos", label: "Custos", count: costs.length, href: `/veiculos/${id}?tab=custos` },
+          { key: "preparacao", label: "Preparação", count: pendingTasks, href: `/veiculos/${id}?tab=preparacao` },
           { key: "documentos", label: "Documentos", count: docs.length, href: `/veiculos/${id}?tab=documentos` },
           { key: "historico", label: "Histórico", href: `/veiculos/${id}?tab=historico` },
         ]}
@@ -241,6 +261,10 @@ export default async function VehiclePage({
 
       {tab === "resumo" && (
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+          <div className="space-y-5">
+          <InfoCard title="Fotos">
+            <PhotoGallery vehicleId={vehicle.id} photos={photos} coverFileName={vehicle.photo} />
+          </InfoCard>
           <InfoCard
             title="Informações do veículo"
             action={
@@ -296,6 +320,7 @@ export default async function VehiclePage({
               </p>
             )}
           </InfoCard>
+          </div>
 
           <div className="space-y-5">
             <InfoCard
@@ -465,6 +490,8 @@ export default async function VehiclePage({
           </Table>
         </div>
       )}
+
+      {tab === "preparacao" && <PrepPanel vehicleId={id} />}
 
       {tab === "operacoes" && (
         <div className="space-y-3">

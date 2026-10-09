@@ -72,15 +72,18 @@ html.dark {
   --color-zinc-900: #f7f7f9;
   --color-zinc-950: #ffffff;
 
-  /* tons suaves (-50 fundo, -200 borda) e vivos legíveis no escuro */
+  /* tons suaves (-50 fundo, -100/-200 borda) e vivos legíveis no escuro */
   --color-emerald-50: #10291e;
+  --color-emerald-100: #173828;
   --color-emerald-400: #52e3a4;
   --color-emerald-500: #3fd994;
   --color-emerald-600: #2fcf8a;
   --color-emerald-700: #7deebb;
 
   --color-red-50: #331418;
+  --color-red-100: #421a20;
   --color-red-200: #512028;
+  --color-red-300: #6b2a35;
   --color-red-400: #ff8585;
   --color-red-500: #ff7070;
   --color-red-600: #ff6b6b;
@@ -89,12 +92,14 @@ html.dark {
   --color-amber-50: #332406;
   --color-amber-200: #5a400d;
   --color-amber-400: #fbbf24;
+  --color-amber-500: #f8ba2b;
   --color-amber-600: #f5b63a;
   --color-amber-700: #fbd34d;
   --color-amber-800: #fde28a;
   --color-amber-900: #fdeab5;
 
   --color-blue-50: #16233a;
+  --color-blue-100: #1d3050;
   --color-blue-300: #7cb0ff;
   --color-blue-400: #6ea7ff;
   --color-blue-500: #5f9dff;
@@ -104,15 +109,34 @@ html.dark {
   --color-blue-900: #2f589d;
 
   --color-violet-50: #292044;
+  --color-violet-100: #352a58;
   --color-violet-400: #a78bfa;
+  --color-violet-500: #8f68f7;
+  --color-violet-600: #9b7bf9;
   --color-violet-700: #c7b7fd;
 
   --color-teal-50: #0f2d2b;
   --color-teal-400: #2dd4bf;
   --color-teal-700: #67e8e0;
 
+  --color-orange-50: #33200c;
+  --color-orange-100: #4d2e0f;
   --color-orange-400: #fda55e;
   --color-orange-500: #fb923c;
+  --color-orange-700: #ffbd85;
+
+  /* badge de plataformas (veículos) */
+  --color-sky-50: #112a3c;
+  --color-sky-700: #87ccf2;
+
+  /* avatares dos leads */
+  --color-rose-50: #331420;
+  --color-rose-500: #ff7d9d;
+
+  /* login: o botão lime fica claro de propósito (o texto dele é escuro fixo) */
+  --color-lime-300: #b1e94a;
+  --color-lime-400: #9fdd33;
+  --color-lime-500: #8ccf1f;
 }
 
 /* a página fica um tom abaixo dos cards, para dar profundidade */

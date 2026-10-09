@@ -1,7 +1,6 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { PlateCachePanel } from "@/components/plate-cache/plate-cache-panel";
 import { AccessForm } from "@/components/settings/access-form";
-import { AppearanceForm } from "@/components/settings/appearance-form";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { LinkTabs } from "@/components/ui/tabs";
 import { getProfile } from "@/lib/queries/profile";
@@ -16,7 +15,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHeader title="Configurações" description="Perfil, aparência e a segurança do CarOS." />
+      <PageHeader title="Configurações" description="Perfil e a segurança do CarOS." />
       <LinkTabs
         className="mb-4"
         activeKey={tab}
@@ -33,10 +32,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           {tab === "seguranca" ? (
             <AccessForm login={profile.login} authEnabled={profile.authEnabled} />
           ) : (
-            <>
-              <ProfileForm name={profile.name} avatarUrl={profile.avatarUrl} />
-              <AppearanceForm />
-            </>
+            <ProfileForm name={profile.name} avatarUrl={profile.avatarUrl} />
           )}
         </div>
       )}

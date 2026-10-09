@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
-import { MoreHorizontal } from "lucide-react";
+import { LogOut, MoreHorizontal, Settings, X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { logout } from "@/lib/actions/settings";
 import { MAIN, MANAGE, type NavItemData } from "@/components/layout/nav-items";
 
 const ALL = [...MAIN, ...MANAGE];
@@ -74,7 +75,18 @@ export function MobileTabBar() {
           <div className="fixed inset-0 z-50 lg:hidden">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setMoreOpen(false)} />
             <div className="absolute inset-x-0 bottom-0 animate-[sheet-in_.18s_ease-out] rounded-t-2xl bg-white px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3 shadow-xl">
-              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-zinc-200" />
+              <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-zinc-200" />
+              <div className="mb-1 flex items-center justify-between">
+                <h2 className="px-3 text-[15px] font-semibold text-zinc-900">Mais opções</h2>
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen(false)}
+                  aria-label="Fechar"
+                  className="grid size-10 place-items-center rounded-full text-zinc-500 transition-colors active:bg-zinc-100"
+                >
+                  <X size={20} strokeWidth={1.75} />
+                </button>
+              </div>
               <div className="space-y-1">
                 {MORE.map(({ href, label, icon: Icon }) => {
                   const active = isActive(pathname, href);
@@ -92,6 +104,32 @@ export function MobileTabBar() {
                     </Link>
                   );
                 })}
+                <div className="my-1.5 h-px bg-zinc-100" />
+                <Link
+                  href="/configuracoes"
+                  className={cn(
+                    "flex h-12 items-center gap-3 rounded-lg px-3 text-[15px] font-medium transition-colors",
+                    isActive(pathname, "/configuracoes")
+                      ? "bg-zinc-100 text-zinc-900"
+                      : "text-zinc-600 active:bg-zinc-100"
+                  )}
+                >
+                  <Settings
+                    size={19}
+                    strokeWidth={1.75}
+                    className={cn("shrink-0", isActive(pathname, "/configuracoes") ? "text-zinc-700" : "text-zinc-400")}
+                  />
+                  Configurações
+                </Link>
+                <form action={logout}>
+                  <button
+                    type="submit"
+                    className="flex h-12 w-full items-center gap-3 rounded-lg px-3 text-[15px] font-medium text-red-600 transition-colors active:bg-red-50"
+                  >
+                    <LogOut size={19} strokeWidth={1.75} className="shrink-0" />
+                    Sair
+                  </button>
+                </form>
               </div>
             </div>
           </div>,

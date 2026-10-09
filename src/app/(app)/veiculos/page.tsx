@@ -15,6 +15,7 @@ import { customerOptions } from "@/lib/queries/customers";
 import { sellerOptions } from "@/lib/queries/sellers";
 import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
 import { VehicleRowActions } from "@/components/vehicles/vehicle-row-actions";
+import { VehicleSearch } from "@/components/vehicles/vehicle-search";
 import { brl, pct } from "@/lib/format";
 import { vehicleMetrics, vehicleLabel } from "@/lib/metrics";
 import { commissionRule, listCommissionRules } from "@/lib/queries/commissions";
@@ -22,6 +23,9 @@ import { listVehicles, vehicleCounts, vehicleOptions, type VehicleFilter } from 
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Veículos" };
+
+const norm = (s: string) =>
+  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 const TABS: { key: VehicleFilter; label: string }[] = [
   { key: "cadastrado", label: "Cadastrados" },
@@ -32,14 +36,25 @@ const TABS: { key: VehicleFilter; label: string }[] = [
 export default async function VehiclesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filtro?: string }>;
+  searchParams: Promise<{ filtro?: string; busca?: string }>;
 }) {
-  const { filtro } = await searchParams;
+  const { filtro, busca } = await searchParams;
   // filtros sem aba, mas acessíveis por link (ex.: dashboard)
   const LINK_ONLY = ["parados", "todos", "estoque", "para_arrumar"];
   const valid = TABS.some((t) => t.key === filtro) || LINK_ONLY.includes(filtro ?? "");
   const filter = (valid ? filtro : "cadastrado") as VehicleFilter;
-  const rows = await listVehicles(filter);
+  const allRows = await listVehicles(filter);
+  // busca por marca/modelo/versão e placa (com e sem caracteres especiais)
+  const q = busca?.trim() ? norm(busca.trim()) : null;
+  const qAlnum = q ? q.replace(/[^a-z0-9]/g, "") : "";
+  const rows = q
+    ? allRows.filter((v) => {
+        if (norm(`${v.brand} ${v.model} ${v.version ?? ""}`).includes(q)) return true;
+        if (!v.plate) return false;
+        const plate = v.plate.toLowerCase();
+        return plate.includes(q) || (qAlnum !== "" && plate.replace(/[^a-z0-9]/g, "").includes(qAlnum));
+      })
+    : allRows;
   const counts = await vehicleCounts();
   const tabCount: Record<string, number> = {
     estoque: counts.todos - (counts.vendido ?? 0),
@@ -99,6 +114,10 @@ export default async function VehiclesPage({
         }))}
       />
 
+      <div className="mb-4 lg:max-w-sm">
+        <VehicleSearch busca={busca ?? null} />
+      </div>
+
       {filter === "parados" && (
         <p className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
           Mostrando veículos parados há mais de 60 dias.
@@ -108,7 +127,11 @@ export default async function VehiclesPage({
         </p>
       )}
 
-      {rows.length === 0 ? (
+      {q && rows.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-zinc-200 px-6 py-10 text-center text-[13px] text-zinc-500">
+          Nenhum veículo encontrado para essa busca.
+        </p>
+      ) : rows.length === 0 ? (
         <EmptyState
           icon={Car}
           title={filter === "cadastrado" || filter === "estoque" ? "Estoque zerado — tudo vendido! 🎉" : "Nenhum veículo neste filtro"}
@@ -243,7 +266,7 @@ export default async function VehiclesPage({
             <Th right>Lucro</Th>
             <Th right>Margem</Th>
             <Th right>Dias</Th>
-            <Th>Status</Th>
+            {filter !== "vendido" && <Th>Status</Th>}
             <Th />
           </THead>
           <TBody>
@@ -310,9 +333,11 @@ export default async function VehiclesPage({
                   <Td right className={!m.sold && (m.days ?? 0) > 60 ? "font-medium text-amber-600" : "text-zinc-500"}>
                     {m.days ?? "—"}
                   </Td>
-                  <Td>
-                    <VehicleStatusBadge status={v.status} />
-                  </Td>
+                  {filter !== "vendido" && (
+                    <Td>
+                      <VehicleStatusBadge status={v.status} />
+                    </Td>
+                  )}
                   <Td className="w-10">
                     <VehicleRowActions id={v.id} label={label} />
                   </Td>

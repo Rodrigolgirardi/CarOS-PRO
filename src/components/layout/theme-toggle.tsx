@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
-import { cn } from "@/lib/cn";
 
 export type Theme = "light" | "dark";
 
@@ -41,32 +40,5 @@ export function ThemeToggle() {
     >
       {dark ? <Sun size={16} /> : <Moon size={16} />}
     </button>
-  );
-}
-
-/** Par de ícones sol/lua (Configurações): o ativo fica destacado. */
-export function ThemeIconPicker() {
-  const [theme, pick] = useTheme();
-  const btn = (t: Theme, Icon: typeof Sun, label: string) => (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={() => pick(t)}
-      className={cn(
-        "grid size-10 place-items-center rounded-full border transition-colors",
-        theme === t
-          ? "border-zinc-900 bg-zinc-900 text-white"
-          : "border-zinc-200 bg-white text-zinc-400 hover:bg-zinc-50 hover:text-zinc-700"
-      )}
-    >
-      <Icon size={17} />
-    </button>
-  );
-  return (
-    <div className="flex items-center gap-2">
-      {btn("light", Sun, "Modo claro")}
-      {btn("dark", Moon, "Modo escuro")}
-    </div>
   );
 }

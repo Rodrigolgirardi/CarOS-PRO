@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select } from "@/components/ui/field";
 import { FormError, SubmitButton, useAction } from "@/components/ui/form";
-import { Menu } from "@/components/ui/menu";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 
@@ -74,7 +73,7 @@ export function AddCostButton({ vehicleId }: { vehicleId: number }) {
   );
 }
 
-/** Ações da linha de custo: ⋯ (editar) + lixeira. */
+/** Ações da linha de custo: lápis (editar) + lixeira. */
 export function CostRowActions({ cost }: { cost: Cost }) {
   const [editOpen, setEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -93,10 +92,15 @@ export function CostRowActions({ cost }: { cost: Cost }) {
 
   return (
     <div className="flex items-center justify-end gap-0.5">
-      <Menu
-        ariaLabel="Mais ações do custo"
-        items={[{ label: "Editar custo", icon: <Pencil size={14} />, onSelect: () => setEditOpen(true) }]}
-      />
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label="Editar custo"
+        className="size-9 p-0"
+        onClick={() => setEditOpen(true)}
+      >
+        <Pencil size={16} />
+      </Button>
       <Button
         variant="danger-ghost"
         size="sm"

@@ -29,7 +29,7 @@ export default async function SellersPage() {
         <EmptyState
           icon={Percent}
           title="Nenhum vendedor cadastrado"
-          description="Cadastre os vendedores e a % padrão de comissão. Ao registrar uma venda pelo botão Vendido, a comissão é sugerida automaticamente."
+          description="Cadastre os vendedores e a % padrão de comissão. Ao registrar uma venda pelo botão Venda, a comissão é sugerida automaticamente."
           action={<SellerCreateButton />}
         />
       ) : (

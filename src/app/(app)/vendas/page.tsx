@@ -257,7 +257,7 @@ export default async function SalesPage({
         <EmptyState
           icon={BadgeCheck}
           title="Nenhuma venda registrada"
-          description="Venda pelo botão verde “Vendido” na tela de Veículos e o carro aparece aqui."
+          description="Venda pelo botão verde “Venda” na tela de Veículos e o carro aparece aqui."
         />
       ) : (
         <>

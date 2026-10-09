@@ -72,9 +72,7 @@ export function MonthlySalesChart({ months, action }: { months: MonthlyPoint[]; 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-[15px] font-semibold tracking-tight text-zinc-900">Resultado mensal</h3>
         {action ?? (
-          <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-500">
-            {months[0]?.key.slice(0, 4)} ▾
-          </span>
+          <span className="text-[11px] font-medium text-zinc-500">{months[0]?.key.slice(0, 4)}</span>
         )}
       </div>
       <div className="mt-2 flex items-center gap-4 text-[11px] text-zinc-500">

@@ -80,7 +80,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-const TABS = ["resumo", "plataformas", "custos", "operacoes", "documentos", "dados", "historico"] as const;
+const TABS = ["resumo", "plataformas", "custos", "operacoes", "documentos", "historico"] as const;
 type Tab = (typeof TABS)[number];
 
 export default async function VehiclePage({
@@ -152,7 +152,7 @@ export default async function VehiclePage({
                   </span>
                 )}
               </p>
-              {/* status + ações, coladas na foto; Lead e Vendido sempre lado a lado */}
+              {/* status + ações, coladas na foto; Lead e Venda sempre lado a lado */}
               <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span
                   title={VEHICLE_STATUS[vehicle.status].label}
@@ -235,7 +235,6 @@ export default async function VehiclePage({
           { key: "plataformas", label: "Plataformas", count: platforms.length, href: `/veiculos/${id}?tab=plataformas` },
           { key: "custos", label: "Custos", count: costs.length, href: `/veiculos/${id}?tab=custos` },
           { key: "documentos", label: "Documentos", count: docs.length, href: `/veiculos/${id}?tab=documentos` },
-          { key: "dados", label: "Dados", href: `/veiculos/${id}?tab=dados` },
           { key: "historico", label: "Histórico", href: `/veiculos/${id}?tab=historico` },
         ]}
       />
@@ -299,12 +298,59 @@ export default async function VehiclePage({
           </InfoCard>
 
           <div className="space-y-5">
-            <InfoCard title="Compra">
-              <dl>
-                <Row label="Data" value={fmtDate(vehicle.purchase_date)} />
-                <Row label="Vendedor" value={vehicle.purchase_seller} />
-                <Row label="Pagamento" value={vehicle.purchase_payment} />
-                <Row label="Preço de compra" value={brl(vehicle.purchase_price)} />
+            <InfoCard
+              title={vehicle.consignado === 1 ? "Consignação" : "Compra"}
+              action={
+                <Link
+                  href={`/veiculos/${id}/editar`}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+                >
+                  <Pencil size={12} />
+                  Editar
+                </Link>
+              }
+            >
+              <dl className="grid grid-cols-3 gap-x-4 gap-y-3.5">
+                <Cell
+                  label={vehicle.consignado === 1 ? "Dono (consignante)" : "Comprado de"}
+                  value={vehicle.consignado === 1 ? vehicle.consignor : vehicle.purchase_seller}
+                  className="col-span-2"
+                />
+                <Cell
+                  label={vehicle.consignado === 1 ? "Data da consignação" : "Data da compra"}
+                  value={vehicle.purchase_date ? fmtDate(vehicle.purchase_date) : null}
+                />
+                <Cell label="CPF" value={vehicle.origin_cpf} />
+                <Cell
+                  label="WhatsApp"
+                  value={
+                    vehicle.origin_whatsapp ? (
+                      <a
+                        href={`https://wa.me/55${vehicle.origin_whatsapp.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-emerald-700 underline-offset-2 hover:underline"
+                      >
+                        {vehicle.origin_whatsapp}
+                      </a>
+                    ) : null
+                  }
+                />
+                <Cell
+                  label="E-mail"
+                  value={
+                    vehicle.origin_email ? (
+                      <a
+                        href={`mailto:${vehicle.origin_email}`}
+                        className="text-zinc-900 underline-offset-2 hover:underline"
+                      >
+                        {vehicle.origin_email}
+                      </a>
+                    ) : null
+                  }
+                />
+                <Cell label="Pagamento" value={vehicle.purchase_payment} />
+                <Cell label="Preço de compra" value={brl(vehicle.purchase_price)} className="col-span-2" />
               </dl>
               {vehicle.purchase_notes && (
                 <p className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-[13px] leading-relaxed text-zinc-600">
@@ -525,64 +571,6 @@ export default async function VehiclePage({
               </TBody>
             </Table>
           )}
-        </div>
-      )}
-
-      {tab === "dados" && (
-        <div className="max-w-xl">
-          <InfoCard
-            title={vehicle.consignado === 1 ? "Dados da consignação" : "Dados da compra"}
-            action={
-              <Link
-                href={`/veiculos/${id}/editar`}
-                className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900"
-              >
-                <Pencil size={12} />
-                Editar
-              </Link>
-            }
-          >
-            <dl className="grid grid-cols-3 gap-x-4 gap-y-3.5">
-              <Cell
-                label={vehicle.consignado === 1 ? "Dono (consignante)" : "Comprado de"}
-                value={vehicle.consignado === 1 ? vehicle.consignor : vehicle.purchase_seller}
-                className="col-span-2"
-              />
-              <Cell
-                label={vehicle.consignado === 1 ? "Data da consignação" : "Data da compra"}
-                value={vehicle.purchase_date ? fmtDate(vehicle.purchase_date) : null}
-              />
-              <Cell label="CPF" value={vehicle.origin_cpf} />
-              <Cell
-                label="WhatsApp"
-                value={
-                  vehicle.origin_whatsapp ? (
-                    <a
-                      href={`https://wa.me/55${vehicle.origin_whatsapp.replace(/\D/g, "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-emerald-700 underline-offset-2 hover:underline"
-                    >
-                      {vehicle.origin_whatsapp}
-                    </a>
-                  ) : null
-                }
-              />
-              <Cell
-                label="E-mail"
-                value={
-                  vehicle.origin_email ? (
-                    <a
-                      href={`mailto:${vehicle.origin_email}`}
-                      className="text-zinc-900 underline-offset-2 hover:underline"
-                    >
-                      {vehicle.origin_email}
-                    </a>
-                  ) : null
-                }
-              />
-            </dl>
-          </InfoCard>
         </div>
       )}
 

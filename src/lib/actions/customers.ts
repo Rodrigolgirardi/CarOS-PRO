@@ -82,7 +82,7 @@ export async function addContact(customerId: number, prev: ActionState, formData
   const note = f.s("note");
   if (!note) return err("Descreva o contato.");
   await logEvent({ type: "contato", description: note, customer: customerId, date: f.s("date") ?? todayISO() });
-  if (customer.status === "novo") run("UPDATE customers SET status = 'contato' WHERE id = ?", customerId);
+  if (customer.status === "novo") await run("UPDATE customers SET status = 'contato' WHERE id = ?", customerId);
   revalidate();
   return ok("Contato registrado.");
 }

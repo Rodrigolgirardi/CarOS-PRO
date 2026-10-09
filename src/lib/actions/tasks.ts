@@ -42,7 +42,7 @@ export async function toggleTask(taskId: number): Promise<{ ok: boolean; error?:
       await run("UPDATE tasks SET status = 'concluida', done_date = ?, cost_id = ? WHERE id = ?", todayISO(), costId, taskId);
       await logEvent({ type: "tarefa", description: `Tarefa concluída — ${TASK_TYPE[task.type].label}`, vehicle: task.vehicle_id });
     } else {
-      if (task.cost_id) run("DELETE FROM costs WHERE id = ?", task.cost_id);
+      if (task.cost_id) await run("DELETE FROM costs WHERE id = ?", task.cost_id);
       await run("UPDATE tasks SET status = 'pendente', done_date = NULL, cost_id = NULL WHERE id = ?", taskId);
     }
   });
@@ -108,7 +108,7 @@ export async function deleteTask(taskId: number): Promise<{ ok: boolean; error?:
   const task = await get<Task>("SELECT * FROM tasks WHERE id = ?", taskId);
   if (!task) return err("Tarefa não encontrada.");
   await tx(async () => {
-    if (task.cost_id) run("DELETE FROM costs WHERE id = ?", task.cost_id);
+    if (task.cost_id) await run("DELETE FROM costs WHERE id = ?", task.cost_id);
     await run("DELETE FROM tasks WHERE id = ?", taskId);
   });
   revalidate();

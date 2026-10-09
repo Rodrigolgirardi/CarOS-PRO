@@ -567,7 +567,7 @@ export async function undoSale(dealId: number): Promise<{ ok: boolean; error?: s
       deal.customer_id,
       dealId
     ))!;
-    if (otherSold.n === 0) run("UPDATE customers SET status = 'negociacao' WHERE id = ?", deal.customer_id);
+    if (otherSold.n === 0) await run("UPDATE customers SET status = 'negociacao' WHERE id = ?", deal.customer_id);
   });
   revalidate();
   return ok("Venda desfeita.");

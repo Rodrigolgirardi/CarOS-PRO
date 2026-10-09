@@ -83,7 +83,7 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
       );
     }
     // checklist padrão de preparação (vira o módulo Operações)
-    for (const t of DEFAULT_CHECKLIST) run("INSERT INTO tasks (vehicle_id, type) VALUES (?, ?)", vid, t);
+    for (const t of DEFAULT_CHECKLIST) await run("INSERT INTO tasks (vehicle_id, type) VALUES (?, ?)", vid, t);
     if (consigned) {
       // o dono vira cliente "consignante" automaticamente (se ainda não existir)
       const [namePart, ...phonePart] = consignor!.split("—");
@@ -289,7 +289,7 @@ export async function duplicateVehicle(id: number): Promise<{ ok: boolean; error
       p?.price ?? 0,
       p?.payment_method ?? null
     );
-    for (const t of DEFAULT_CHECKLIST) run("INSERT INTO tasks (vehicle_id, type) VALUES (?, ?)", vid, t);
+    for (const t of DEFAULT_CHECKLIST) await run("INSERT INTO tasks (vehicle_id, type) VALUES (?, ?)", vid, t);
     await logEvent({ type: "compra", description: `Veículo duplicado a partir de ${v.brand} ${v.model}`, vehicle: vid, amount: p?.price ?? null, date: today });
     return vid;
   });

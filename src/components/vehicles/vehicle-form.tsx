@@ -57,10 +57,7 @@ function MoreDetails({
   }, []);
   if (desktop) {
     return (
-      <div className="mt-4">
-        <p className="mb-3 text-[13px] font-medium text-zinc-600">Mais detalhes (opcional)</p>
-        {children}
-      </div>
+      <div className="mt-3">{children}</div>
     );
   }
   return (

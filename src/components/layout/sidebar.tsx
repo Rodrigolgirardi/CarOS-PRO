@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { MAIN, MANAGE, type NavItemData } from "@/components/layout/nav-items";
 
-function NavItem({ href, label, icon: Icon }: NavItemData) {
+function NavItem({ href, label: mobileLabel, icon: MobileIcon, desktopLabel, desktopIcon }: NavItemData) {
+  const label = desktopLabel ?? mobileLabel;
+  const Icon = desktopIcon ?? MobileIcon;
   const pathname = usePathname();
   const active = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
   return (

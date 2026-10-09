@@ -40,12 +40,18 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
 export function CustomerExpandRow({
   customer: c,
   consignorView,
+  buyerView,
 }: {
   customer: CustomerListRow;
-  /** aba Consignantes: no desktop mostra o carro deixado na loja no lugar do rótulo */
+  /**
+   * Abas Consignantes/Compradores: no desktop mostra o carro (deixado na loja
+   * ou comprado) no lugar do rótulo do tipo de cliente.
+   */
   consignorView?: boolean;
+  buyerView?: boolean;
 }) {
-  const cars = (c.consigned_vehicles ?? "")
+  const carsView = consignorView || buyerView;
+  const cars = ((buyerView ? c.bought_vehicles : c.consigned_vehicles) ?? "")
     .split("|")
     .filter(Boolean)
     .map((x) => {
@@ -90,7 +96,7 @@ export function CustomerExpandRow({
               </a>
             </>
           )}
-          {consignorView &&
+          {carsView &&
             cars.map((car) => (
               <span key={car.id} className="hidden min-w-0 items-center gap-2 lg:flex">
                 <span className="shrink-0 text-zinc-200">|</span>
@@ -104,9 +110,9 @@ export function CustomerExpandRow({
                 </a>
               </span>
             ))}
-          <span className={`shrink-0 text-zinc-200 ${consignorView ? "lg:hidden" : ""}`}>|</span>
+          <span className={`shrink-0 text-zinc-200 ${carsView ? "lg:hidden" : ""}`}>|</span>
           <span
-            className={`shrink-0 text-xs font-medium ${consignorView ? "lg:hidden" : ""} ${
+            className={`shrink-0 text-xs font-medium ${carsView ? "lg:hidden" : ""} ${
               c.kind === "consignante" ? "text-violet-600" : "text-emerald-600"
             }`}
           >

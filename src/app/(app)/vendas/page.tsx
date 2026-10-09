@@ -63,7 +63,7 @@ export default async function SalesPage({
 }) {
   const { tab: tabParam, status, busca } = await searchParams;
   const tabRaw = tabParam === "clientes" ? "consignantes" : tabParam; // links antigos
-  const tab = ["vendas", "consignantes", "relatorio"].includes(tabRaw ?? "") ? tabRaw! : "leads";
+  const tab = ["vendas", "consignantes", "compradores", "relatorio"].includes(tabRaw ?? "") ? tabRaw! : "leads";
   const allDeals = await listDeals();
   const sold = allDeals
     .filter((d) => d.stage === "vendido" || d.stage === "entregue")
@@ -82,11 +82,12 @@ export default async function SalesPage({
   return (
     <>
       {/* abas no mesmo visual dos cards indicadores */}
-      <div className="mb-4 grid grid-cols-4 gap-2 sm:max-w-xl sm:gap-2.5 lg:mx-auto lg:max-w-5xl lg:grid-cols-3">
+      <div className="mb-4 grid grid-cols-4 gap-2 sm:max-w-xl sm:gap-2.5 lg:mx-auto lg:max-w-5xl lg:grid-cols-4">
         {[
           { key: "leads", label: "Leads", href: "/vendas" },
           { key: "vendas", label: "Vendas", count: sold.length, href: "/vendas?tab=vendas" },
           { key: "consignantes", label: "Consignantes", href: "/vendas?tab=consignantes" },
+          { key: "compradores", label: "Compradores", href: "/vendas?tab=compradores" },
           { key: "relatorio", label: "Relatório", href: "/vendas?tab=relatorio" },
         ].map((t) => {
           const active = t.key === tab;
@@ -96,7 +97,7 @@ export default async function SalesPage({
               href={t.href}
               className={`flex items-center justify-center gap-1.5 rounded-2xl border px-2 py-2.5 text-[12px] font-semibold transition-colors sm:text-[13px] ${
                 // desktop: a aba Vendas sai (as vendas ficam em Veículos → Vendidos)
-                t.key === "vendas" ? "lg:hidden" : ""
+                t.key === "vendas" ? "lg:hidden" : t.key === "compradores" ? "max-lg:hidden" : ""
               } ${
                 active
                   ? "border-violet-100 bg-violet-50 text-violet-700"
@@ -122,6 +123,8 @@ export default async function SalesPage({
         <LeadsPanel deals={allDeals} status={status} busca={busca} />
       ) : tab === "consignantes" ? (
         <CustomersPanel status="consignantes" />
+      ) : tab === "compradores" ? (
+        <CustomersPanel status="compradores" />
       ) : tab === "relatorio" ? (
         (() => {
           // ---- leads por canal/marketplace

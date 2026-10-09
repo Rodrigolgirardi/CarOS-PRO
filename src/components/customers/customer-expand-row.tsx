@@ -5,6 +5,7 @@ import { ChevronRight } from "lucide-react";
 import { WhatsAppIcon } from "@/components/ui/whatsapp-icon";
 import { CustomerRowActions } from "@/components/customers/customer-dialogs";
 import { CustomerStatusBadge } from "@/components/ui/badge";
+import { BrandLogo } from "@/components/vehicles/brand-logo";
 import { CUSTOMER_KIND } from "@/lib/labels";
 import type { CustomerListRow } from "@/lib/queries/customers";
 
@@ -36,7 +37,21 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 /** Linha de cliente que expande para baixo com os detalhes. */
-export function CustomerExpandRow({ customer: c }: { customer: CustomerListRow }) {
+export function CustomerExpandRow({
+  customer: c,
+  consignorView,
+}: {
+  customer: CustomerListRow;
+  /** aba Consignantes: no desktop mostra o carro deixado na loja no lugar do rótulo */
+  consignorView?: boolean;
+}) {
+  const cars = (c.consigned_vehicles ?? "")
+    .split("|")
+    .filter(Boolean)
+    .map((x) => {
+      const [id, brand, ...label] = x.split("~");
+      return { id: Number(id), brand, label: label.join("~") };
+    });
   const [open, setOpen] = useState(false);
   // alguns cadastros antigos têm o telefone embutido no nome — separa na exibição
   const embedded = !c.phone ? c.name.match(/^(.*?)[\s—–-]*(\(?\d{2}\)?[\s.-]?9?[\s.-]?\d{4}[\s.-]?\d{4})\s*$/) : null;
@@ -75,9 +90,23 @@ export function CustomerExpandRow({ customer: c }: { customer: CustomerListRow }
               </a>
             </>
           )}
-          <span className="shrink-0 text-zinc-200">|</span>
+          {consignorView &&
+            cars.map((car) => (
+              <span key={car.id} className="hidden min-w-0 items-center gap-2 lg:flex">
+                <span className="shrink-0 text-zinc-200">|</span>
+                <a
+                  href={`/veiculos/${car.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:underline hover:underline-offset-2"
+                >
+                  <BrandLogo brand={car.brand} size={16} />
+                  <span className="truncate">{car.label}</span>
+                </a>
+              </span>
+            ))}
+          <span className={`shrink-0 text-zinc-200 ${consignorView ? "lg:hidden" : ""}`}>|</span>
           <span
-            className={`shrink-0 text-xs font-medium ${
+            className={`shrink-0 text-xs font-medium ${consignorView ? "lg:hidden" : ""} ${
               c.kind === "consignante" ? "text-violet-600" : "text-emerald-600"
             }`}
           >

@@ -5,6 +5,7 @@ export interface CustomerListRow extends Customer {
   purchases_count: number;
   active_interest: string | null;
   last_activity: string | null;
+  consigned_vehicles: string | null;
 }
 
 export async function listCustomers(status?: CustomerStatus | "todos"): Promise<CustomerListRow[]> {
@@ -16,7 +17,13 @@ export async function listCustomers(status?: CustomerStatus | "todos"): Promise<
           FROM deals d JOIN vehicles v ON v.id = d.vehicle_id
          WHERE d.customer_id = cu.id AND d.stage IN ('interessado', 'proposta', 'reservado')
          ORDER BY d.created_at DESC LIMIT 1) AS active_interest,
-       (SELECT MAX(date) FROM events e WHERE e.customer_id = cu.id) AS last_activity
+       (SELECT MAX(date) FROM events e WHERE e.customer_id = cu.id) AS last_activity,
+       -- carros que essa pessoa deixou em consignação ("id~marca~rótulo|…"); o dono fica gravado
+       -- no veículo como "Nome — telefone"
+       (SELECT STRING_AGG(v.id || '~' || v.brand || '~' || TRIM(v.brand || ' ' || v.model || ' ' || COALESCE(v.version, '')), '|' ORDER BY v.id DESC)
+          FROM vehicles v
+         WHERE v.consignado = 1
+           AND lower(trim(split_part(v.consignor, '—', 1))) = lower(trim(cu.name))) AS consigned_vehicles
      FROM customers cu
      ${where}
      ORDER BY cu.created_at DESC, cu.id DESC`

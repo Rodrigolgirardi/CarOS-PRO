@@ -163,6 +163,8 @@ export function QuickSaleButton({ vehicles, sellers, customers, defaultCommissio
               <CurrencyInput key={`${sellerId}-${priceCents ?? 0}`} name="commission" defaultCents={commissionSuggested} />
             </Field>
           </div>
+          {/* desktop: cliente e canal lado a lado */}
+          <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
           <Field label="Cliente" required>
             <Select
               name="customer_id"
@@ -197,6 +199,7 @@ export function QuickSaleButton({ vehicles, sellers, customers, defaultCommissio
               ))}
             </Select>
           </Field>
+          </div>
           <FormError state={state} />
           <div className="flex justify-end gap-2">
             <Button onClick={() => setOpen(false)}>Cancelar</Button>

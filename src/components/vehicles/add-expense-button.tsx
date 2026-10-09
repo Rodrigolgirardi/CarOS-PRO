@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Receipt } from "lucide-react";
 import { addCostForVehicle } from "@/lib/actions/costs";
 import { todayISO } from "@/lib/format";
-import { COST_CATEGORY } from "@/lib/labels";
+import { ADMIN_EXPENSE_TYPES, COST_CATEGORY } from "@/lib/labels";
 import type { VehicleOption } from "@/lib/queries/vehicles";
 import { ChipInner, chipCls } from "@/components/ui/action-chip";
 import { Button } from "@/components/ui/button";
@@ -25,8 +25,16 @@ export function AddExpenseButton({
   extraCategories?: string[];
 }) {
   const [open, setOpen] = useState(false);
-  const [target, setTarget] = useState(""); // "" = sem veículo (saída da loja) | id do veículo
-  const admin = target === "";
+  const [target, setTarget] = useState(""); // "" (escolher) | "admin" | id do veículo
+  const admin = target === "admin";
+  // "Qual o gasto?": lista administrativa + tipos criados em Configurações, sem repetir nomes
+  const adminTypes = [
+    ...ADMIN_EXPENSE_TYPES.filter((t) => t !== "Outros"),
+    ...extraCategories.filter(
+      (c) => !ADMIN_EXPENSE_TYPES.some((t) => t.toLowerCase() === c.toLowerCase())
+    ),
+    "Outros",
+  ];
   const { state, formAction } = useAction(addCostForVehicle, {
     onSuccess: () => setOpen(false),
   });
@@ -49,33 +57,17 @@ export function AddExpenseButton({
         title="Adicionar saída"
         description={
           admin
-            ? "Saída da loja (pró-labore, aluguel, padaria…) — entra no caixa, mas não no custo de nenhum carro."
+            ? "Gasto da loja (pró-labore, água, luz…) — entra no caixa, mas não no custo de nenhum carro."
             : "O gasto entra direto no custo total e no lucro do veículo escolhido."
         }
       >
         <form action={formAction} className="space-y-4">
-          {/* primeiro o que é a saída; o carro é opcional */}
-          <Field label="Saídas" required>
-            <Select name="category" defaultValue="" required>
+          <Field label="Veículo" required>
+            <Select name="vehicle_id" required value={target} onChange={(e) => setTarget(e.target.value)}>
               <option value="" disabled>
-                Escolha a categoria…
+                Escolha o veículo…
               </option>
-              {Object.entries(COST_CATEGORY).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-              {/* tipos criados em Configurações → Entradas e saídas */}
-              {extraCategories.map((label) => (
-                <option key={label} value={label}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Veículo" hint={admin ? "Sem veículo: vai só para o caixa da loja." : undefined}>
-            <Select name="vehicle_id" value={target} onChange={(e) => setTarget(e.target.value)}>
-              <option value="">Sem veículo (saída da loja)</option>
+              <option value="admin">Gastos administrativos (sem carro)</option>
               {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.label}
@@ -84,6 +76,42 @@ export function AddExpenseButton({
               ))}
             </Select>
           </Field>
+          {admin ? (
+            // administrativo: obrigatório dizer qual é o gasto
+            <Field label="Qual o gasto?" required>
+              <Select key="admin" name="admin_type" defaultValue="" required>
+                <option value="" disabled>
+                  Escolha: pró-labore, água, luz…
+                </option>
+                {adminTypes.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : (
+            target !== "" && (
+              <Field label="Categoria" required>
+                <Select key="car" name="category" defaultValue="" required>
+                  <option value="" disabled>
+                    Escolha a categoria…
+                  </option>
+                  {Object.entries(COST_CATEGORY).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                  {/* tipos criados em Configurações → Entradas e saídas */}
+                  {extraCategories.map((label) => (
+                    <option key={label} value={label}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )
+          )}
           <div className="grid grid-cols-2 gap-4">
             <Field label="Valor" required>
               <CurrencyInput name="amount" required />

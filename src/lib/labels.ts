@@ -227,3 +227,17 @@ export const INCOME_TYPES: {
 /** Nome da categoria de custo: as fixas pelo mapa; as criadas em Configurações já são o próprio nome. */
 export const costLabel = (category: string): string =>
   (COST_CATEGORY as Record<string, string>)[category] ?? category;
+
+/** "Qual o gasto?" quando a saída é administrativa (sem carro). Os tipos criados em Configurações entram junto. */
+export const ADMIN_EXPENSE_TYPES = [
+  "Pró-labore",
+  "Água",
+  "Luz",
+  "Telefone",
+  "Internet",
+  "Aluguel",
+  "Alimentação",
+  "Material de escritório",
+  "Impostos",
+  "Outros",
+];

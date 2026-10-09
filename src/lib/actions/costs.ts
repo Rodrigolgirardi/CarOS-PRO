@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { get, run, tx } from "../db";
 import { brl, todayISO } from "../format";
-import { COST_CATEGORY, costLabel } from "../labels";
+import { ADMIN_EXPENSE_TYPES, COST_CATEGORY, costLabel } from "../labels";
 import type { ActionState, Cost } from "../types";
 import { err, fields, logEvent, ok } from "./util";
 
@@ -46,29 +46,30 @@ export async function addCost(vehicleId: number, prev: ActionState, formData: Fo
 export async function addCostForVehicle(prev: ActionState, formData: FormData): Promise<ActionState> {
   const f = fields(formData);
 
-  // Saída sem veículo (pró-labore, padaria, água, loja…): vira conta paga no
-  // caixa, sem entrar no custo/lucro de nenhum carro.
-  const target = f.s("vehicle_id");
-  if (!target || target === "admin") {
-    const category = f.s("category");
-    if (!(await validCategory(category))) return err("Escolha a categoria da saída.");
+  // Gasto administrativo (pró-labore, água, luz…): vira conta paga no caixa,
+  // sem entrar no custo/lucro de nenhum carro. "Qual o gasto?" é obrigatório.
+  if (f.s("vehicle_id") === "admin") {
+    const kind = f.s("admin_type");
+    const known =
+      !!kind && (ADMIN_EXPENSE_TYPES.includes(kind) || (await validCategory(kind)));
+    if (!known) return err("Escolha qual é o gasto (pró-labore, água, luz…).");
     const amount = f.cents("amount");
     const date = f.s("date") ?? todayISO();
     if (amount == null || amount <= 0) return err("Informe o valor do gasto.");
-    const label = costLabel(category!);
+    const label = costLabel(kind!);
     const detail = f.s("description");
     const description = detail ? `${label} — ${detail}` : label;
     await run(
       "INSERT INTO payables (description, category, amount, due_date, status, paid_date) VALUES (?,?,?,?,'pago',?)",
       description,
-      label,
+      "Gastos administrativos",
       amount,
       date,
       date
     );
-    await logEvent({ type: "custo", description: `Saída da loja — ${description}`, amount, date });
+    await logEvent({ type: "custo", description: `Gasto administrativo — ${description}`, amount, date });
     revalidatePath("/", "layout");
-    return ok("Saída lançada no caixa.");
+    return ok("Gasto administrativo lançado.");
   }
 
   const vehicleId = f.int("vehicle_id");

@@ -101,3 +101,31 @@ export async function vehicleOptions(opts?: { includeSold?: boolean; consignedOn
      FROM vehicles ${where} ORDER BY brand, model`
   );
 }
+
+export interface ConsignmentRow {
+  id: number; // veículo
+  brand: string;
+  label: string;
+  status: VehicleStatus;
+  owner: string; // nome do dono (antes do "—" no campo consignor)
+  phone: string | null; // WhatsApp do carro ou, na falta, o da ficha do cliente
+  consignor_value: number | null;
+  consignado_date: string | null;
+  created_at: string;
+}
+
+/** Aba Consignantes (desktop): uma linha por carro deixado na loja, do mais recente ao mais antigo. */
+export async function listConsignments(): Promise<ConsignmentRow[]> {
+  return all<ConsignmentRow>(
+    `SELECT v.id, v.brand, TRIM(v.brand || ' ' || v.model || ' ' || COALESCE(v.version, '')) AS label, v.status,
+            TRIM(split_part(COALESCE(v.consignor, ''), '—', 1)) AS owner,
+            COALESCE(NULLIF(v.origin_whatsapp, ''),
+              (SELECT cu.phone FROM customers cu
+                WHERE lower(trim(cu.name)) = lower(trim(split_part(COALESCE(v.consignor, ''), '—', 1)))
+                ORDER BY cu.id DESC LIMIT 1)) AS phone,
+            v.consignor_value, v.consignado_date, v.created_at
+       FROM vehicles v
+      WHERE v.consignado = 1
+      ORDER BY COALESCE(v.consignado_date, v.created_at) DESC, v.id DESC`
+  );
+}

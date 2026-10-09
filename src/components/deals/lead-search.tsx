@@ -6,7 +6,16 @@ import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/field";
 
 /** Busca de leads por nome, telefone ou veículo. */
-export function LeadSearch({ busca }: { busca: string | null }) {
+export function LeadSearch({
+  busca,
+  tab = "leads",
+  placeholder = "Buscar por nome, telefone ou veículo…",
+}: {
+  busca: string | null;
+  /** aba da página Clientes onde a busca vale (leads, consignantes…) */
+  tab?: string;
+  placeholder?: string;
+}) {
   const router = useRouter();
   const params = useSearchParams();
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -14,7 +23,7 @@ export function LeadSearch({ busca }: { busca: string | null }) {
 
   const apply = (value: string | null) => {
     const next = new URLSearchParams(params.toString());
-    next.set("tab", "leads");
+    next.set("tab", tab);
     if (value) next.set("busca", value);
     else next.delete("busca");
     router.push(`/vendas?${next.toString()}`);
@@ -26,7 +35,7 @@ export function LeadSearch({ busca }: { busca: string | null }) {
       <Input
         ref={inputRef}
         aria-label="Buscar leads"
-        placeholder="Buscar por nome, telefone ou veículo…"
+        placeholder={placeholder}
         defaultValue={busca ?? ""}
         onChange={(e) => {
           if (debounce.current) clearTimeout(debounce.current);

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BadgeCheck, Clock, Megaphone, Percent, Trophy } from "lucide-react";
+import { ConsignmentsTable } from "@/components/customers/consignments-table";
 import { CustomersPanel } from "@/components/customers/customers-panel";
 import { LeadsPanel } from "@/components/deals/leads-panel";
 import { SaleExpandRow } from "@/components/deals/sale-expand-row";
@@ -122,7 +123,15 @@ export default async function SalesPage({
       {tab === "leads" ? (
         <LeadsPanel deals={allDeals} status={status} busca={busca} />
       ) : tab === "consignantes" ? (
-        <CustomersPanel status="consignantes" />
+        <>
+          {/* celular: lista de pessoas · desktop: tabela no mesmo desenho dos leads */}
+          <div className="lg:hidden">
+            <CustomersPanel status="consignantes" />
+          </div>
+          <div className="hidden lg:block">
+            <ConsignmentsTable busca={busca} />
+          </div>
+        </>
       ) : tab === "compradores" ? (
         <CustomersPanel status="compradores" />
       ) : tab === "relatorio" ? (

@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: v ? vehicleLabel(v) : "Veículo" };
 }
 
-function InfoCard({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+function InfoCard({ title, action, children }: { title: React.ReactNode; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="rounded-2xl border border-zinc-200 bg-white shadow-card">
       <header className="flex items-center justify-between gap-3 border-b border-zinc-100 px-5 py-3">
@@ -330,7 +330,15 @@ export default async function VehiclePage({
 
           <div className="space-y-5">
             <InfoCard
-              title={vehicle.consignado === 1 ? "Consignação" : "Compra"}
+              title={
+                <>
+                  <span className="lg:hidden">{vehicle.consignado === 1 ? "Consignação" : "Compra"}</span>
+                  {/* desktop: deixa claro de quem são os dados do card */}
+                  <span className="hidden lg:inline">
+                    {vehicle.consignado === 1 ? "Dados do consignante" : "Dados do antigo proprietário"}
+                  </span>
+                </>
+              }
               action={
                 <Link
                   href={`/veiculos/${id}/editar`}

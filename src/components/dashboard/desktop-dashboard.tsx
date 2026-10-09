@@ -22,7 +22,7 @@ export function DesktopDashboard({ data }: { data: DashboardData }) {
       <section>
         <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Vendas</h2>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_270px]">
-          <MonthlySalesChart months={data.monthly} />
+          <MonthlySalesChart months={data.monthly} netLabel="Caixa" />
           <MonthlyTable months={data.monthly} />
         </div>
       </section>

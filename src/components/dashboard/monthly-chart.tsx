@@ -10,7 +10,16 @@ import type { MonthlyPoint } from "@/lib/queries/dashboard";
  * Lucro negativo desce abaixo da linha zero. Trio validado para daltonismo.
  * Tocar numa coluna seleciona o mês e mostra o resumo abaixo do gráfico.
  */
-export function MonthlySalesChart({ months, action }: { months: MonthlyPoint[]; action?: React.ReactNode }) {
+export function MonthlySalesChart({
+  months,
+  action,
+  netLabel = "Lucro",
+}: {
+  months: MonthlyPoint[];
+  action?: React.ReactNode;
+  /** nome da 3ª série (faturamento − custos): "Caixa" no desktop, que é visão de fluxo de caixa */
+  netLabel?: string;
+}) {
   const net = (m: MonthlyPoint) => m.revenue - m.spend;
   const hasMove = (m: MonthlyPoint) => m.revenue !== 0 || m.spend !== 0;
 
@@ -101,7 +110,7 @@ export function MonthlySalesChart({ months, action }: { months: MonthlyPoint[]; 
         </span>
         <span className="flex items-center gap-1.5">
           <span className="size-2 rounded-full bg-emerald-600" />
-          Lucro
+          {netLabel}
         </span>
       </div>
 
@@ -135,7 +144,7 @@ export function MonthlySalesChart({ months, action }: { months: MonthlyPoint[]; 
                 const empty = !hasMove(m);
                 const hint = empty
                   ? `${m.label} — sem movimentação`
-                  : `${m.label} — Faturamento ${brl(m.revenue)} (${m.sales} venda(s)) · Custos ${brl(m.spend)} · Lucro ${brl(lucro)}`;
+                  : `${m.label} — Faturamento ${brl(m.revenue)} (${m.sales} venda(s)) · Custos ${brl(m.spend)} · ${netLabel} ${brl(lucro)}`;
                 const isSel = selected === m.key;
                 return (
                   <div
@@ -192,7 +201,7 @@ export function MonthlySalesChart({ months, action }: { months: MonthlyPoint[]; 
             <>
               {" "}
               · Faturamento <span className="font-medium tabular-nums text-zinc-800">{brl(sel.revenue)}</span> ({sel.sales}{" "}
-              venda(s)) · Custos <span className="font-medium tabular-nums text-zinc-800">{brl(sel.spend)}</span> · Lucro{" "}
+              venda(s)) · Custos <span className="font-medium tabular-nums text-zinc-800">{brl(sel.spend)}</span> · {netLabel}{" "}
               <span className={`font-semibold tabular-nums ${net(sel) >= 0 ? "text-emerald-700" : "text-red-600"}`}>
                 {brl(net(sel))}
               </span>

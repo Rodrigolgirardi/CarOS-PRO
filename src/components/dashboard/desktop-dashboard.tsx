@@ -3,7 +3,6 @@ import { AttentionActivity, buildAttentionItems } from "@/components/dashboard/a
 import { MonthlySalesChart } from "@/components/dashboard/monthly-chart";
 import { MonthlyTable } from "@/components/dashboard/monthly-table";
 import { BrandLogo } from "@/components/vehicles/brand-logo";
-import { Stat, StatGrid } from "@/components/ui/stat";
 import { brl, pct } from "@/lib/format";
 import type { DashboardData } from "@/lib/queries/dashboard";
 
@@ -14,7 +13,7 @@ const stockShade = (i: number) => STOCK_SHADES[Math.min(i, STOCK_SHADES.length -
 
 /** Layout clássico do dashboard — usado apenas no desktop (lg+). */
 export function DesktopDashboard({ data }: { data: DashboardData }) {
-  const { stock, month, attention, recent } = data;
+  const { stock, attention, recent } = data;
 
   const items = buildAttentionItems(attention);
 
@@ -22,28 +21,9 @@ export function DesktopDashboard({ data }: { data: DashboardData }) {
     <>
       <section>
         <h2 className="mb-2.5 text-[13px] font-semibold text-zinc-900">Vendas</h2>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_250px_220px]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_270px]">
           <MonthlySalesChart months={data.monthly} />
           <MonthlyTable months={data.monthly} />
-          <StatGrid className="grid-cols-2 lg:grid-cols-1 lg:grid-rows-3">
-            <Stat
-              label="Faturamento"
-              value={brl(month.revenue)}
-              sub={month.sales === 0 ? "Nenhuma venda no mês" : `${month.sales} venda(s) no mês`}
-            />
-            <Stat
-              label="Custos"
-              value={brl(month.spend)}
-              valueClassName="text-red-600"
-              sub="Compras + custos + contas"
-            />
-            <Stat
-              label="Lucro"
-              value={brl(month.revenue - month.spend)}
-              valueClassName={month.revenue - month.spend >= 0 ? "text-emerald-600" : "text-red-600"}
-              sub="Faturamento − custos"
-            />
-          </StatGrid>
         </div>
       </section>
 

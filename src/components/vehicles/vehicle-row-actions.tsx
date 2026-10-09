@@ -16,7 +16,7 @@ interface VehicleDeleteProps {
   redirectAfterDelete?: string;
 }
 
-type VehicleRowActionsProps = VehicleDeleteProps;
+type VehicleRowActionsProps = VehicleDeleteProps & { vertical?: boolean };
 
 /** Modal de confirmação + exclusão compartilhados entre o menu ⋯ e o botão da página de edição. */
 function useDeleteVehicle({ id, label, redirectAfterDelete }: VehicleDeleteProps) {
@@ -57,7 +57,7 @@ function useDeleteVehicle({ id, label, redirectAfterDelete }: VehicleDeleteProps
   return { openConfirm: () => setConfirmOpen(true), confirmModal };
 }
 
-export function VehicleRowActions({ id, label, redirectAfterDelete }: VehicleRowActionsProps) {
+export function VehicleRowActions({ id, label, redirectAfterDelete, vertical }: VehicleRowActionsProps) {
   const router = useRouter();
   const { openConfirm, confirmModal } = useDeleteVehicle({ id, label, redirectAfterDelete });
 
@@ -65,6 +65,7 @@ export function VehicleRowActions({ id, label, redirectAfterDelete }: VehicleRow
     <>
       <Menu
         ariaLabel={`Ações de ${label}`}
+        vertical={vertical}
         items={[
           { label: "Editar", icon: <Pencil size={14} />, onSelect: () => router.push(`/veiculos/${id}/editar`) },
           { label: "Excluir", icon: <Trash2 size={14} />, danger: true, onSelect: openConfirm },

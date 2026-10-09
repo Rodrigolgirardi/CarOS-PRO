@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export interface MenuItem {
@@ -16,6 +16,8 @@ interface MenuProps {
   items: MenuItem[];
   ariaLabel?: string;
   align?: "left" | "right";
+  /** pontinhos em pé (⋮) em vez de deitados (⋯) */
+  vertical?: boolean;
 }
 
 const MENU_WIDTH = 176; // w-44
@@ -24,7 +26,7 @@ const MENU_WIDTH = 176; // w-44
  * Menu "⋯" discreto para ações de linha. O dropdown é renderizado num portal
  * com posição fixa, para não ser cortado por tabelas com overflow.
  */
-export function Menu({ items, ariaLabel = "Mais ações", align = "right" }: MenuProps) {
+export function Menu({ items, ariaLabel = "Mais ações", align = "right", vertical }: MenuProps) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -76,7 +78,7 @@ export function Menu({ items, ariaLabel = "Mais ações", align = "right" }: Men
           open && "bg-zinc-100 text-zinc-700"
         )}
       >
-        <MoreHorizontal size={15} />
+        {vertical ? <MoreVertical size={15} /> : <MoreHorizontal size={15} />}
       </button>
       {open &&
         pos &&

@@ -266,6 +266,7 @@ export default async function VehiclesPage({
           <THead>
             <Th>Veículo</Th>
             <Th />
+            <Th />
             <Th>Ano</Th>
             <Th right>KM</Th>
             <Th right>Compra</Th>
@@ -292,7 +293,7 @@ export default async function VehiclesPage({
                           {v.brand} {v.model}
                         </span>
                         <span className="block truncate text-xs text-zinc-500">{v.version ?? "—"}</span>
-                        {/* embaixo do modelo: Próprio/Consignado · placa · nota de anúncios (2/7) */}
+                        {/* embaixo do modelo: Próprio/Consignado · placa */}
                         <span className="mt-1 flex min-w-0 items-center gap-1.5">
                           <span
                             className={`shrink-0 rounded-full px-1.5 py-px text-[10px] font-medium ${
@@ -306,7 +307,6 @@ export default async function VehiclesPage({
                               {v.plate}
                             </span>
                           )}
-                          <PlatformsHover list={v.platforms_list} />
                         </span>
                       </span>
                     </Link>
@@ -340,6 +340,9 @@ export default async function VehiclesPage({
                         small
                       />
                     )}
+                  </Td>
+                  <Td>
+                    <PlatformsHover list={v.platforms_list} />
                   </Td>
                   <Td className="text-zinc-500">
                     {v.year_fab
@@ -376,7 +379,7 @@ export default async function VehiclesPage({
                     </Td>
                   )}
                   <Td className="w-10">
-                    <VehicleRowActions id={v.id} label={label} />
+                    <VehicleRowActions id={v.id} label={label} vertical />
                   </Td>
                 </Tr>
               );

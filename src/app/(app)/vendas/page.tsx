@@ -238,6 +238,77 @@ export default async function SalesPage({
               </section>
               </div>
 
+              {/* só no desktop: vendas mês a mês do ano, com o mês campeão destacado */}
+              {(() => {
+                const year = new Date().getFullYear();
+                const MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+                const MONTHS_FULL = [
+                  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+                  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+                ];
+                const months = MONTHS.map((label) => ({ label, n: 0, revenue: 0 }));
+                for (const d of sold) {
+                  if (!d.sold_date || Number(d.sold_date.slice(0, 4)) !== year) continue;
+                  const m = months[Number(d.sold_date.slice(5, 7)) - 1];
+                  if (!m) continue;
+                  m.n += 1;
+                  m.revenue += d.sale_price ?? 0;
+                }
+                const yearTotal = months.reduce((s, m) => s + m.n, 0);
+                const maxN = Math.max(...months.map((m) => m.n), 1);
+                // campeão: mais vendas; empate desempata pelo faturamento
+                const bestIdx = yearTotal
+                  ? months.reduce((bi, m, i) => {
+                      const b = months[bi]!;
+                      return m.n > b.n || (m.n === b.n && m.revenue > b.revenue) ? i : bi;
+                    }, 0)
+                  : -1;
+                const best = bestIdx >= 0 ? months[bestIdx]! : null;
+                return (
+                  <section className="hidden rounded-2xl border border-zinc-200 bg-white lg:block">
+                    <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3">
+                      <h2 className="text-[15px] font-semibold tracking-tight text-zinc-900">Vendas por mês · {year}</h2>
+                      {best ? (
+                        <p className="text-[13px] text-zinc-500">
+                          Mês que mais vende:{" "}
+                          <span className="font-semibold capitalize text-emerald-600">{MONTHS_FULL[bestIdx]}</span>{" "}
+                          · {best.n} venda{best.n === 1 ? "" : "s"} · {brl(best.revenue)}
+                        </p>
+                      ) : (
+                        <p className="text-[13px] text-zinc-500">Nenhuma venda em {year} ainda.</p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-12 items-end gap-3 px-5 pb-4 pt-5">
+                      {months.map((m, i) => (
+                        <div key={m.label} className="flex flex-col items-center gap-1.5">
+                          <span
+                            className={`text-xs font-semibold tabular-nums ${
+                              i === bestIdx ? "text-emerald-600" : m.n ? "text-zinc-700" : "text-zinc-300"
+                            }`}
+                          >
+                            {m.n}
+                          </span>
+                          <div className="flex h-28 w-full items-end">
+                            <div
+                              title={`${MONTHS_FULL[i]}: ${m.n} venda(s) · ${brl(m.revenue)}`}
+                              className={`w-full rounded-t-md ${
+                                i === bestIdx ? "bg-emerald-500" : m.n ? "bg-blue-500" : "bg-zinc-100"
+                              }`}
+                              style={{ height: m.n ? `${(m.n / maxN) * 100}%` : "4px" }}
+                            />
+                          </div>
+                          <span
+                            className={`text-xs ${i === bestIdx ? "font-semibold text-emerald-600" : "text-zinc-500"}`}
+                          >
+                            {m.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })()}
+
               {(biggest || bestMargin || fastest || topChannel) && (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
                   {/* só no desktop: canal que mais converte em venda */}

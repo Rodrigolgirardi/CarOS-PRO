@@ -31,7 +31,7 @@ export default async function SellersPage() {
   const [sellers, rules] = await Promise.all([listSellers(), listCommissionRules()]);
 
   return (
-    <>
+    <div className="lg:mx-auto lg:max-w-4xl">
       <PageHeader
         title="Vendedores"
         description={
@@ -57,13 +57,13 @@ export default async function SellersPage() {
       ) : (
         <>
           {/* desktop: Vendedor | Contato | Vendas | Tempo de casa */}
-          <div className="hidden max-w-4xl lg:block">
+          <div className="hidden lg:block">
             <Table>
               <THead>
                 <Th>Vendedor</Th>
-                <Th>Contato</Th>
-                <Th right>Quantidade de vendas</Th>
-                <Th>Vendedor há</Th>
+                <Th className="text-center!">Contato</Th>
+                <Th className="text-center!">Quantidade de vendas</Th>
+                <Th className="text-center!">Vendedor há</Th>
                 <Th />
               </THead>
               <TBody>
@@ -74,7 +74,7 @@ export default async function SellersPage() {
                   return (
                     <Tr key={s.id}>
                       <Td className="font-medium text-zinc-900">{s.name}</Td>
-                      <Td>
+                      <Td className="text-center">
                         {phone ? (
                           <a
                             href={`https://wa.me/55${(s.phone ?? "").replace(/\D/g, "")}`}
@@ -89,10 +89,10 @@ export default async function SellersPage() {
                           <span className="text-zinc-400">—</span>
                         )}
                       </Td>
-                      <Td right className="font-medium tabular-nums text-zinc-900">
+                      <Td className="text-center font-medium tabular-nums text-zinc-900">
                         {s.sales_count}
                       </Td>
-                      <Td className="text-zinc-600">
+                      <Td className="text-center text-zinc-600">
                         <span className="font-medium tabular-nums text-zinc-900">
                           {days} dia{days === 1 ? "" : "s"}
                         </span>{" "}
@@ -158,6 +158,6 @@ export default async function SellersPage() {
           ))}
         </div>
       </section>
-    </>
+    </div>
   );
 }

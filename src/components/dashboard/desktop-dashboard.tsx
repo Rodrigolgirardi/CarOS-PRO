@@ -79,14 +79,18 @@ export function DesktopDashboard({ data }: { data: DashboardData }) {
                   </p>
                 </div>
               )}
-              <div className="divide-y divide-zinc-100">
+              {/* 2 carros por linha */}
+              <div className="grid grid-cols-2">
                 {stock.vehicles.map((v, i) => {
                   const share = stock.invested > 0 ? v.invested / stock.invested : 0;
+                  const lastRow = i >= Math.ceil(stock.vehicles.length / 2) * 2 - 2;
                   return (
                     <Link
                       key={v.id}
                       href={`/veiculos/${v.id}`}
-                      className="flex items-center justify-between gap-3 px-4 py-2.5 transition-colors hover:bg-zinc-50"
+                      className={`flex min-w-0 items-center justify-between gap-3 border-zinc-100 px-4 py-2.5 transition-colors hover:bg-zinc-50 ${
+                        i % 2 === 0 ? "border-r" : ""
+                      } ${lastRow ? "" : "border-b"}`}
                     >
                       <span className="flex min-w-0 items-center gap-2.5">
                         <BrandLogo brand={v.label} size={18} />

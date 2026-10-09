@@ -262,7 +262,8 @@ export default async function VehiclesPage({
 
           {/* computador: tabela completa */}
           <div className="hidden lg:block">
-            <Table>
+            {/* largura do conteúdo: colunas juntas, sem esticar até a borda da página */}
+            <Table className="w-fit max-w-full">
           <THead>
             <Th>Veículo</Th>
             <Th />

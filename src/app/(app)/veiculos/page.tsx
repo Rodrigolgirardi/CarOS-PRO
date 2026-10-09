@@ -79,7 +79,7 @@ export default async function VehiclesPage({
     // desktop: a página usa a largura do monitor (a tabela cabe sem rolagem lateral)
     <div className="page-wide">
       {/* desktop: coluna da largura da tabela, centralizada no monitor (grande ou pequeno) */}
-      <div className="lg:mx-auto lg:w-fit lg:max-w-full">
+      <div className="lg:mx-auto lg:w-fit lg:min-w-[min(1140px,100%)] lg:max-w-full">
       <PageHeader title="Veículos" description="Seu estoque, do jeito que ele está agora." />
 
       {/* celular: chips (visual das Ações rápidas) · desktop: botões clássicos */}

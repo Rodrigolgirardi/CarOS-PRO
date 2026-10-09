@@ -23,10 +23,11 @@ interface CpfCnpjInputProps {
   name: string;
   defaultValue?: string | null;
   placeholder?: string;
+  required?: boolean;
 }
 
 /** Campo de CPF/CNPJ: só números, no máximo 14 dígitos, formata enquanto digita. */
-export function CpfCnpjInput({ name, defaultValue, placeholder = "000.000.000-00" }: CpfCnpjInputProps) {
+export function CpfCnpjInput({ name, defaultValue, placeholder = "000.000.000-00", required }: CpfCnpjInputProps) {
   const [value, setValue] = useState(formatCpfCnpj(defaultValue ?? ""));
   return (
     <Input
@@ -35,6 +36,8 @@ export function CpfCnpjInput({ name, defaultValue, placeholder = "000.000.000-00
       onChange={(e) => setValue(formatCpfCnpj(e.target.value))}
       inputMode="numeric"
       maxLength={18}
+      required={required}
+      minLength={required ? 14 : undefined}
       placeholder={placeholder}
     />
   );

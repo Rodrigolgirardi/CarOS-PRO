@@ -15,6 +15,15 @@ const cleanChassis = (c: string | null) => (c ? c.toUpperCase().replace(/\s+/g, 
 const oneOf = (v: string | null, allowed: Record<string, string>) => (v && v in allowed ? v : null);
 const simNao = (v: string | null) => (v === "1" ? 1 : v === "0" ? 0 : null);
 
+/** Consignado exige CPF/CNPJ e WhatsApp do dono (para contato e repasse). */
+function consignorContactError(cpf: string | null, whatsapp: string | null): string | null {
+  const doc = (cpf ?? "").replace(/\D/g, "");
+  if (doc.length !== 11 && doc.length !== 14) return "Informe o CPF (ou CNPJ) do consignante.";
+  const phone = (whatsapp ?? "").replace(/\D/g, "");
+  if (phone.length < 10) return "Informe o WhatsApp do consignante.";
+  return null;
+}
+
 /**
  * Entrada de veículo. "Estoque próprio" cria a compra (dinheiro sai do caixa);
  * "Consignado" registra carro de terceiro na loja, sem compra e sem saída de
@@ -23,6 +32,10 @@ const simNao = (v: string | null) => (v === "1" ? 1 : v === "0" ? 0 : null);
 export async function createPurchase(prev: ActionState, formData: FormData): Promise<ActionState> {
   const f = fields(formData);
   const consigned = f.s("entry_type") === "consignado";
+  if (consigned) {
+    const contactErr = consignorContactError(f.s("origin_cpf"), f.s("origin_whatsapp"));
+    if (contactErr) return err(contactErr);
+  }
   const brand = f.s("brand");
   const model = f.s("model");
   const price = f.cents("purchase_price");
@@ -88,15 +101,16 @@ export async function createPurchase(prev: ActionState, formData: FormData): Pro
       // o dono vira cliente "consignante" automaticamente (se ainda não existir)
       const [namePart, ...phonePart] = consignor!.split("—");
       const ownerName = namePart.trim() || consignor!;
-      const ownerPhone = phonePart.join("—").trim() || null;
+      const ownerPhone = f.s("origin_whatsapp") ?? (phonePart.join("—").trim() || null);
       const existing = await get<{ id: number }>("SELECT id FROM customers WHERE lower(name) = lower(?)", ownerName);
       const ownerId =
         existing?.id ??
         (
           await run(
-            "INSERT INTO customers (name, phone, kind, notes) VALUES (?,?,'consignante','Criado automaticamente ao receber um carro em consignação.')",
+            "INSERT INTO customers (name, phone, cpf_cnpj, kind, notes) VALUES (?,?,?,'consignante','Criado automaticamente ao receber um carro em consignação.')",
             ownerName,
-            ownerPhone
+            ownerPhone,
+            f.s("origin_cpf")
           )
         ).lastId;
       await logEvent({
@@ -152,6 +166,10 @@ export async function updateVehicle(id: number, prev: ActionState, formData: For
   const isConsigned = current.consignado === 1;
   if (!brand || !model) return err("Informe marca e modelo do veículo.");
   if (!isConsigned && (price == null || price <= 0)) return err("Informe o preço de compra.");
+  if (isConsigned) {
+    const contactErr = consignorContactError(f.s("origin_cpf"), f.s("origin_whatsapp"));
+    if (contactErr) return err(contactErr);
+  }
 
   const photoFile = f.file("photo");
   let photo = current.photo;

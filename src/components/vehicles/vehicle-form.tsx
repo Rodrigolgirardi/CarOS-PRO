@@ -376,8 +376,21 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                   <Input
                     name="consignor"
                     defaultValue={vehicle?.consignor ?? ""}
-                    placeholder="Marcos Vieira — (11) 99999-0000"
+                    placeholder="Marcos Vieira"
                     required
+                  />
+                </Field>
+                {/* consignado: contato do dono é obrigatório (repasse e comunicação) */}
+                <Field label="CPF do consignante" required>
+                  <CpfCnpjInput name="origin_cpf" defaultValue={vehicle?.origin_cpf} required />
+                </Field>
+                <Field label="WhatsApp do consignante" required>
+                  <PhoneInput
+                    name="origin_whatsapp"
+                    defaultValue={vehicle?.origin_whatsapp ?? ""}
+                    placeholder="(11) 99999-0000"
+                    required
+                    minLength={14}
                   />
                 </Field>
                 <Field
@@ -425,12 +438,17 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
           <MoreDetails open={entryMoreOpen} onOpenChange={setEntryMoreOpen}>
             {/* contato de quem vendeu/consignou — aparece na aba Dados do veículo */}
             <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-3">
-              <Field label="CPF">
-                <CpfCnpjInput name="origin_cpf" defaultValue={vehicle?.origin_cpf} />
-              </Field>
-              <Field label="WhatsApp">
-                <PhoneInput name="origin_whatsapp" defaultValue={vehicle?.origin_whatsapp ?? ""} placeholder="(11) 99999-0000" />
-              </Field>
+              {/* no consignado, CPF e WhatsApp ficam no bloco principal (obrigatórios) */}
+              {!consigned && (
+                <>
+                  <Field label="CPF">
+                    <CpfCnpjInput name="origin_cpf" defaultValue={vehicle?.origin_cpf} />
+                  </Field>
+                  <Field label="WhatsApp">
+                    <PhoneInput name="origin_whatsapp" defaultValue={vehicle?.origin_whatsapp ?? ""} placeholder="(11) 99999-0000" />
+                  </Field>
+                </>
+              )}
               <Field label="E-mail">
                 <Input type="email" name="origin_email" defaultValue={vehicle?.origin_email ?? ""} placeholder="nome@email.com" />
               </Field>

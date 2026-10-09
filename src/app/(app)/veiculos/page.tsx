@@ -101,9 +101,6 @@ export default async function VehiclesPage({
           <Plus size={14} />
           Adicionar veículo
         </LinkButton>
-        <AddExpenseButton vehicles={vehOptions} />
-        <AddIncomeButton customers={customers} sellers={sellers} rules={rules} />
-        <PlateLookupButton />
         <QuickSaleButton
           vehicles={vehOptions}
           sellers={sellers}
@@ -266,6 +263,7 @@ export default async function VehiclesPage({
             <Table>
           <THead>
             <Th>Veículo</Th>
+            <Th />
             <Th>Anúncios</Th>
             <Th>Ano</Th>
             <Th>Placa</Th>
@@ -305,6 +303,19 @@ export default async function VehiclesPage({
                         <span className="block truncate text-xs text-zinc-500">{v.version ?? "—"}</span>
                       </span>
                     </Link>
+                  </Td>
+                  <Td>
+                    {/* venda direto da linha: o modal já vem com este carro */}
+                    {v.status !== "vendido" && (
+                      <QuickSaleButton
+                        vehicles={vehOptions}
+                        sellers={sellers}
+                        customers={customers}
+                        defaultCommission={saleCommission}
+                        fixedVehicleId={v.id}
+                        small
+                      />
+                    )}
                   </Td>
                   <Td>
                     <PlatformsHover list={v.platforms_list} />

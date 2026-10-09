@@ -26,7 +26,7 @@ interface QuickSaleButtonProps {
 }
 
 /** Botão verde "Venda": registra a venda escolhendo o carro no modal. */
-export function QuickSaleButton({ vehicles, sellers, customers, defaultCommission, fixedVehicleId, chip }: QuickSaleButtonProps & { chip?: boolean }) {
+export function QuickSaleButton({ vehicles, sellers, customers, defaultCommission, fixedVehicleId, chip, small }: QuickSaleButtonProps & { chip?: boolean; small?: boolean }) {
   const [open, setOpen] = useState(false);
   const [vehicleId, setVehicleId] = useState(fixedVehicleId != null ? String(fixedVehicleId) : "");
   const [sellerId, setSellerId] = useState("");
@@ -54,7 +54,7 @@ export function QuickSaleButton({ vehicles, sellers, customers, defaultCommissio
           <ChipInner icon={BadgeCheck} label="Venda" color="emerald" compact />
         </button>
       ) : (
-      <Button variant="success" onClick={() => setOpen(true)} disabled={vehicles.length === 0}>
+      <Button variant="success" size={small ? "sm" : "md"} onClick={() => setOpen(true)} disabled={vehicles.length === 0}>
         <BadgeCheck size={14} />
         Venda
       </Button>

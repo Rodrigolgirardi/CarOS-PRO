@@ -175,6 +175,8 @@ export default async function SalesPage({
 
           return (
             <div className="space-y-5">
+              {/* desktop: os dois rankings lado a lado */}
+              <div className="space-y-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0">
               <section className="rounded-2xl border border-zinc-200 bg-white">
                 <h2 className="border-b border-zinc-100 px-4 py-3 text-[15px] font-semibold tracking-tight text-zinc-900">
                   Leads por canal
@@ -234,6 +236,7 @@ export default async function SalesPage({
                   </div>
                 )}
               </section>
+              </div>
 
               {(biggest || bestMargin || fastest || topChannel) && (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">

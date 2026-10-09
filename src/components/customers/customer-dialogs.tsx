@@ -143,6 +143,39 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
   );
 }
 
+/**
+ * Lápis ao lado do nome (tabelas que abrem para baixo): edita a ficha do
+ * cliente. Cliques e teclas não vazam para a linha (senão ela abriria/fecharia).
+ */
+export function CustomerEditPencil({ customer }: { customer: Customer }) {
+  const [open, setOpen] = useState(false);
+  const { state, formAction } = useAction(saveCustomer.bind(null, customer.id), {
+    onSuccess: () => setOpen(false),
+  });
+  return (
+    <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="contents">
+      <button
+        type="button"
+        aria-label={`Editar ${customer.name}`}
+        onClick={() => setOpen(true)}
+        className="grid size-6 shrink-0 place-items-center rounded-md text-zinc-300 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+      >
+        <Pencil size={13} />
+      </button>
+      <Modal open={open} onClose={() => setOpen(false)} title="Ficha do cliente">
+        <form action={formAction} className="space-y-4">
+          <CustomerFields customer={customer} />
+          <FormError state={state} />
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setOpen(false)}>Cancelar</Button>
+            <SubmitButton>Salvar</SubmitButton>
+          </div>
+        </form>
+      </Modal>
+    </span>
+  );
+}
+
 export function AddContactButton({ customerId }: { customerId: number }) {
   const [open, setOpen] = useState(false);
   const { state, formAction } = useAction(addContact.bind(null, customerId), { onSuccess: () => setOpen(false) });

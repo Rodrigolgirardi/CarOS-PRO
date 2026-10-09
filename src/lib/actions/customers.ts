@@ -104,3 +104,43 @@ export async function quickCreateCustomer(
   revalidate();
   return { ok: true, customer: { id: lastId, name: n, city: null } };
 }
+
+/**
+ * Edita o dono de um carro consignado (aba Consignantes): os dados ficam no
+ * veículo (consignor/origin_*) e a ficha do cliente consignante acompanha.
+ */
+export async function updateConsignor(vehicleId: number, prev: ActionState, formData: FormData): Promise<ActionState> {
+  const f = fields(formData);
+  const name = f.s("name");
+  const phone = f.s("phone");
+  const cpf = f.s("cpf");
+  if (!name) return err("Informe o nome do proprietário.");
+  if ((phone ?? "").replace(/\D/g, "").length < 10) return err("Informe o WhatsApp com DDD.");
+  const doc = (cpf ?? "").replace(/\D/g, "");
+  if (doc.length !== 11 && doc.length !== 14) return err("Informe o CPF (ou CNPJ) do proprietário.");
+
+  const v = await get<{ consignor: string | null }>("SELECT consignor FROM vehicles WHERE id = ? AND consignado = 1", vehicleId);
+  if (!v) return err("Carro consignado não encontrado.");
+  const oldName = (v.consignor ?? "").split("—")[0]!.trim();
+
+  await run(
+    "UPDATE vehicles SET consignor = ?, origin_whatsapp = ?, origin_cpf = ?, origin_email = ? WHERE id = ?",
+    name,
+    phone,
+    cpf,
+    f.s("email"),
+    vehicleId
+  );
+  if (oldName) {
+    await run(
+      "UPDATE customers SET name = ?, phone = ?, cpf_cnpj = ?, email = COALESCE(?, email) WHERE kind = 'consignante' AND lower(trim(name)) = lower(?)",
+      name,
+      phone,
+      cpf,
+      f.s("email"),
+      oldName
+    );
+  }
+  revalidate();
+  return ok("Dados do proprietário atualizados.");
+}

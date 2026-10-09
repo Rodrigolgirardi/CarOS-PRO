@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight, ExternalLink } from "lucide-react";
+import { CustomerEditPencil } from "@/components/customers/customer-dialogs";
 import { WhatsAppIcon } from "@/components/ui/whatsapp-icon";
 import { BrandLogo } from "@/components/vehicles/brand-logo";
 import { brl } from "@/lib/format";
@@ -74,6 +75,22 @@ export function BuyerRowItem({ deal: d, grid }: { deal: DealRow; grid: string })
             className={`size-2 shrink-0 rounded-full ${d.pending > 0 ? "bg-amber-400" : "bg-emerald-500"}`}
           />
           <span className="truncate text-[13px] font-semibold text-zinc-900">{d.customer_name}</span>
+          <CustomerEditPencil
+            customer={{
+              id: d.customer_id,
+              name: d.customer_name,
+              cpf_cnpj: d.customer_cpf,
+              phone: d.customer_phone,
+              email: d.customer_email,
+              city: d.customer_city,
+              notes: d.customer_notes,
+              kind: d.customer_kind,
+              source: d.customer_source,
+              status: d.customer_status,
+              is_demo: 0,
+              created_at: "",
+            }}
+          />
         </span>
         <span className="min-w-0">
           {phone ? (

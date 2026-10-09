@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, ExternalLink } from "lucide-react";
+import { ChevronRight, ExternalLink, Pencil } from "lucide-react";
+import { updateConsignor } from "@/lib/actions/customers";
+import { Button } from "@/components/ui/button";
+import { CpfCnpjInput } from "@/components/ui/cpf-cnpj-input";
+import { Field, Input } from "@/components/ui/field";
+import { FormError, SubmitButton, useAction } from "@/components/ui/form";
+import { Modal } from "@/components/ui/modal";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { WhatsAppIcon } from "@/components/ui/whatsapp-icon";
 import { BrandLogo } from "@/components/vehicles/brand-logo";
 import { brl } from "@/lib/format";
@@ -52,6 +59,50 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+/** Lápis ao lado do dono: edita nome, WhatsApp, CPF e e-mail (gravados no carro). */
+function ConsignorEditPencil({ row: r }: { row: ConsignmentRow }) {
+  const [open, setOpen] = useState(false);
+  const { state, formAction } = useAction(updateConsignor.bind(null, r.id), {
+    onSuccess: () => setOpen(false),
+  });
+  return (
+    // cliques e teclas não vazam para a linha (senão ela abriria/fecharia)
+    <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="contents">
+      <button
+        type="button"
+        aria-label={`Editar ${r.owner}`}
+        onClick={() => setOpen(true)}
+        className="grid size-6 shrink-0 place-items-center rounded-md text-zinc-300 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+      >
+        <Pencil size={13} />
+      </button>
+      <Modal open={open} onClose={() => setOpen(false)} title="Dados do proprietário" description={r.label}>
+        <form action={formAction} className="space-y-4">
+          <Field label="Nome" required>
+            <Input name="name" defaultValue={r.owner} required />
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="WhatsApp" required>
+              <PhoneInput name="phone" defaultValue={r.phone ?? ""} placeholder="(11) 99999-0000" required minLength={14} />
+            </Field>
+            <Field label="CPF" required>
+              <CpfCnpjInput name="cpf" defaultValue={r.cpf} required />
+            </Field>
+          </div>
+          <Field label="E-mail">
+            <Input type="email" name="email" defaultValue={r.email ?? ""} placeholder="nome@email.com" />
+          </Field>
+          <FormError state={state} />
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setOpen(false)}>Cancelar</Button>
+            <SubmitButton>Salvar</SubmitButton>
+          </div>
+        </form>
+      </Modal>
+    </span>
+  );
+}
+
 /** Linha da tabela de consignantes (desktop): clicar abre os detalhes para baixo. */
 export function ConsignmentRowItem({ row: r, grid }: { row: ConsignmentRow; grid: string }) {
   const [open, setOpen] = useState(false);
@@ -79,6 +130,7 @@ export function ConsignmentRowItem({ row: r, grid }: { row: ConsignmentRow; grid
             className={`size-2 shrink-0 rounded-full ${sold ? "bg-zinc-300" : "bg-emerald-500"}`}
           />
           <span className="truncate text-[13px] font-semibold text-zinc-900">{r.owner || "—"}</span>
+          <ConsignorEditPencil row={r} />
         </span>
         <span className="min-w-0">
           {phone ? (

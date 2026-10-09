@@ -229,11 +229,12 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
           </div>
 
           <MoreDetails open={vehicleMoreOpen} onOpenChange={setVehicleMoreOpen}>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-4">
-              <Field label="Cor">
+            {/* desktop: 8 colunas — cor | câmbio | combustível | renavam / chassi | laudo | blindado | leilão / observações */}
+            <div className="grid grid-cols-2 gap-x-3 gap-y-3 md:gap-4 md:grid-cols-4 lg:grid-cols-8 lg:gap-x-3 lg:gap-y-3">
+              <Field label="Cor" className="lg:col-span-2">
                 <Input name="color" defaultValue={vehicle?.color ?? ""} placeholder="Prata" />
               </Field>
-              <Field label="Câmbio">
+              <Field label="Câmbio" className="lg:col-span-2">
                 <Select name="transmission" defaultValue={vehicle?.transmission ?? ""}>
                   <option value="">—</option>
                   {TRANSMISSION_OPTIONS.map((o) => (
@@ -241,7 +242,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                   ))}
                 </Select>
               </Field>
-              <Field label="Combustível">
+              <Field label="Combustível" className="lg:col-span-2">
                 <Select name="fuel" defaultValue={vehicle?.fuel ?? ""}>
                   <option value="">—</option>
                   {FUEL_OPTIONS.map((o) => (
@@ -249,7 +250,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                   ))}
                 </Select>
               </Field>
-              <Field label="Renavam">
+              <Field label="Renavam" className="lg:col-span-2">
                 <Input name="renavam" defaultValue={vehicle?.renavam ?? ""} inputMode="numeric" />
               </Field>
               <Field label="Chassi" className="md:col-span-2">
@@ -261,7 +262,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                   className="uppercase"
                 />
               </Field>
-              <Field label="Laudo cautelar">
+              <Field label="Laudo cautelar" className="lg:col-span-2">
                 <Select name="laudo" defaultValue={vehicle?.laudo ?? ""}>
                   <option value="">—</option>
                   {Object.entries(VEHICLE_LAUDO).map(([key, label]) => (
@@ -271,14 +272,22 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                   ))}
                 </Select>
               </Field>
-              <Field label="Blindado">
+              <Field label="Blindado" className="lg:col-span-2">
                 <Select name="blindado" defaultValue={vehicle?.blindado == null ? "" : String(vehicle.blindado)}>
                   <option value="">—</option>
                   <option value="1">Sim</option>
                   <option value="0">Não</option>
                 </Select>
               </Field>
-              <Field label="Passagem por leilão">
+              <Field
+                label={
+                  <>
+                    <span className="lg:hidden">Passagem por leilão</span>
+                    <span className="hidden lg:inline">Leilão</span>
+                  </>
+                }
+                className="lg:col-span-2"
+              >
                 <Select name="leilao" defaultValue={vehicle?.leilao ?? ""}>
                   <option value="">—</option>
                   {Object.entries(VEHICLE_LEILAO).map(([key, label]) => (
@@ -288,7 +297,7 @@ export function VehicleForm({ vehicle, defaultConsigned }: VehicleFormProps) {
                   ))}
                 </Select>
               </Field>
-              <Field label="Observações" className="col-span-2 md:col-span-3">
+              <Field label="Observações" className="col-span-2 md:col-span-3 lg:col-span-8">
                 <Textarea name="notes" defaultValue={vehicle?.notes ?? ""} placeholder="Único dono, revisões em dia…" />
               </Field>
             </div>

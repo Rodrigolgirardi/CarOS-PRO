@@ -266,7 +266,7 @@ export default async function VehiclesPage({
           <THead>
             <Th>Veículo</Th>
             <Th />
-            <Th>Anúncios</Th>
+            <Th />
             <Th>Ano</Th>
             <Th>Placa</Th>
             <Th right>KM</Th>

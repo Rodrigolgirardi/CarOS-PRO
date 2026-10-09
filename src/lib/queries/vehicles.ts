@@ -12,6 +12,7 @@ SELECT
   p.notes          AS purchase_notes,
   COALESCE(c.total, 0) AS costs_total,
   COALESCE(pl.n, 0) AS platforms_count,
+  pl.names         AS platforms_list,
   COALESCE(p.price, 0) + COALESCE(c.total, 0) AS total_cost,
   sd.sale_price    AS sold_price,
   sd.sold_date     AS sold_date,
@@ -20,7 +21,7 @@ SELECT
 FROM vehicles v
 LEFT JOIN purchases p ON p.vehicle_id = v.id
 LEFT JOIN (SELECT vehicle_id, SUM(amount) AS total FROM costs GROUP BY vehicle_id) c ON c.vehicle_id = v.id
-LEFT JOIN (SELECT vehicle_id, COUNT(*) AS n FROM vehicle_platforms GROUP BY vehicle_id) pl ON pl.vehicle_id = v.id
+LEFT JOIN (SELECT vehicle_id, COUNT(*) AS n, STRING_AGG(platform, '|') AS names FROM vehicle_platforms GROUP BY vehicle_id) pl ON pl.vehicle_id = v.id
 LEFT JOIN deals sd ON sd.vehicle_id = v.id AND sd.stage IN ('vendido', 'entregue')
 LEFT JOIN customers bc ON bc.id = sd.customer_id
 `;

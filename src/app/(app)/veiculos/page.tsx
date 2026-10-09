@@ -14,6 +14,7 @@ import { QuickSaleButton } from "@/components/vehicles/quick-sale-button";
 import { customerOptions } from "@/lib/queries/customers";
 import { sellerOptions } from "@/lib/queries/sellers";
 import { VehiclePhoto } from "@/components/vehicles/vehicle-photo";
+import { PlatformsHover } from "@/components/vehicles/platforms-hover";
 import { VehicleRowActions } from "@/components/vehicles/vehicle-row-actions";
 import { VehicleSearch } from "@/components/vehicles/vehicle-search";
 import { brl, pct } from "@/lib/format";
@@ -264,6 +265,7 @@ export default async function VehiclesPage({
             <Table>
           <THead>
             <Th>Veículo</Th>
+            <Th>Anúncios</Th>
             <Th>Ano</Th>
             <Th>Placa</Th>
             <Th right>KM</Th>
@@ -302,6 +304,9 @@ export default async function VehiclesPage({
                         <span className="block truncate text-xs text-zinc-500">{v.version ?? "—"}</span>
                       </span>
                     </Link>
+                  </Td>
+                  <Td>
+                    <PlatformsHover list={v.platforms_list} />
                   </Td>
                   <Td className="text-zinc-500">
                     {v.year_fab

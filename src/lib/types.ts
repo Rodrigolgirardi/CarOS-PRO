@@ -240,6 +240,7 @@ export interface VehicleRow extends Vehicle {
   costs_total: number;
   /** nº de plataformas onde o carro está anunciado */
   platforms_count: number;
+  platforms_list: string | null; // nomes separados por "|"
   total_cost: number;
   sold_price: number | null;
   sold_date: string | null;

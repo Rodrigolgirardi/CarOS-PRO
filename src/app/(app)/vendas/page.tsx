@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { BadgeCheck, Clock, Megaphone, Percent, Trophy } from "lucide-react";
+import { BadgeCheck, Clock, Percent, Trophy } from "lucide-react";
 import { BuyersTable } from "@/components/customers/buyers-table";
 import { ConsignmentsTable } from "@/components/customers/consignments-table";
 import { CustomersPanel } from "@/components/customers/customers-panel";
 import { LeadsPanel } from "@/components/deals/leads-panel";
 import { SaleExpandRow } from "@/components/deals/sale-expand-row";
 import { SaleRow } from "@/components/deals/sale-row";
+import { DonutChart, EmptyChart, HBarChart, MonthBars, ReportCard } from "@/components/reports/report-charts";
 import { BrandLogo } from "@/components/vehicles/brand-logo";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TBody, Th, THead } from "@/components/ui/table";
@@ -195,197 +196,215 @@ export default async function SalesPage({
           );
           // um canal de verdade ganha do "Sem canal" quando houver
           const topChannel = rankedChannels.find(([k]) => k !== "Sem canal") ?? rankedChannels[0] ?? null;
-          const topChannelLeads = topChannel ? (byChannel.get(topChannel[0]) ?? 0) : 0;
+
+          // ---- vendas mês a mês do ano corrente
+          const year = new Date().getFullYear();
+          const MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+          const MONTHS_FULL = [
+            "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+            "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+          ];
+          const months = MONTHS.map((label) => ({ label, n: 0, revenue: 0 }));
+          for (const d of sold) {
+            if (!d.sold_date || Number(d.sold_date.slice(0, 4)) !== year) continue;
+            const m = months[Number(d.sold_date.slice(5, 7)) - 1];
+            if (!m) continue;
+            m.n += 1;
+            m.revenue += d.sale_price ?? 0;
+          }
+          // campeão: mais vendas; empate desempata pelo faturamento
+          const bestIdx = months.some((m) => m.n > 0)
+            ? months.reduce((bi, m, i) => {
+                const b = months[bi]!;
+                return m.n > b.n || (m.n === b.n && m.revenue > b.revenue) ? i : bi;
+              }, 0)
+            : -1;
+          const bestMonth = bestIdx >= 0 ? months[bestIdx]! : null;
+
+          const highlights = (biggest || bestMargin || fastest) && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {biggest && (
+                <HighlightCard
+                  icon={Trophy}
+                  title="Maior faturamento"
+                  deal={biggest}
+                  value={brl(biggest.sale_price)}
+                  sub={`${biggest.customer_name} · ${fmtDate(biggest.sold_date)}`}
+                />
+              )}
+              {bestMargin && (
+                <HighlightCard
+                  icon={Percent}
+                  title="Maior margem"
+                  deal={bestMargin}
+                  value={pct(margin(bestMargin))}
+                  sub={`Lucro de ${brl((bestMargin.sale_price ?? 0) - bestMargin.vehicle_total_cost)}`}
+                />
+              )}
+              {fastest && (
+                <HighlightCard
+                  icon={Clock}
+                  title="Saída mais rápida"
+                  deal={fastest}
+                  value={`${daysToSell(fastest)} dia(s)`}
+                  sub={`Comprado em ${fmtDate(fastest.purchase_date)}, vendido em ${fmtDate(fastest.sold_date)}`}
+                />
+              )}
+            </div>
+          );
 
           return (
-            <div className="space-y-5">
-              {/* desktop: os dois rankings lado a lado */}
-              <div className="space-y-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0">
-              <section className="rounded-2xl border border-zinc-200 bg-white">
-                <h2 className="border-b border-zinc-100 px-4 py-3 text-[15px] font-semibold tracking-tight text-zinc-900">
-                  Leads por canal
-                </h2>
-                {totalLeads === 0 ? (
-                  <p className="px-4 py-6 text-[13px] text-zinc-500">Nenhum lead registrado ainda.</p>
-                ) : (
-                  <div className="divide-y divide-zinc-100">
-                    {channels.map(([name, n]) => (
-                      <div key={name} className="flex items-center gap-3 px-4 py-2.5">
-                        <span className="w-28 shrink-0 truncate text-[13px] font-medium text-zinc-800 sm:w-36">
-                          {name}
-                        </span>
-                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
-                          <span
-                            className="block h-full rounded-full bg-violet-500"
-                            style={{ width: `${(n / maxChannel) * 100}%` }}
-                          />
-                        </span>
-                        <span className="w-8 shrink-0 text-right text-[13px] font-medium tabular-nums text-zinc-900">
-                          {n}
-                        </span>
-                        <span className="w-10 shrink-0 text-right text-xs tabular-nums text-zinc-500">
-                          {Math.round((n / totalLeads) * 100)}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              <section className="rounded-2xl border border-zinc-200 bg-white">
-                <h2 className="border-b border-zinc-100 px-4 py-3 text-[15px] font-semibold tracking-tight text-zinc-900">
-                  Carros mais procurados
-                </h2>
-                {cars.length === 0 ? (
-                  <p className="px-4 py-6 text-[13px] text-zinc-500">Os carros aparecem aqui conforme os leads chegam.</p>
-                ) : (
-                  <div className="divide-y divide-zinc-100">
-                    {cars.map((c) => (
-                      <div key={c.label} className="flex items-center gap-3 px-4 py-2.5">
-                        <BrandLogo brand={c.brand} size={16} />
-                        <span className="w-32 shrink-0 truncate text-[13px] font-medium text-zinc-800 sm:w-44">
-                          {c.label}
-                        </span>
-                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
-                          <span
-                            className="block h-full rounded-full bg-blue-600"
-                            style={{ width: `${(c.count / maxCar) * 100}%` }}
-                          />
-                        </span>
-                        <span className="w-14 shrink-0 text-right text-xs tabular-nums text-zinc-500">
-                          {c.count} lead{c.count === 1 ? "" : "s"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-              </div>
-
-              {/* só no desktop: vendas mês a mês do ano, com o mês campeão destacado */}
-              {(() => {
-                const year = new Date().getFullYear();
-                const MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-                const MONTHS_FULL = [
-                  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-                  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
-                ];
-                const months = MONTHS.map((label) => ({ label, n: 0, revenue: 0 }));
-                for (const d of sold) {
-                  if (!d.sold_date || Number(d.sold_date.slice(0, 4)) !== year) continue;
-                  const m = months[Number(d.sold_date.slice(5, 7)) - 1];
-                  if (!m) continue;
-                  m.n += 1;
-                  m.revenue += d.sale_price ?? 0;
-                }
-                const yearTotal = months.reduce((s, m) => s + m.n, 0);
-                const maxN = Math.max(...months.map((m) => m.n), 1);
-                // campeão: mais vendas; empate desempata pelo faturamento
-                const bestIdx = yearTotal
-                  ? months.reduce((bi, m, i) => {
-                      const b = months[bi]!;
-                      return m.n > b.n || (m.n === b.n && m.revenue > b.revenue) ? i : bi;
-                    }, 0)
-                  : -1;
-                const best = bestIdx >= 0 ? months[bestIdx]! : null;
-                return (
-                  <section className="hidden rounded-2xl border border-zinc-200 bg-white lg:block">
-                    <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3">
-                      <h2 className="text-[15px] font-semibold tracking-tight text-zinc-900">Vendas por mês · {year}</h2>
-                      {best ? (
-                        <p className="text-[13px] text-zinc-500">
-                          Mês que mais vende:{" "}
-                          <span className="font-semibold capitalize text-emerald-600">{MONTHS_FULL[bestIdx]}</span>{" "}
-                          · {best.n} venda{best.n === 1 ? "" : "s"} · {brl(best.revenue)}
-                        </p>
-                      ) : (
-                        <p className="text-[13px] text-zinc-500">Nenhuma venda em {year} ainda.</p>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-12 items-end gap-3 px-5 pb-4 pt-5">
-                      {months.map((m, i) => (
-                        <div key={m.label} className="flex flex-col items-center gap-1.5">
-                          <span
-                            className={`text-xs font-semibold tabular-nums ${
-                              i === bestIdx ? "text-emerald-600" : m.n ? "text-zinc-700" : "text-zinc-300"
-                            }`}
-                          >
-                            {m.n}
+            <>
+              {/* celular: rankings em lista + destaques */}
+              <div className="space-y-5 lg:hidden">
+                <section className="rounded-2xl border border-zinc-200 bg-white">
+                  <h2 className="border-b border-zinc-100 px-4 py-3 text-[15px] font-semibold tracking-tight text-zinc-900">
+                    Leads por canal
+                  </h2>
+                  {totalLeads === 0 ? (
+                    <p className="px-4 py-6 text-[13px] text-zinc-500">Nenhum lead registrado ainda.</p>
+                  ) : (
+                    <div className="divide-y divide-zinc-100">
+                      {channels.map(([name, n]) => (
+                        <div key={name} className="flex items-center gap-3 px-4 py-2.5">
+                          <span className="w-28 shrink-0 truncate text-[13px] font-medium text-zinc-800 sm:w-36">
+                            {name}
                           </span>
-                          <div className="flex h-28 w-full items-end">
-                            <div
-                              title={`${MONTHS_FULL[i]}: ${m.n} venda(s) · ${brl(m.revenue)}`}
-                              className={`w-full rounded-t-md ${
-                                i === bestIdx ? "bg-emerald-500" : m.n ? "bg-blue-500" : "bg-zinc-100"
-                              }`}
-                              style={{ height: m.n ? `${(m.n / maxN) * 100}%` : "4px" }}
+                          <span className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
+                            <span
+                              className="block h-full rounded-full bg-violet-500"
+                              style={{ width: `${(n / maxChannel) * 100}%` }}
                             />
-                          </div>
-                          <span
-                            className={`text-xs ${i === bestIdx ? "font-semibold text-emerald-600" : "text-zinc-500"}`}
-                          >
-                            {m.label}
+                          </span>
+                          <span className="w-8 shrink-0 text-right text-[13px] font-medium tabular-nums text-zinc-900">
+                            {n}
+                          </span>
+                          <span className="w-10 shrink-0 text-right text-xs tabular-nums text-zinc-500">
+                            {Math.round((n / totalLeads) * 100)}%
                           </span>
                         </div>
                       ))}
                     </div>
-                  </section>
-                );
-              })()}
+                  )}
+                </section>
 
-              {(biggest || bestMargin || fastest || topChannel) && (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
-                  {/* só no desktop: canal que mais converte em venda */}
-                  {topChannel && (
-                    <div className="hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-card lg:block">
-                      <p className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                        <Megaphone size={14} className="text-zinc-400" />
-                        Canal que mais vende
-                      </p>
-                      <p className="mt-2 truncate text-[13px] font-semibold text-zinc-900">{topChannel[0]}</p>
-                      <span className="mt-1 inline-block rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[11px] text-zinc-500">
-                        {topChannel[1].n} venda{topChannel[1].n === 1 ? "" : "s"}
-                      </span>
-                      <p className="mt-2.5 text-xl font-semibold tabular-nums tracking-tight text-emerald-600">
-                        {brl(topChannel[1].revenue)}
-                      </p>
-                      <p className="mt-0.5 truncate text-xs text-zinc-500">
-                        {topChannelLeads > 0
-                          ? `Conversão: ${topChannel[1].n} de ${topChannelLeads} lead${topChannelLeads === 1 ? "" : "s"} (${Math.round((topChannel[1].n / topChannelLeads) * 100)}%)`
-                          : "Faturamento das vendas do canal"}
-                      </p>
+                <section className="rounded-2xl border border-zinc-200 bg-white">
+                  <h2 className="border-b border-zinc-100 px-4 py-3 text-[15px] font-semibold tracking-tight text-zinc-900">
+                    Carros mais procurados
+                  </h2>
+                  {cars.length === 0 ? (
+                    <p className="px-4 py-6 text-[13px] text-zinc-500">Os carros aparecem aqui conforme os leads chegam.</p>
+                  ) : (
+                    <div className="divide-y divide-zinc-100">
+                      {cars.map((c) => (
+                        <div key={c.label} className="flex items-center gap-3 px-4 py-2.5">
+                          <BrandLogo brand={c.brand} size={16} />
+                          <span className="w-32 shrink-0 truncate text-[13px] font-medium text-zinc-800 sm:w-44">
+                            {c.label}
+                          </span>
+                          <span className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
+                            <span
+                              className="block h-full rounded-full bg-blue-600"
+                              style={{ width: `${(c.count / maxCar) * 100}%` }}
+                            />
+                          </span>
+                          <span className="w-14 shrink-0 text-right text-xs tabular-nums text-zinc-500">
+                            {c.count} lead{c.count === 1 ? "" : "s"}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   )}
-                  {biggest && (
-                    <HighlightCard
-                      icon={Trophy}
-                      title="Maior faturamento"
-                      deal={biggest}
-                      value={brl(biggest.sale_price)}
-                      sub={`${biggest.customer_name} · ${fmtDate(biggest.sold_date)}`}
-                    />
-                  )}
-                  {bestMargin && (
-                    <HighlightCard
-                      icon={Percent}
-                      title="Maior margem"
-                      deal={bestMargin}
-                      value={pct(margin(bestMargin))}
-                      sub={`Lucro de ${brl((bestMargin.sale_price ?? 0) - bestMargin.vehicle_total_cost)}`}
-                    />
-                  )}
-                  {fastest && (
-                    <HighlightCard
-                      icon={Clock}
-                      title="Saída mais rápida"
-                      deal={fastest}
-                      value={`${daysToSell(fastest)} dia(s)`}
-                      sub={`Comprado em ${fmtDate(fastest.purchase_date)}, vendido em ${fmtDate(fastest.sold_date)}`}
-                    />
-                  )}
+                </section>
+
+                {highlights}
+              </div>
+
+              {/* desktop: mesmo padrão das outras abas — 4 gráficos em grade + destaques */}
+              <div className="hidden space-y-4 lg:mx-auto lg:block lg:max-w-5xl">
+                <div className="grid grid-cols-2 gap-4">
+                  <ReportCard title="Leads por canal" aside={`${totalLeads} lead${totalLeads === 1 ? "" : "s"}`}>
+                    {totalLeads === 0 ? (
+                      <EmptyChart>Nenhum lead registrado ainda.</EmptyChart>
+                    ) : (
+                      <DonutChart data={channels.map(([label, value]) => ({ label, value }))} unit="leads" />
+                    )}
+                  </ReportCard>
+
+                  <ReportCard title="Carros mais procurados" aside="top 5 por leads">
+                    {cars.length === 0 ? (
+                      <EmptyChart>Os carros aparecem aqui conforme os leads chegam.</EmptyChart>
+                    ) : (
+                      <HBarChart
+                        color="bg-blue-500"
+                        data={cars.map((c) => ({
+                          label: c.label,
+                          brand: c.brand,
+                          value: c.count,
+                          right: `${c.count} lead${c.count === 1 ? "" : "s"}`,
+                        }))}
+                      />
+                    )}
+                  </ReportCard>
+
+                  <ReportCard
+                    title={`Vendas por mês · ${year}`}
+                    aside={
+                      bestMonth ? (
+                        <>
+                          Melhor mês:{" "}
+                          <span className="font-semibold capitalize text-emerald-600">{MONTHS_FULL[bestIdx]}</span> ·{" "}
+                          {bestMonth.n} venda{bestMonth.n === 1 ? "" : "s"}
+                        </>
+                      ) : undefined
+                    }
+                  >
+                    {bestMonth ? (
+                      <MonthBars
+                        bestIdx={bestIdx}
+                        months={months.map((m, i) => ({
+                          label: m.label,
+                          value: m.n,
+                          title: `${MONTHS_FULL[i]}: ${m.n} venda(s) · ${brl(m.revenue)}`,
+                        }))}
+                      />
+                    ) : (
+                      <EmptyChart>Nenhuma venda em {year} ainda.</EmptyChart>
+                    )}
+                  </ReportCard>
+
+                  <ReportCard
+                    title="Marketplace com mais vendas"
+                    aside={topChannel ? <span className="font-semibold text-emerald-600">{topChannel[0]}</span> : undefined}
+                  >
+                    {rankedChannels.length === 0 ? (
+                      <EmptyChart>Nenhuma venda registrada ainda.</EmptyChart>
+                    ) : (
+                      <HBarChart
+                        color="bg-violet-500"
+                        highlightFirst
+                        data={[...rankedChannels]
+                          .sort(([a], [b]) => (a === topChannel?.[0] ? -1 : b === topChannel?.[0] ? 1 : 0))
+                          .map(([label, v]) => {
+                            const leads = byChannel.get(label) ?? 0;
+                            return {
+                              label,
+                              value: v.n,
+                              right: `${v.n} venda${v.n === 1 ? "" : "s"} · ${brl(v.revenue)}`,
+                              title:
+                                leads > 0
+                                  ? `Conversão: ${v.n} de ${leads} lead(s) (${Math.round((v.n / leads) * 100)}%)`
+                                  : undefined,
+                            };
+                          })}
+                      />
+                    )}
+                  </ReportCard>
                 </div>
-              )}
-            </div>
+
+                {highlights}
+              </div>
+            </>
           );
         })()
       ) : sold.length === 0 ? (

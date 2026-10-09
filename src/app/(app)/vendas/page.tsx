@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BadgeCheck, Clock, Megaphone, Percent, Trophy } from "lucide-react";
+import { BuyersTable } from "@/components/customers/buyers-table";
 import { ConsignmentsTable } from "@/components/customers/consignments-table";
 import { CustomersPanel } from "@/components/customers/customers-panel";
 import { LeadsPanel } from "@/components/deals/leads-panel";
@@ -133,7 +134,15 @@ export default async function SalesPage({
           </div>
         </>
       ) : tab === "compradores" ? (
-        <CustomersPanel status="compradores" />
+        <>
+          {/* celular: lista de pessoas · desktop: uma linha por venda, no desenho dos leads */}
+          <div className="lg:hidden">
+            <CustomersPanel status="compradores" />
+          </div>
+          <div className="hidden lg:block">
+            <BuyersTable deals={allDeals} busca={busca} />
+          </div>
+        </>
       ) : tab === "relatorio" ? (
         (() => {
           // ---- leads por canal/marketplace

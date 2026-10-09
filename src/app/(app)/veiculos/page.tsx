@@ -266,9 +266,7 @@ export default async function VehiclesPage({
           <THead>
             <Th>Veículo</Th>
             <Th />
-            <Th />
             <Th>Ano</Th>
-            <Th>Placa</Th>
             <Th right>KM</Th>
             <Th right>Compra</Th>
             <Th right>FIPE</Th>
@@ -293,8 +291,9 @@ export default async function VehiclesPage({
                         <span className="block truncate font-medium text-zinc-900 group-hover:underline group-hover:underline-offset-2">
                           {v.brand} {v.model}
                         </span>
-                        {/* embaixo do modelo: Próprio/Consignado + versão */}
-                        <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                        <span className="block truncate text-xs text-zinc-500">{v.version ?? "—"}</span>
+                        {/* embaixo do modelo: Próprio/Consignado · placa · nota de anúncios (2/7) */}
+                        <span className="mt-1 flex min-w-0 items-center gap-1.5">
                           <span
                             className={`shrink-0 rounded-full px-1.5 py-px text-[10px] font-medium ${
                               v.consignado === 1 ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700"
@@ -302,7 +301,12 @@ export default async function VehiclesPage({
                           >
                             {v.consignado === 1 ? "Consignado" : "Próprio"}
                           </span>
-                          <span className="truncate text-xs text-zinc-500">{v.version ?? "—"}</span>
+                          {v.plate && (
+                            <span className="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-1 py-px font-mono text-[10px] text-zinc-600">
+                              {v.plate}
+                            </span>
+                          )}
+                          <PlatformsHover list={v.platforms_list} />
                         </span>
                       </span>
                     </Link>
@@ -337,22 +341,10 @@ export default async function VehiclesPage({
                       />
                     )}
                   </Td>
-                  <Td>
-                    <PlatformsHover list={v.platforms_list} />
-                  </Td>
                   <Td className="text-zinc-500">
                     {v.year_fab
                       ? `${String(v.year_fab).slice(-2)}/${String(v.year_model ?? v.year_fab).slice(-2)}`
                       : "—"}
-                  </Td>
-                  <Td>
-                    {v.plate ? (
-                      <span className="rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px] text-zinc-600">
-                        {v.plate}
-                      </span>
-                    ) : (
-                      <span className="text-zinc-400">—</span>
-                    )}
                   </Td>
                   <Td right className="text-zinc-500">
                     {v.km != null ? v.km.toLocaleString("pt-BR") : "—"}

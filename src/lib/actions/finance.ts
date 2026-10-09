@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { get, run, tx } from "../db";
 import { todayISO } from "../format";
+import { INCOME_TYPES } from "../labels";
 import type { ActionState, Payable, Receivable } from "../types";
 import { deleteCost } from "./costs";
 import { err, fields, logEvent, ok } from "./util";
@@ -16,15 +17,18 @@ const revalidate = () => revalidatePath("/", "layout");
  */
 export async function addIncome(prev: ActionState, formData: FormData): Promise<ActionState> {
   const f = fields(formData);
-  const description = f.s("description");
+  // venda de veículo não entra aqui (o botão Venda já lança no caixa)
+  const type = INCOME_TYPES.find((t) => t.key === f.s("income_type"));
+  if (!type) return err("Escolha o tipo de recebimento.");
+  const detail = f.s("description");
+  const description = detail ? `${type.label} — ${detail}` : type.label;
   const amount = f.cents("amount");
   const date = f.s("date") ?? todayISO();
-  if (!description) return err("Descreva a entrada (ex.: Documentação — Fiat Toro).");
   if (amount == null || amount <= 0) return err("Informe o valor recebido.");
 
   const customerId = f.id("customer_id");
-  const sellerId = f.id("seller_id");
-  const commission = f.cents("commission") ?? 0;
+  const sellerId = type.commission ? f.id("seller_id") : null;
+  const commission = type.commission ? (f.cents("commission") ?? 0) : 0;
   const seller = sellerId ? await get<{ name: string }>("SELECT name FROM sellers WHERE id = ?", sellerId) : undefined;
 
   await tx(async () => {

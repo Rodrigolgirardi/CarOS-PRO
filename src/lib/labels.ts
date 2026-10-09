@@ -204,3 +204,22 @@ export const AD_PLATFORMS = [
 
 export const FUEL_OPTIONS = ["Flex", "Gasolina", "Diesel", "Híbrido", "Elétrico"];
 export const TRANSMISSION_OPTIONS = ["Automático", "Manual", "CVT", "Automatizado"];
+
+/**
+ * Tipos de "Adicionar entrada" — só dinheiro que entra fora da venda de
+ * veículos (a venda já lança o recebimento pelo botão Venda). `rule` aponta
+ * a regra de comissão sugerida; aporte e empréstimo não têm comissão.
+ */
+export const INCOME_TYPES: {
+  key: string;
+  label: string;
+  rule: string | null;
+  commission: boolean;
+  example: string;
+}[] = [
+  { key: "financiamento", label: "Financiamento", rule: "financiamento", commission: true, example: "Retorno do banco — Fiat Toro" },
+  { key: "despachante", label: "Despachante", rule: "documentacao", commission: true, example: "Transferência — Honda CG" },
+  { key: "aporte", label: "Aporte de capital", rule: null, commission: false, example: "Aporte dos sócios" },
+  { key: "emprestimo", label: "Empréstimo", rule: null, commission: false, example: "Banco X — 12 parcelas" },
+  { key: "outros", label: "Outros", rule: "outros", commission: true, example: "Descreva a entrada" },
+];

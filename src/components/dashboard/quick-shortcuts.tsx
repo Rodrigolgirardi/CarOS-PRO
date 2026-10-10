@@ -1,4 +1,6 @@
 import { Plus } from "lucide-react";
+import { NewDealButton } from "@/components/deals/new-deal-button";
+import { UploadDocButton } from "@/components/documents/upload-doc-button";
 import { NewTaskButton } from "@/components/my-tasks/my-tasks";
 import { AddIncomeButton } from "@/components/finance/add-income-button";
 import { PlateLookupButton } from "@/components/plate-cache/plate-lookup-button";
@@ -13,8 +15,9 @@ import { vehicleOptions } from "@/lib/queries/vehicles";
 
 /** "Atalhos rápidos" do Dashboard (desktop): os mesmos botões da tela de Veículos. */
 export async function QuickShortcuts() {
-  const [vehicles, sellers, customers, rules, saleCommission, saidas, entradas] = await Promise.all([
+  const [vehicles, allVehicles, sellers, customers, rules, saleCommission, saidas, entradas] = await Promise.all([
     vehicleOptions(),
+    vehicleOptions({ includeSold: true }), // documento pode ser de carro já vendido (transferência)
     sellerOptions(),
     customerOptions(),
     listCommissionRules(),
@@ -40,6 +43,8 @@ export async function QuickShortcuts() {
         />
         <PlateLookupButton />
         <NewTaskButton vehicles={vehicles} variant="secondary" />
+        <UploadDocButton vehicles={allVehicles} customers={customers} shortcut />
+        <NewDealButton vehicles={vehicles} customers={customers} label="Novo lead" variant="secondary" />
         <QuickSaleButton vehicles={vehicles} sellers={sellers} customers={customers} defaultCommission={saleCommission} />
       </div>
     </section>

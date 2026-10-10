@@ -7,7 +7,7 @@ import { brl } from "@/lib/format";
 import { SALE_CHANNELS } from "@/lib/labels";
 import type { CustomerOption } from "@/lib/queries/customers";
 import type { VehicleOption } from "@/lib/queries/vehicles";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonVariant } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { FormError, SubmitButton, useAction } from "@/components/ui/form";
@@ -19,10 +19,17 @@ interface NewDealButtonProps {
   customers: CustomerOption[];
   vehicleId?: number;
   label?: string;
+  variant?: ButtonVariant;
 }
 
 /** Inicia uma negociação: interessado ou já com proposta. */
-export function NewDealButton({ vehicles, customers, vehicleId, label = "Nova negociação" }: NewDealButtonProps) {
+export function NewDealButton({
+  vehicles,
+  customers,
+  vehicleId,
+  label = "Nova negociação",
+  variant = "primary",
+}: NewDealButtonProps) {
   const [open, setOpen] = useState(false);
   const [withProposal, setWithProposal] = useState(false);
   const [customerValue, setCustomerValue] = useState("");
@@ -31,7 +38,7 @@ export function NewDealButton({ vehicles, customers, vehicleId, label = "Nova ne
 
   return (
     <>
-      <Button variant="primary" onClick={() => setOpen(true)}>
+      <Button variant={variant} onClick={() => setOpen(true)}>
         <Plus size={14} />
         {label}
       </Button>

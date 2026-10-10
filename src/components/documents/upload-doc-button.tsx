@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, Upload } from "lucide-react";
+import { Camera, Plus, Upload } from "lucide-react";
 import { uploadDocument } from "@/lib/actions/documents";
 import { DOC_TYPE } from "@/lib/labels";
 import type { DocumentType } from "@/lib/types";
@@ -20,6 +20,8 @@ interface UploadDocButtonProps {
   dealId?: number;
   defaultType?: DocumentType;
   label?: string;
+  /** botão único no estilo dos Atalhos rápidos ("+ Enviar documento"), sem o "Tirar foto" ao lado */
+  shortcut?: boolean;
 }
 
 export function UploadDocButton({
@@ -30,6 +32,7 @@ export function UploadDocButton({
   dealId,
   defaultType = "outro",
   label = "Enviar documento",
+  shortcut,
 }: UploadDocButtonProps) {
   const [open, setOpen] = useState(false);
   // foto tirada na hora (câmera do celular) que pré-preenche o campo de arquivo
@@ -53,14 +56,23 @@ export function UploadDocButton({
 
   return (
     <>
-      <Button variant="primary" size="sm" onClick={() => setOpen(true)}>
-        <Upload size={13} />
-        {label}
-      </Button>
-      <Button size="sm" onClick={() => camRef.current?.click()}>
-        <Camera size={13} />
-        Tirar foto
-      </Button>
+      {shortcut ? (
+        <Button variant="secondary" onClick={() => setOpen(true)}>
+          <Plus size={14} />
+          {label}
+        </Button>
+      ) : (
+        <>
+          <Button variant="primary" size="sm" onClick={() => setOpen(true)}>
+            <Upload size={13} />
+            {label}
+          </Button>
+          <Button size="sm" onClick={() => camRef.current?.click()}>
+            <Camera size={13} />
+            Tirar foto
+          </Button>
+        </>
+      )}
       {/* abre a câmera no celular; no computador vira um seletor de arquivo comum */}
       <input
         ref={camRef}

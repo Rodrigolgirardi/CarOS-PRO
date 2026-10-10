@@ -7,9 +7,9 @@ const blank = (v: string | null | undefined) => !v || v.trim() === "";
 
 /**
  * Apaga o cadastro de um cliente "fantasma": ficha vazia (sem CPF, e-mail,
- * cidade nem observação escrita pelo usuário) e sem nenhum vínculo — nenhuma
- * negociação, documento, lançamento financeiro ou carro consignado no nome
- * dele. Ficha com dados de verdade nunca é apagada por aqui.
+ * cidade, origem nem observação escrita pelo usuário) e sem nenhum vínculo —
+ * nenhuma negociação, documento, lançamento financeiro, contato anotado ou
+ * carro consignado no nome dele. Ficha com dados de verdade nunca sai daqui.
  */
 export async function removeOrphanCustomer(customerId: number): Promise<void> {
   const c = await get<{
@@ -18,19 +18,26 @@ export async function removeOrphanCustomer(customerId: number): Promise<void> {
     email: string | null;
     city: string | null;
     notes: string | null;
-  }>("SELECT name, cpf_cnpj, email, city, notes FROM customers WHERE id = ?", customerId);
+    source: string | null;
+  }>("SELECT name, cpf_cnpj, email, city, notes, source FROM customers WHERE id = ?", customerId);
   if (!c || c.name === "Venda balcão") return;
   const bare =
-    blank(c.cpf_cnpj) && blank(c.email) && blank(c.city) && (blank(c.notes) || c.notes!.trim() === AUTO_CONSIGNOR_NOTE);
+    blank(c.cpf_cnpj) &&
+    blank(c.email) &&
+    blank(c.city) &&
+    blank(c.source) &&
+    (blank(c.notes) || c.notes!.trim() === AUTO_CONSIGNOR_NOTE);
   if (!bare) return;
 
   const links = (await get<{ n: number }>(
     `SELECT (SELECT COUNT(*) FROM deals WHERE customer_id = ?)
           + (SELECT COUNT(*) FROM documents WHERE customer_id = ?)
           + (SELECT COUNT(*) FROM receivables WHERE customer_id = ?)
+          + (SELECT COUNT(*) FROM events WHERE customer_id = ? AND vehicle_id IS NULL)
           + (SELECT COUNT(*) FROM vehicles
               WHERE consignado = 1
                 AND lower(trim(split_part(COALESCE(consignor, ''), '—', 1))) = lower(trim(?))) AS n`,
+    customerId,
     customerId,
     customerId,
     customerId,
@@ -50,18 +57,20 @@ export async function consignorIdsByName(name: string): Promise<number[]> {
 
 /**
  * Depois de apagar uma negociação, acerta o status do cliente que ficou:
- * vendido se ainda tem venda, negociação se ainda tem lead ativo, senão contato.
+ * vendido se ainda tem venda, negociação se tem proposta/reserva, interessado
+ * se só tem interesse, senão contato.
  * Só mexe em status que vieram das negociações.
  */
 export async function refreshCustomerStatus(customerId: number): Promise<void> {
   const c = await get<{ status: string }>("SELECT status FROM customers WHERE id = ?", customerId);
   if (!c || !["interessado", "negociacao", "vendido"].includes(c.status)) return;
-  const s = (await get<{ sold: number; active: number }>(
+  const s = (await get<{ sold: number; negotiating: number; interested: number }>(
     `SELECT COUNT(*) FILTER (WHERE stage IN ('vendido', 'entregue')) AS sold,
-            COUNT(*) FILTER (WHERE stage IN ('interessado', 'proposta', 'reservado')) AS active
+            COUNT(*) FILTER (WHERE stage IN ('proposta', 'reservado')) AS negotiating,
+            COUNT(*) FILTER (WHERE stage = 'interessado') AS interested
        FROM deals WHERE customer_id = ?`,
     customerId
   ))!;
-  const next = s.sold > 0 ? "vendido" : s.active > 0 ? "negociacao" : "contato";
+  const next = s.sold > 0 ? "vendido" : s.negotiating > 0 ? "negociacao" : s.interested > 0 ? "interessado" : "contato";
   if (next !== c.status) await run("UPDATE customers SET status = ? WHERE id = ?", next, customerId);
 }

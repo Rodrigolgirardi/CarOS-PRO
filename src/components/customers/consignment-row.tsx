@@ -165,7 +165,7 @@ export function ConsignmentRowItem({ row: r, grid }: { row: ConsignmentRow; grid
               <ConfirmButton
                 action={deleteConsignment.bind(null, r.id)}
                 title="Excluir este consignado?"
-                description={`O ${r.label}${r.plate ? " (" + r.plate + ")" : ""} de ${r.owner} sai do sistema junto com custos, fotos e documentos dele. Use se o dono levou o carro de volta ou se foi cadastro errado. Não dá para desfazer.`}
+                description={`O ${r.label}${r.plate ? " (" + r.plate + ")" : ""} de ${r.owner} sai do sistema junto com custos, fotos, documentos, histórico e leads encerrados dele. Use se o dono levou o carro de volta ou se foi cadastro errado. Não dá para desfazer.`}
                 variant="danger-ghost"
                 className="size-9 p-0"
               >

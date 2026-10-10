@@ -329,7 +329,7 @@ export default async function VehiclesPage({
                       <ConfirmButton
                         action={undoSale.bind(null, v.sold_deal_id)}
                         title={`Desfazer a venda do ${label}?`}
-                        description="O carro volta para o estoque e os recebimentos e a comissão dessa venda são apagados."
+                        description="O carro volta para o estoque e os recebimentos, a comissão e o repasse ao dono (se for consignado) dessa venda são apagados."
                         confirmLabel="Desfazer venda"
                         variant="danger"
                         className="h-auto! py-1 text-[11px] leading-tight"

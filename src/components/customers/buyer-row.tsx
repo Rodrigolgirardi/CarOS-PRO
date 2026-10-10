@@ -124,7 +124,7 @@ export function BuyerRowItem({ deal: d, grid }: { deal: DealRow; grid: string })
             <ConfirmButton
               action={deleteBuyer.bind(null, d.id)}
               title="Excluir este comprador?"
-              description={`A venda do ${d.vehicle_label} para ${d.customer_name} será desfeita: o carro volta para o estoque e os recebimentos dessa venda são apagados. Não dá para desfazer.`}
+              description={`A venda do ${d.vehicle_label} para ${d.customer_name} será desfeita: o carro volta para o estoque e os recebimentos, a comissão e o repasse ao dono (se for consignado) dessa venda são apagados. Não dá para desfazer.`}
               variant="danger-ghost"
               className="size-9 p-0"
             >

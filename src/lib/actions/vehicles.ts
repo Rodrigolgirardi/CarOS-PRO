@@ -391,8 +391,11 @@ export async function deleteConsignment(vehicleId: number): Promise<{ ok: boolea
        FROM deals WHERE vehicle_id = ?`,
     vehicleId
   ))!;
-  if (v.status === "vendido" || d.sold > 0) {
+  if (d.sold > 0) {
     return err("Esse carro já foi vendido. Exclua primeiro o comprador na aba Compradores — isso desfaz a venda.");
+  }
+  if (v.status === "vendido") {
+    return err("Esse carro está marcado como vendido, mas sem venda registrada. Mude o status dele na ficha do veículo antes de excluir.");
   }
   if (d.active > 0) {
     return err(

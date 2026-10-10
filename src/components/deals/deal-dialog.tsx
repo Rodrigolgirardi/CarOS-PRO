@@ -249,7 +249,7 @@ export function DealDialog({ deal, open, onClose }: DealDialogProps) {
                 <ConfirmButton
                   action={undoSale.bind(null, deal.id)}
                   title="Desfazer esta venda?"
-                  description="O veículo volta para Reservado e os recebíveis e a comissão gerados pela venda são removidos."
+                  description="O veículo volta para o estoque, a negociação fica como Reservado, e os recebimentos, a comissão e o repasse ao dono (se for consignado) gerados pela venda são removidos."
                   confirmLabel="Desfazer venda"
                   variant="ghost"
                   size="sm"

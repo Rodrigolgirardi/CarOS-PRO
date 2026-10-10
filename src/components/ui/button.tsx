@@ -10,7 +10,10 @@ export type ButtonVariant =
   | "success"
   | "warning"
   | "info"
-  | "danger-solid";
+  | "danger-solid"
+  | "violet"
+  | "pink"
+  | "yellow";
 export type ButtonSize = "sm" | "md";
 
 const BASE =
@@ -26,6 +29,10 @@ const VARIANTS: Record<ButtonVariant, string> = {
   warning: "border-transparent bg-orange-500 text-white hover:bg-orange-400",
   info: "border-transparent bg-blue-600 text-white hover:bg-blue-500",
   "danger-solid": "border-transparent bg-red-600 text-white hover:bg-red-500",
+  violet: "border-transparent bg-violet-600 text-white hover:bg-violet-500",
+  pink: "border-transparent bg-pink-600 text-white hover:bg-pink-500",
+  // texto yellow-950 (não zinc-900) para continuar escuro no modo escuro, que inverte os zinc
+  yellow: "border-transparent bg-yellow-400 text-yellow-950 hover:bg-yellow-300",
 };
 
 // mobile-first: alvo de toque de 40/36px no celular; densidade clássica volta no desktop (lg+)

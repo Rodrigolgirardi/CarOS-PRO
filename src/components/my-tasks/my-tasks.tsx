@@ -6,7 +6,7 @@ import { Check, Pencil, Plus, Trash2, Undo2 } from "lucide-react";
 import { deleteMyTask, saveMyTask, toggleMyTask } from "@/lib/actions/my-tasks";
 import type { MyTask, MyTaskPriority } from "@/lib/queries/my-tasks";
 import { cn } from "@/lib/cn";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonVariant } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/confirm";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { BrandLogo } from "@/components/vehicles/brand-logo";
@@ -91,7 +91,7 @@ function TaskModal({
   );
 }
 
-export function NewTaskButton({ vehicles, variant = "primary" }: { vehicles: VehicleOption[]; variant?: "primary" | "secondary" }) {
+export function NewTaskButton({ vehicles, variant = "primary" }: { vehicles: VehicleOption[]; variant?: ButtonVariant }) {
   const [open, setOpen] = useState(false);
   return (
     <>

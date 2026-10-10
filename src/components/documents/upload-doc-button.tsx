@@ -7,7 +7,7 @@ import { DOC_TYPE } from "@/lib/labels";
 import type { DocumentType } from "@/lib/types";
 import type { CustomerOption } from "@/lib/queries/customers";
 import type { VehicleOption } from "@/lib/queries/vehicles";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonVariant } from "@/components/ui/button";
 import { Field, Input, Select, controlCls } from "@/components/ui/field";
 import { FormError, SubmitButton, useAction } from "@/components/ui/form";
 import { Modal } from "@/components/ui/modal";
@@ -22,6 +22,8 @@ interface UploadDocButtonProps {
   label?: string;
   /** botão único no estilo dos Atalhos rápidos ("+ Enviar documento"), sem o "Tirar foto" ao lado */
   shortcut?: boolean;
+  /** cor do botão no modo atalho */
+  variant?: ButtonVariant;
 }
 
 export function UploadDocButton({
@@ -33,6 +35,7 @@ export function UploadDocButton({
   defaultType = "outro",
   label = "Enviar documento",
   shortcut,
+  variant = "secondary",
 }: UploadDocButtonProps) {
   const [open, setOpen] = useState(false);
   // foto tirada na hora (câmera do celular) que pré-preenche o campo de arquivo
@@ -57,7 +60,7 @@ export function UploadDocButton({
   return (
     <>
       {shortcut ? (
-        <Button variant="secondary" onClick={() => setOpen(true)}>
+        <Button variant={variant} onClick={() => setOpen(true)}>
           <Plus size={14} />
           {label}
         </Button>

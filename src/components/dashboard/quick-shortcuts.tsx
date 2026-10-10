@@ -42,9 +42,9 @@ export async function QuickShortcuts() {
           extraTypes={entradas.map((t) => t.label)}
         />
         <PlateLookupButton />
-        <NewTaskButton vehicles={vehicles} variant="secondary" />
-        <UploadDocButton vehicles={allVehicles} customers={customers} shortcut />
-        <NewDealButton vehicles={vehicles} customers={customers} label="Novo lead" variant="secondary" />
+        <NewTaskButton vehicles={vehicles} variant="pink" />
+        <UploadDocButton vehicles={allVehicles} customers={customers} shortcut variant="yellow" />
+        <NewDealButton vehicles={vehicles} customers={customers} label="Novo lead" variant="violet" />
         <QuickSaleButton vehicles={vehicles} sellers={sellers} customers={customers} defaultCommission={saleCommission} />
       </div>
     </section>

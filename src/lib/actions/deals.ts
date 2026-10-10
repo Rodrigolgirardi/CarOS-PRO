@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { all, get, run, tx } from "../db";
 import { addDaysISO, brl, todayISO } from "../format";
 import type { ActionState, Customer, CustomerStatus, Deal, Seller, VehicleStatus } from "../types";
+import { refreshCustomerStatus, removeOrphanCustomer } from "../orphans";
 import { err, fields, logEvent, ok } from "./util";
 
 const revalidate = () => revalidatePath("/", "layout");
@@ -532,33 +533,87 @@ export async function markLost(dealId: number, prev: ActionState, formData: Form
 }
 
 /** Desfaz uma venda registrada por engano: volta para "reservado" e remove recebíveis/comissão gerados. */
+/**
+ * Desfaz uma venda (sem abrir transação — quem chama decide): apaga os
+ * recebimentos, a comissão e, no consignado, o repasse ao dono lançado na
+ * venda; a negociação volta para "reservado" e o carro para o estoque.
+ */
+async function revertSale(deal: DealCtx) {
+  await run("DELETE FROM receivables WHERE deal_id = ?", deal.id);
+  if (deal.commission_cost_id) {
+    await run("DELETE FROM costs WHERE id = ?", deal.commission_cost_id);
+    await run("UPDATE deals SET commission_cost_id = NULL WHERE id = ?", deal.id);
+  }
+  // o repasse ao dono que registerSale/quickSale lançaram nesta venda (um só, da data da venda)
+  if (deal.vehicle_consignado === 1 && deal.sold_date) {
+    await run(
+      `DELETE FROM costs WHERE id = (
+         SELECT id FROM costs
+          WHERE vehicle_id = ? AND category = 'outros' AND date = ?
+            AND description LIKE 'Repasse ao dono%' AND description LIKE '%(consignação)'
+          ORDER BY id DESC LIMIT 1)`,
+      deal.vehicle_id,
+      deal.sold_date
+    );
+  }
+  await run("UPDATE deals SET stage = 'reservado', sold_date = NULL, delivered_date = NULL WHERE id = ?", deal.id);
+  await run("UPDATE vehicles SET status = 'cadastrado' WHERE id = ?", deal.vehicle_id);
+  await logEvent({
+    type: "status",
+    description: `Venda desfeita — ${deal.customer_name}`,
+    vehicle: deal.vehicle_id,
+    customer: deal.customer_id,
+    deal: deal.id,
+  });
+  const otherSold = (await get<{ n: number }>(
+    "SELECT COUNT(*) AS n FROM deals WHERE customer_id = ? AND stage IN ('vendido', 'entregue') AND id != ?",
+    deal.customer_id,
+    deal.id
+  ))!;
+  if (otherSold.n === 0) await run("UPDATE customers SET status = 'negociacao' WHERE id = ?", deal.customer_id);
+}
+
 export async function undoSale(dealId: number): Promise<{ ok: boolean; error?: string }> {
   const deal = await dealCtx(dealId);
   if (!deal) return err("Negociação não encontrada.");
   if (!["vendido", "entregue"].includes(deal.stage)) return err("Esta negociação não é uma venda.");
-
-  await tx(async () => {
-    await run("DELETE FROM receivables WHERE deal_id = ?", dealId);
-    if (deal.commission_cost_id) {
-      await run("DELETE FROM costs WHERE id = ?", deal.commission_cost_id);
-      await run("UPDATE deals SET commission_cost_id = NULL WHERE id = ?", dealId);
-    }
-    await run("UPDATE deals SET stage = 'reservado', sold_date = NULL, delivered_date = NULL WHERE id = ?", dealId);
-    await run("UPDATE vehicles SET status = 'cadastrado' WHERE id = ?", deal.vehicle_id);
-    await logEvent({
-      type: "status",
-      description: `Venda desfeita — ${deal.customer_name}`,
-      vehicle: deal.vehicle_id,
-      customer: deal.customer_id,
-      deal: dealId,
-    });
-    const otherSold = (await get<{ n: number }>(
-      "SELECT COUNT(*) AS n FROM deals WHERE customer_id = ? AND stage IN ('vendido', 'entregue') AND id != ?",
-      deal.customer_id,
-      dealId
-    ))!;
-    if (otherSold.n === 0) await run("UPDATE customers SET status = 'negociacao' WHERE id = ?", deal.customer_id);
-  });
+  await tx(() => revertSale(deal));
   revalidate();
   return ok("Venda desfeita.");
+}
+
+/** Exclui um lead (negociação que não virou venda). */
+export async function deleteLead(dealId: number): Promise<{ ok: boolean; error?: string; message?: string }> {
+  const deal = await dealCtx(dealId);
+  if (!deal) return err("Lead não encontrado.");
+  if (deal.stage === "vendido" || deal.stage === "entregue") {
+    return err("Esse lead já virou venda. Para apagar, exclua o comprador na aba Compradores.");
+  }
+  await tx(async () => {
+    await run("DELETE FROM deals WHERE id = ?", dealId);
+    await logEvent({ type: "outro", description: `Lead excluído — ${deal.customer_name}`, vehicle: deal.vehicle_id });
+    await refreshCustomerStatus(deal.customer_id);
+    await removeOrphanCustomer(deal.customer_id);
+  });
+  revalidate();
+  return ok("Lead excluído.");
+}
+
+/**
+ * Exclui um comprador (linha da aba Compradores = uma venda), tudo numa
+ * transação só: desfaz a venda — o carro volta para o estoque e saem os
+ * recebimentos, a comissão e o repasse ao dono — e apaga a negociação.
+ */
+export async function deleteBuyer(dealId: number): Promise<{ ok: boolean; error?: string; message?: string }> {
+  const deal = await dealCtx(dealId);
+  if (!deal) return err("Venda não encontrada.");
+  if (deal.stage !== "vendido" && deal.stage !== "entregue") return err("Essa negociação não é uma venda.");
+  await tx(async () => {
+    await revertSale(deal);
+    await run("DELETE FROM deals WHERE id = ?", dealId);
+    await refreshCustomerStatus(deal.customer_id);
+    await removeOrphanCustomer(deal.customer_id);
+  });
+  revalidate();
+  return ok("Comprador excluído — o carro voltou para o estoque.");
 }

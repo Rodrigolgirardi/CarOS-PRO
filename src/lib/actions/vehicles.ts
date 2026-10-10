@@ -7,6 +7,7 @@ import { brl, todayISO } from "../format";
 import { AD_PLATFORMS, DEFAULT_CHECKLIST, VEHICLE_LAUDO, VEHICLE_LEILAO, VEHICLE_STATUS } from "../labels";
 import { deleteUpload, saveUpload } from "../uploads";
 import type { ActionState, Vehicle, VehicleStatus } from "../types";
+import { consignorIdsByName, removeOrphanCustomer } from "../orphans";
 import { err, fields, logEvent, ok } from "./util";
 
 const revalidate = () => revalidatePath("/", "layout");
@@ -373,4 +374,44 @@ export async function setSalePrice(id: number, prev: ActionState, formData: Form
   });
   revalidate();
   return ok("Preço atualizado.");
+}
+
+/**
+ * Exclui um consignado (linha da aba Consignantes = um carro de terceiro):
+ * o carro sai do sistema com custos, fotos e documentos. Recusa carro já
+ * vendido (a venda precisa ser desfeita antes, na aba Compradores) e carro
+ * com lead em andamento de outra pessoa (para não apagar leads em silêncio).
+ */
+export async function deleteConsignment(vehicleId: number): Promise<{ ok: boolean; error?: string; message?: string }> {
+  const v = await get<Vehicle>("SELECT * FROM vehicles WHERE id = ? AND consignado = 1", vehicleId);
+  if (!v) return err("Carro consignado não encontrado.");
+  const d = (await get<{ sold: number; active: number }>(
+    `SELECT COUNT(*) FILTER (WHERE stage IN ('vendido', 'entregue')) AS sold,
+            COUNT(*) FILTER (WHERE stage IN ('interessado', 'proposta', 'reservado')) AS active
+       FROM deals WHERE vehicle_id = ?`,
+    vehicleId
+  ))!;
+  if (v.status === "vendido" || d.sold > 0) {
+    return err("Esse carro já foi vendido. Exclua primeiro o comprador na aba Compradores — isso desfaz a venda.");
+  }
+  if (d.active > 0) {
+    return err(
+      `Esse carro tem ${d.active === 1 ? "1 lead" : `${d.active} leads`} em andamento. Exclua os leads dele na aba Leads antes.`
+    );
+  }
+
+  // quem pode ficar sem nada no nome depois: o dono e os clientes de leads perdidos deste carro
+  const owner = (v.consignor ?? "").split("—")[0]!.trim();
+  const leadCustomers = (await all<{ customer_id: number }>(
+    "SELECT DISTINCT customer_id FROM deals WHERE vehicle_id = ?",
+    vehicleId
+  )).map((r) => r.customer_id);
+  const ownerIds = owner ? await consignorIdsByName(owner) : [];
+
+  const removed = await deleteVehicle(vehicleId);
+  if (!removed.ok) return removed;
+
+  for (const id of new Set([...leadCustomers, ...ownerIds])) await removeOrphanCustomer(id);
+  revalidate();
+  return ok("Consignado excluído.");
 }

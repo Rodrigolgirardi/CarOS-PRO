@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, ExternalLink, FileText, Pencil } from "lucide-react";
+import { ChevronRight, ExternalLink, FileText, Pencil, Trash2 } from "lucide-react";
 import { saveCustomer } from "@/lib/actions/customers";
+import { deleteLead } from "@/lib/actions/deals";
 import { CustomerFields } from "@/components/customers/customer-dialogs";
 import { UploadDocButton } from "@/components/documents/upload-doc-button";
 import { Badge, CustomerStatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm";
 import { FormError, SubmitButton, useAction } from "@/components/ui/form";
 import { Modal } from "@/components/ui/modal";
 import { WhatsAppIcon } from "@/components/ui/whatsapp-icon";
@@ -70,8 +72,9 @@ function dateTime(createdAt: string): string {
   return rel.includes(",") || !hhmm ? rel : `${rel}, ${hhmm}`;
 }
 
-/** Colunas da tabela de leads no desktop (cabeçalho e linhas usam a mesma grade). */
-export const LEAD_ROW_GRID = "grid grid-cols-[1.4fr_1fr_0.9fr_1.6fr_0.9fr_16px] items-center gap-4";
+/** Colunas da tabela de leads no desktop (cabeçalho e linhas usam a mesma grade).
+ *  A última coluna (56px) leva a lixeira + o chevron. */
+export const LEAD_ROW_GRID = "grid grid-cols-[1.4fr_1fr_0.9fr_1.6fr_0.9fr_56px] items-center gap-4";
 
 /** Cabeçalho da tabela de leads (desktop). */
 export function LeadTableHeader() {
@@ -102,6 +105,28 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
       <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">{label}</p>
       <p className="mt-0.5 break-words text-[13px] font-medium text-zinc-900">{value ?? "—"}</p>
     </div>
+  );
+}
+
+/** Lixeira do lead: pede confirmação e apaga. Não deixa o clique/tecla abrir a linha. */
+function DeleteLeadButton({ deal: d, className }: { deal: DealRow; className?: string }) {
+  return (
+    <span
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+      className={`flex shrink-0 ${className ?? ""}`}
+    >
+      <ConfirmButton
+        action={deleteLead.bind(null, d.id)}
+        title="Excluir este lead?"
+        description={`O lead de ${d.customer_name} pelo ${d.vehicle_label} será apagado. Não dá para desfazer.`}
+        variant="danger-ghost"
+        className="size-9 p-0"
+      >
+        <Trash2 size={15} aria-hidden />
+        <span className="sr-only">{`Excluir lead de ${d.customer_name}`}</span>
+      </ConfirmButton>
+    </span>
   );
 }
 
@@ -148,6 +173,8 @@ export function LeadExpandRow({
   const phoneDigits = (d.customer_phone ?? "").replace(/\D/g, "");
   const toggle = () => setOpen((o) => !o);
   const row = layout === "row";
+  // vendido/entregue já virou venda — esse sai pela aba Compradores
+  const canDelete = d.stage !== "vendido" && d.stage !== "entregue";
 
   return (
     <div
@@ -222,7 +249,14 @@ export function LeadExpandRow({
           </span>
           {/* data/hora */}
           <span className="truncate text-[13px] tabular-nums text-zinc-500">{dateTime(d.created_at)}</span>
-          <ChevronRight size={15} className={`text-zinc-300 transition-transform ${open ? "rotate-90" : ""}`} />
+          {/* lixeira + chevron (margem negativa para a lixeira não engordar a linha) */}
+          <span className="flex items-center justify-end gap-1">
+            {canDelete && <DeleteLeadButton deal={d} className="-my-1" />}
+            <ChevronRight
+              size={15}
+              className={`shrink-0 text-zinc-300 transition-transform ${open ? "rotate-90" : ""}`}
+            />
+          </span>
         </div>
       ) : (
       <div
@@ -272,11 +306,14 @@ export function LeadExpandRow({
               )}
             </span>
           </span>
-          <span className="flex shrink-0 flex-col items-end gap-1">
-            <Badge tone={stage.tone} dot className="px-1.5 py-0 text-[11px]">
-              {stage.label}
-            </Badge>
-            <span className="text-[11px] text-zinc-500">{relativeDate(d.created_at)}</span>
+          <span className="flex shrink-0 items-start gap-0.5">
+            <span className="flex shrink-0 flex-col items-end gap-1">
+              <Badge tone={stage.tone} dot className="px-1.5 py-0 text-[11px]">
+                {stage.label}
+              </Badge>
+              <span className="text-[11px] text-zinc-500">{relativeDate(d.created_at)}</span>
+            </span>
+            {canDelete && <DeleteLeadButton deal={d} className="-mr-2 -mt-2" />}
           </span>
         </div>
 

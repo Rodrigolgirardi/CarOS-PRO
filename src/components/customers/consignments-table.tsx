@@ -5,7 +5,7 @@ import { listConsignments } from "@/lib/queries/vehicles";
 import { ConsignmentRowItem } from "./consignment-row";
 
 // mesma grade da tabela de leads, para as duas abas terem o mesmo desenho
-const GRID = "grid grid-cols-[1.4fr_1fr_0.9fr_1.6fr_0.9fr_16px] items-center gap-4";
+const GRID = "grid grid-cols-[1.4fr_1fr_0.9fr_1.6fr_0.9fr_56px] items-center gap-4";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 

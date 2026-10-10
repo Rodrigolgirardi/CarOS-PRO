@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, ExternalLink, Pencil } from "lucide-react";
+import { ChevronRight, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { updateConsignor } from "@/lib/actions/customers";
+import { deleteConsignment } from "@/lib/actions/vehicles";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm";
 import { CpfCnpjInput } from "@/components/ui/cpf-cnpj-input";
 import { Field, Input } from "@/components/ui/field";
 import { FormError, SubmitButton, useAction } from "@/components/ui/form";
@@ -156,7 +158,24 @@ export function ConsignmentRowItem({ row: r, grid }: { row: ConsignmentRow; grid
           <span className="truncate text-[13px] font-medium text-zinc-800">{r.label}</span>
         </span>
         <span className="truncate text-[13px] tabular-nums text-zinc-500">{enteredAt(r)}</span>
-        <ChevronRight size={15} className={`text-zinc-300 transition-transform ${open ? "rotate-90" : ""}`} />
+        <span className="flex items-center justify-end gap-1">
+          {/* lixeira só para carro que ainda não foi vendido; cliques e teclas não vazam para a linha */}
+          {!sold && r.sold_date == null && r.sold_price == null && (
+            <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="-my-1.5 flex">
+              <ConfirmButton
+                action={deleteConsignment.bind(null, r.id)}
+                title="Excluir este consignado?"
+                description={`O ${r.label}${r.plate ? " (" + r.plate + ")" : ""} de ${r.owner} sai do sistema junto com custos, fotos e documentos dele. Use se o dono levou o carro de volta ou se foi cadastro errado. Não dá para desfazer.`}
+                variant="danger-ghost"
+                className="size-9 p-0"
+              >
+                <Trash2 size={15} aria-hidden />
+                <span className="sr-only">{`Excluir consignado de ${r.owner || r.label}`}</span>
+              </ConfirmButton>
+            </span>
+          )}
+          <ChevronRight size={15} className={`shrink-0 text-zinc-300 transition-transform ${open ? "rotate-90" : ""}`} />
+        </span>
       </div>
 
       {open && (

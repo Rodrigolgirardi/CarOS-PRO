@@ -8,7 +8,7 @@ import type { DealRow } from "@/lib/types";
 import { BuyerRowItem } from "./buyer-row";
 
 // mesma grade das tabelas de leads e consignantes
-const GRID = "grid grid-cols-[1.4fr_1fr_0.9fr_1.6fr_0.9fr_16px] items-center gap-4";
+const GRID = "grid grid-cols-[1.4fr_1fr_0.9fr_1.6fr_0.9fr_56px] items-center gap-4";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 

@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, ExternalLink } from "lucide-react";
+import { ChevronRight, ExternalLink, Trash2 } from "lucide-react";
 import { CustomerEditPencil } from "@/components/customers/customer-dialogs";
+import { ConfirmButton } from "@/components/ui/confirm";
+import { deleteBuyer } from "@/lib/actions/deals";
 import { WhatsAppIcon } from "@/components/ui/whatsapp-icon";
 import { BrandLogo } from "@/components/vehicles/brand-logo";
 import { brl } from "@/lib/format";
@@ -116,7 +118,22 @@ export function BuyerRowItem({ deal: d, grid }: { deal: DealRow; grid: string })
           <span className="truncate text-[13px] font-medium text-zinc-800">{d.vehicle_label}</span>
         </span>
         <span className="truncate text-[13px] tabular-nums text-zinc-500">{soldAt(d)}</span>
-        <ChevronRight size={15} className={`text-zinc-300 transition-transform ${open ? "rotate-90" : ""}`} />
+        <span className="flex items-center justify-end gap-1">
+          {/* lixeira: desfaz a venda; cliques e teclas não vazam para a linha */}
+          <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="-my-1.5 flex">
+            <ConfirmButton
+              action={deleteBuyer.bind(null, d.id)}
+              title="Excluir este comprador?"
+              description={`A venda do ${d.vehicle_label} para ${d.customer_name} será desfeita: o carro volta para o estoque e os recebimentos dessa venda são apagados. Não dá para desfazer.`}
+              variant="danger-ghost"
+              className="size-9 p-0"
+            >
+              <Trash2 size={15} aria-hidden />
+              <span className="sr-only">{`Excluir comprador ${d.customer_name}`}</span>
+            </ConfirmButton>
+          </span>
+          <ChevronRight size={15} className={`shrink-0 text-zinc-300 transition-transform ${open ? "rotate-90" : ""}`} />
+        </span>
       </div>
 
       {open && (

@@ -110,9 +110,9 @@ export function CustomerExpandRow({
                 </a>
               </span>
             ))}
-          <span className={`shrink-0 text-zinc-200 ${carsView ? "lg:hidden" : ""}`}>|</span>
+          <span className={`shrink-0 text-zinc-200 ${carsView ? "hidden" : ""}`}>|</span>
           <span
-            className={`shrink-0 text-xs font-medium ${carsView ? "lg:hidden" : ""} ${
+            className={`shrink-0 text-xs font-medium ${carsView ? "hidden" : ""} ${
               c.kind === "consignante" ? "text-violet-600" : "text-emerald-600"
             }`}
           >

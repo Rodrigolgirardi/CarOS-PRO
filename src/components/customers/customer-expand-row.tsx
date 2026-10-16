@@ -79,7 +79,8 @@ export function CustomerExpandRow({
         }}
         className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-zinc-50"
       >
-        <span className="flex min-w-0 flex-1 items-center gap-2">
+        <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-center gap-2">
           <span className="min-w-0 break-words text-sm font-medium leading-snug text-zinc-900 lg:truncate">{displayName}</span>
           {displayPhone && (
             <>
@@ -118,6 +119,23 @@ export function CustomerExpandRow({
           >
             {CUSTOMER_KIND[c.kind].label}
           </span>
+        </span>
+        {/* celular: o(s) carro(s) da pessoa embaixo do nome (no desktop ficam na mesma linha) */}
+        {carsView && cars.length > 0 && (
+          <span className="mt-1 flex flex-col gap-0.5 lg:hidden">
+            {cars.map((car) => (
+              <a
+                key={car.id}
+                href={`/veiculos/${car.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900"
+              >
+                <BrandLogo brand={car.brand} size={14} />
+                <span className="truncate">{car.label}</span>
+              </a>
+            ))}
+          </span>
+        )}
         </span>
         <ChevronRight size={15} className={`shrink-0 text-zinc-300 transition-transform ${open ? "rotate-90" : ""}`} />
       </div>

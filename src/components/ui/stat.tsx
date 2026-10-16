@@ -21,7 +21,7 @@ export function Stat({ label, value, sub, valueClassName }: StatProps) {
       >
         {value}
       </p>
-      {sub != null && <p className="truncate text-[11px] text-zinc-500 sm:mt-0.5 sm:text-xs">{sub}</p>}
+      {sub != null && <p className="truncate text-[11px] text-zinc-500 max-lg:whitespace-normal sm:mt-0.5 sm:text-xs">{sub}</p>}
     </div>
   );
 }

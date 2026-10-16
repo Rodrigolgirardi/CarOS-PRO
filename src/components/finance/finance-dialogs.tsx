@@ -21,9 +21,11 @@ export function AddMovementButton({ vehicles }: { vehicles: VehicleOption[] }) {
   const { state, formAction } = useAction(addCashMovement, { onSuccess: () => setOpen(false) });
   return (
     <>
-      <Button variant="primary" onClick={() => setOpen(true)}>
+      <Button variant="primary" onClick={() => setOpen(true)} className="max-sm:h-8! max-sm:px-2.5! max-sm:text-xs!">
         <Plus size={14} />
-        Adicionar gasto/receita
+        {/* celular: rótulo curto, botão menor */}
+        <span className="sm:hidden">Gasto/receita</span>
+        <span className="max-sm:hidden">Adicionar gasto/receita</span>
       </Button>
       <Modal
         open={open}

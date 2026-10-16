@@ -152,9 +152,9 @@ export default async function FinancePage({
                                 title="Excluir transação?"
                                 description={`"${e.description}" (${brl(e.inflow || e.outflow)}) será apagada do caixa e de onde estiver ligada. Não dá para desfazer.`}
                                 variant="danger-ghost"
-                                className="size-8 p-0"
+                                className="size-9! p-0!"
                               >
-                                <Trash2 size={16} />
+                                <Trash2 size={19} />
                               </ConfirmButton>
                             )}
                           </span>

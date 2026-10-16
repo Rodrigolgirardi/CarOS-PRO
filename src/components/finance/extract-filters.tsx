@@ -21,7 +21,8 @@ export function ExtractSearch({ busca }: { busca: string | null }) {
   };
 
   return (
-    <div className="relative min-w-0 flex-1 sm:max-w-xs">
+    // celular: a busca ganha a linha inteira (ao lado do mês/ano o texto cortava)
+    <div className="relative min-w-0 flex-1 max-sm:basis-full sm:max-w-xs">
       <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
       <Input
         ref={inputRef}

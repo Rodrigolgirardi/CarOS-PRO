@@ -30,10 +30,10 @@ export function LinkEntryButton({ kind, sourceId, vehicles, currentVehicleId }: 
         size="sm"
         aria-label="Vincular a um veículo"
         title="Vincular a um veículo"
-        className="size-9 p-0"
+        className="size-9! p-0!"
         onClick={() => setOpen(true)}
       >
-        <Link2 size={21} />
+        <Link2 size={19} />
       </Button>
       <Modal
         open={open}

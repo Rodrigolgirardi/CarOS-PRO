@@ -203,7 +203,8 @@ export default async function VehiclePage({
                 {/* vendido: sem anúncio, mas os sócios ainda podem auditar os custos */}
                 {sold && <ShareVehicleButton label={label} costReport={costReport} costsOnly />}
                 {!sold && (
-                  <span className="flex items-center gap-1.5 sm:gap-2">
+                  // celular: estes botões vão para a linha de baixo, a partir da margem (não cabem ao lado da foto)
+                  <span className="flex items-center gap-1.5 max-sm:hidden sm:gap-2">
                     <NewDealButton vehicles={vehicles} customers={customers} vehicleId={id} label="Lead" />
                     <QuickSaleButton
                       vehicles={vehicles}
@@ -252,6 +253,34 @@ export default async function VehiclePage({
             </div>
           </div>
         </div>
+        {/* celular: Lead | Venda | Compartilhar numa linha própria, a partir da margem esquerda */}
+        {!sold && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 sm:hidden">
+            <NewDealButton vehicles={vehicles} customers={customers} vehicleId={id} label="Lead" />
+            <QuickSaleButton
+              vehicles={vehicles}
+              sellers={sellers}
+              customers={customers}
+              defaultCommission={saleCommission}
+              fixedVehicleId={id}
+            />
+            <ShareVehicleButton
+              label={label}
+              yearLabel={
+                vehicle.year_fab
+                  ? `${String(vehicle.year_fab).slice(-2)}/${String(vehicle.year_model ?? vehicle.year_fab).slice(-2)}`
+                  : null
+              }
+              km={vehicle.km}
+              color={vehicle.color}
+              transmission={vehicle.transmission}
+              fuel={vehicle.fuel}
+              salePrice={vehicle.sale_price}
+              photoUrl={vehicle.photo ? `/api/uploads/${encodeURIComponent(vehicle.photo)}` : null}
+              costReport={costReport}
+            />
+          </div>
+        )}
       </div>
 
       {/* ------------------------------------------------ números grandes */}
@@ -287,6 +316,7 @@ export default async function VehiclePage({
       {/* ------------------------------------------------ abas */}
       <LinkTabs
         className="mt-6 mb-5"
+        wrapMobile
         activeKey={tab}
         tabs={[
           { key: "resumo", label: "Resumo", href: `/veiculos/${id}` },

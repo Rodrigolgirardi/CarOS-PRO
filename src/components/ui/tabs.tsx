@@ -14,15 +14,25 @@ export function LinkTabs({
   activeKey,
   className,
   mobileCounts = false,
+  wrapMobile = false,
 }: {
   tabs: LinkTab[];
   activeKey: string;
   className?: string;
   /** mostra os contadores também no celular (use quando as abas são poucas) */
   mobileCounts?: boolean;
+  /** celular: 3 abas por linha (quebra em linhas em vez de rolar de lado) */
+  wrapMobile?: boolean;
 }) {
   return (
-    <div className={cn("flex items-center gap-0.5 overflow-x-auto border-b border-zinc-200", className)}>
+    <div
+      className={cn(
+        wrapMobile
+          ? "grid grid-cols-3 border-b border-zinc-200 sm:flex sm:items-center sm:gap-0.5 sm:overflow-x-auto"
+          : "flex items-center gap-0.5 overflow-x-auto border-b border-zinc-200",
+        className
+      )}
+    >
       {tabs.map((t) => {
         const active = t.key === activeKey;
         return (
@@ -31,6 +41,7 @@ export function LinkTabs({
             href={t.href}
             className={cn(
               "-mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-1.5 py-2.5 text-[13px] transition-colors sm:px-2.5",
+              wrapMobile && "justify-center sm:justify-start",
               active
                 ? "border-zinc-900 font-medium text-zinc-900"
                 : "border-transparent text-zinc-500 hover:text-zinc-800"

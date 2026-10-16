@@ -50,7 +50,7 @@ function KpiCard({
         </span>
       </div>
       <p
-        className={`mt-1 truncate text-[13px] font-semibold tracking-tight tabular-nums sm:text-xl ${
+        className={`mt-1 truncate text-base font-semibold tracking-tight tabular-nums sm:text-xl ${
           valueClass ?? "text-zinc-900"
         }`}
       >
@@ -120,7 +120,7 @@ export default async function DashboardPage({
       {/* celular/tablet: layout novo */}
       <div className="space-y-5 lg:hidden">
       {/* ------------------------------------------------ KPIs principais */}
-      <section className="grid grid-cols-4 gap-2 sm:gap-3">
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
         <KpiCard
           label="Estoque total"
           value={brl(stock.invested)}

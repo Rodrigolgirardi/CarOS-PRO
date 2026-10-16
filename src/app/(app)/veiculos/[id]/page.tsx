@@ -124,6 +124,34 @@ export default async function VehiclePage({
     ]);
 
   const pendingTasks = tasks.filter((t) => t.status === "pendente").length;
+
+  // relatório de custos para sócios/investidores (botão Compartilhar → "Custos")
+  const costsSum = costs.reduce((s, c) => s + c.amount, 0);
+  const costReport = [
+    `📋 Custos — ${label}${vehicle.plate ? ` (${vehicle.plate})` : ""}`,
+    vehicle.consignado === 1
+      ? `Consignado · repasse ao dono: ${brl(vehicle.consignor_value)}`
+      : `Compra: ${brl(vehicle.purchase_price)}${vehicle.purchase_date ? ` em ${fmtDate(vehicle.purchase_date)}` : ""}`,
+    "",
+    `Custos (${costs.length}):`,
+    ...(costs.length === 0
+      ? ["• nenhum custo lançado"]
+      : [...costs]
+          .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+          .map((c) => `• ${fmtDate(c.date)} — ${costLabel(c.category)}${c.description ? ` (${c.description})` : ""}: ${brl(c.amount)}`)),
+    `Total dos custos: ${brl(costsSum)}`,
+    "",
+    `Custo total do carro: ${brl(m.totalCost)}`,
+    m.priceRef != null ? `${sold ? "Vendido por" : "Preço de venda"}: ${brl(m.priceRef)}` : "Preço de venda: não definido",
+    m.profit != null
+      ? `${sold ? "Lucro" : "Lucro potencial"}: ${brl(m.profit)}${m.margin != null ? ` (margem ${pct(m.margin)})` : ""}`
+      : null,
+    m.days != null ? `Dias em estoque: ${m.days}` : null,
+    "",
+    `Gerado pelo CarOS em ${fmtDate(new Date().toISOString().slice(0, 10))}.`,
+  ]
+    .filter((l) => l != null)
+    .join("\n");
   const soldDeal = deals.find((d) => d.stage === "vendido" || d.stage === "entregue");
 
   const sortedTasks = [...tasks].sort((a, b) => {
@@ -172,6 +200,8 @@ export default async function VehiclePage({
                   className={`size-2.5 shrink-0 rounded-full ${DOT_CLASS[VEHICLE_STATUS[vehicle.status].tone]}`}
                 />
                 {!sold && <StatusSelect id={id} status={vehicle.status} />}
+                {/* vendido: sem anúncio, mas os sócios ainda podem auditar os custos */}
+                {sold && <ShareVehicleButton label={label} costReport={costReport} costsOnly />}
                 {!sold && (
                   <span className="flex items-center gap-1.5 sm:gap-2">
                     <NewDealButton vehicles={vehicles} customers={customers} vehicleId={id} label="Lead" />
@@ -195,6 +225,7 @@ export default async function VehiclePage({
                       fuel={vehicle.fuel}
                       salePrice={vehicle.sale_price}
                       photoUrl={vehicle.photo ? `/api/uploads/${encodeURIComponent(vehicle.photo)}` : null}
+                      costReport={costReport}
                     />
                   </span>
                 )}

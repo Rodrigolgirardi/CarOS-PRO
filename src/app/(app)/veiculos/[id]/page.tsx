@@ -174,7 +174,7 @@ export default async function VehiclePage({
           <div className="flex min-w-0 items-start gap-4">
             <VehiclePhoto photo={vehicle.photo} brand={vehicle.brand} size="xl" alt={label} />
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-semibold tracking-tight text-zinc-900">
+              <h1 className="text-lg font-semibold leading-snug tracking-tight text-zinc-900 sm:truncate sm:text-xl">
                 {vehicle.brand} {vehicle.model}
                 {vehicle.version && <span className="font-normal text-zinc-500"> {vehicle.version}</span>}
               </h1>

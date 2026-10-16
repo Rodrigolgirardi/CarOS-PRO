@@ -42,21 +42,22 @@ function KpiCard({
   valueClass?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] sm:p-4">
-      <div className="flex items-start justify-between gap-1.5">
-        <p className="text-[11px] font-medium leading-snug text-zinc-500 sm:text-xs">{label}</p>
-        <span className={`grid size-6 shrink-0 place-items-center rounded-lg sm:size-7 ${iconClass}`}>
-          <Icon size={14} strokeWidth={1.75} />
+    // celular: mais baixo (margens e espaçamentos menores) · tablet/computador como antes
+    <div className="rounded-2xl border border-zinc-200 bg-white px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.03)] sm:p-4">
+      <div className="flex items-center justify-between gap-1.5 sm:items-start">
+        <p className="truncate text-[11px] font-medium leading-tight text-zinc-500 sm:text-xs sm:leading-snug">{label}</p>
+        <span className={`grid size-5 shrink-0 place-items-center rounded-md sm:size-7 sm:rounded-lg ${iconClass}`}>
+          <Icon size={12} strokeWidth={1.75} className="sm:size-3.5" />
         </span>
       </div>
       <p
-        className={`mt-1 truncate text-base font-semibold tracking-tight tabular-nums sm:text-xl ${
+        className={`mt-0.5 truncate text-base font-semibold leading-tight tracking-tight tabular-nums sm:mt-1 sm:text-xl ${
           valueClass ?? "text-zinc-900"
         }`}
       >
         {value}
       </p>
-      <p className="mt-0.5 truncate text-[11px] text-zinc-500">{sub}</p>
+      <p className="truncate text-[11px] leading-tight text-zinc-500 sm:mt-0.5">{sub}</p>
     </div>
   );
 }

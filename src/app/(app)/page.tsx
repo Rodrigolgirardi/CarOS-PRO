@@ -78,13 +78,13 @@ function MonthStat({
   valueClass?: string;
 }) {
   return (
-    <div className="min-w-0 p-2.5 sm:p-4">
+    <div className="min-w-0 bg-white p-3 sm:p-4">
       <p className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-500 sm:text-xs">
         <Icon size={13} className={`shrink-0 ${iconClass}`} />
         <span className="truncate">{label}</span>
       </p>
       <p
-        className={`mt-1 truncate text-[13px] font-semibold tracking-tight tabular-nums sm:text-lg ${
+        className={`mt-1 truncate text-base font-semibold tracking-tight tabular-nums sm:text-lg ${
           valueClass ?? "text-zinc-900"
         }`}
       >
@@ -163,7 +163,7 @@ export default async function DashboardPage({
 
       {/* ------------------------------------------------ resumo do mês (sem título: segue o filtro lá de cima) */}
       <section className="rounded-2xl border border-zinc-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-        <div className="grid grid-cols-4 divide-x divide-zinc-100">
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-zinc-100 sm:grid-cols-4">
           <MonthStat
             label="Faturamento"
             value={brl(month.revenue)}

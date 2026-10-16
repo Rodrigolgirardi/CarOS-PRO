@@ -86,7 +86,7 @@ export default async function VehiclesPage({
       <PageHeader title="Veículos" description="Seu estoque, do jeito que ele está agora." />
 
       {/* celular: chips (visual das Ações rápidas) · desktop: botões clássicos */}
-      <div className="mb-5 grid grid-cols-4 gap-2 lg:hidden">
+      <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:hidden">
         <Link href="/compras/nova" className={chipCls("violet", "justify-center! px-2")}>
           <ChipInner icon={Plus} label="Veículo" color="violet" compact />
         </Link>
@@ -105,7 +105,7 @@ export default async function VehiclesPage({
           extraTypes={entradas.map((t) => t.label)}
           chip
         />
-        <div className="col-span-4 flex justify-center">
+        <div className="col-span-2 flex justify-center sm:col-span-4">
           <PlateLookupButton chip />
         </div>
       </div>

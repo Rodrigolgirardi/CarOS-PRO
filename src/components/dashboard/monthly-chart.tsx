@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { brl } from "@/lib/format";
 import type { MonthlyPoint } from "@/lib/queries/dashboard";
 
@@ -14,13 +14,30 @@ export function MonthlySalesChart({
   months,
   action,
   netLabel = "Lucro",
+  visibleMonths,
+  focusKey,
 }: {
   months: MonthlyPoint[];
   action?: React.ReactNode;
+  /** celular: quantos meses cabem na tela; o resto fica numa faixa arrastável com o dedo */
+  visibleMonths?: number;
+  /** mês que deve aparecer (à direita) ao abrir — o do filtro */
+  focusKey?: string;
   /** nome da 3ª série (faturamento − custos): "Caixa" no desktop, que é visão de fluxo de caixa */
   netLabel?: string;
 }) {
   const net = (m: MonthlyPoint) => m.revenue - m.spend;
+
+  // faixa arrastável: abre já mostrando o mês do filtro na ponta direita
+  const scroll = !!visibleMonths && months.length > visibleMonths;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!scroll || !el) return;
+    const idx = Math.max(months.findIndex((m) => m.key === focusKey), 0);
+    const firstVisible = Math.min(Math.max(idx + 1 - visibleMonths!, 0), months.length - visibleMonths!);
+    el.scrollLeft = (firstVisible / months.length) * el.scrollWidth;
+  }, [scroll, focusKey, months, visibleMonths]);
   const hasMove = (m: MonthlyPoint) => m.revenue !== 0 || m.spend !== 0;
 
   // mês atual começa selecionado se tiver movimentação; toque alterna a seleção
@@ -128,7 +145,11 @@ export function MonthlySalesChart({
           ))}
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div
+          ref={scrollRef}
+          className={scroll ? "min-w-0 flex-1 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" : "min-w-0 flex-1"}
+        >
+          <div style={scroll ? { width: `${(months.length / visibleMonths!) * 100}%` } : undefined}>
           <div className="relative h-32">
             {/* linhas de grade, casadas com o eixo */}
             {ticks.map((t) => (
@@ -189,8 +210,12 @@ export function MonthlySalesChart({
               </span>
             ))}
           </div>
+          </div>
         </div>
       </div>
+      {scroll && (
+        <p className="mt-1 text-center text-[10px] text-zinc-400">← arraste para ver os outros meses →</p>
+      )}
 
       {sel && (
         <p className="mt-3 rounded-lg bg-zinc-50 px-3 py-2 text-[12px] text-zinc-600">

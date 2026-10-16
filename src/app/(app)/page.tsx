@@ -115,11 +115,6 @@ export default async function DashboardPage({
 
   const items = buildAttentionItems(attention);
 
-  // janela de 6 meses do gráfico no celular, terminando no mês escolhido (dentro do ano exibido)
-  const selIdx = Math.max(data.monthly.findIndex((m) => m.key === mesKey), 0);
-  const winStart = Math.min(Math.max(selIdx - 5, 0), Math.max(data.monthly.length - 6, 0));
-  const mobileMonths = data.monthly.slice(winStart, winStart + 6);
-
   return (
     <>
       {/* celular/tablet: layout novo */}
@@ -158,8 +153,13 @@ export default async function DashboardPage({
       </section>
 
       {/* ------------------------------------------------ resultado mensal */}
-      {/* celular: só 6 meses (terminando no mês do filtro) — 12 colunas ficavam espremidas */}
-      <MonthlySalesChart months={mobileMonths} action={<MonthPick years={years} active={mesKey} />} />
+      {/* celular: 6 meses na tela, os 12 numa faixa que se arrasta com o dedo (abre no mês do filtro) */}
+      <MonthlySalesChart
+        months={data.monthly}
+        visibleMonths={6}
+        focusKey={mesKey}
+        action={<MonthPick years={years} active={mesKey} />}
+      />
 
       {/* ------------------------------------------------ resumo do mês (sem título: segue o filtro lá de cima) */}
       <section className="rounded-2xl border border-zinc-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)]">

@@ -54,6 +54,9 @@ const ALIASES: Record<string, string> = {
   volks: "volkswagen",
   gm: "chevrolet",
   chevy: "chevrolet",
+  chev: "chevrolet",
+  caoa: "chery",
+  jta: "suzuki",
   mercedes: "mercedes-benz",
   "mercedes bens": "mercedes-benz",
   "range rover": "land-rover",
@@ -71,6 +74,9 @@ for (const b of BRANDS) {
 }
 for (const [alias, slug] of Object.entries(ALIASES)) LOOKUP.set(alias, slug);
 
+/** nomes de marca de uma palavra só (ex.: "suzuki", "chery") — usados na busca por palavra/trecho */
+const BRAND_KEYS = new Set(BRANDS.map((b) => norm(b.name)).filter((k) => !k.includes(" ")));
+
 /**
  * Resolve o slug do logo a partir do nome da marca OU de um rótulo completo
  * ("Honda HR-V EXL 1.5" → honda; "Land Rover Discovery" → land-rover).
@@ -83,6 +89,21 @@ export function brandSlug(input: string | null | undefined): string | null {
   for (const candidate of [n, words.slice(0, 2).join(" "), words[0]]) {
     const hit = LOOKUP.get(candidate);
     if (hit) return hit;
+  }
+  // nomes do Detran/consulta de placa: "Jta-Suzuki", "I/GM Chevrolet", "Caoachery"…
+  // 1) qualquer palavra do nome que seja uma marca conhecida (marcas antes dos apelidos curtos)
+  for (const w of words) {
+    const hit = BRAND_KEYS.has(w) ? LOOKUP.get(w) : undefined;
+    if (hit) return hit;
+  }
+  for (const w of words) {
+    const hit = LOOKUP.get(w);
+    if (hit) return hit;
+  }
+  // 2) marca grudada em outra palavra ("caoachery" → chery); só nomes com 4+ letras
+  const compact = n.replace(/ /g, "");
+  for (const key of BRAND_KEYS) {
+    if (key.length >= 4 && compact.includes(key)) return LOOKUP.get(key) ?? null;
   }
   return null;
 }

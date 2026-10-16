@@ -79,19 +79,20 @@ function MonthStat({
   valueClass?: string;
 }) {
   return (
-    <div className="min-w-0 bg-white p-3 sm:p-4">
-      <p className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-500 sm:text-xs">
-        <Icon size={13} className={`shrink-0 ${iconClass}`} />
+    // celular: mais baixo (margens e espaçamentos menores) · tablet/computador como antes
+    <div className="min-w-0 bg-white px-3 py-2 sm:p-4">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium leading-tight text-zinc-500 sm:text-xs">
+        <Icon size={12} className={`shrink-0 ${iconClass}`} />
         <span className="truncate">{label}</span>
       </p>
       <p
-        className={`mt-1 truncate text-base font-semibold tracking-tight tabular-nums sm:text-lg ${
+        className={`mt-0.5 truncate text-base font-semibold leading-tight tracking-tight tabular-nums sm:mt-1 sm:text-lg ${
           valueClass ?? "text-zinc-900"
         }`}
       >
         {value}
       </p>
-      <p className="mt-0.5 truncate text-[11px] text-zinc-500">{sub}</p>
+      <p className="truncate text-[11px] leading-tight text-zinc-500 sm:mt-0.5">{sub}</p>
     </div>
   );
 }

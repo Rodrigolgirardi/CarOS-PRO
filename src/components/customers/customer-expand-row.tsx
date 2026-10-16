@@ -80,7 +80,7 @@ export function CustomerExpandRow({
         className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-zinc-50"
       >
         <span className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="truncate text-sm font-medium text-zinc-900">{displayName}</span>
+          <span className="min-w-0 break-words text-sm font-medium leading-snug text-zinc-900 lg:truncate">{displayName}</span>
           {displayPhone && (
             <>
               <span className="shrink-0 text-zinc-200">|</span>

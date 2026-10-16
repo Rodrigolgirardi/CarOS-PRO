@@ -85,7 +85,7 @@ export default async function SalesPage({
   return (
     <>
       {/* abas no mesmo visual dos cards indicadores */}
-      <div className="mb-4 grid grid-cols-4 gap-2 sm:max-w-xl sm:gap-2.5 lg:mx-auto lg:max-w-5xl lg:grid-cols-4">
+      <div className="mb-4 grid grid-cols-4 gap-1 sm:max-w-xl sm:gap-2.5 lg:mx-auto lg:max-w-5xl lg:grid-cols-4">
         {[
           { key: "leads", label: "Leads", href: "/vendas" },
           { key: "vendas", label: "Vendas", count: sold.length, href: "/vendas?tab=vendas" },
@@ -98,7 +98,7 @@ export default async function SalesPage({
             <Link
               key={t.key}
               href={t.href}
-              className={`flex items-center justify-center gap-1.5 rounded-2xl border px-2 py-2.5 text-[12px] font-semibold transition-colors sm:text-[13px] ${
+              className={`flex items-center justify-center gap-1.5 whitespace-nowrap rounded-2xl border px-0.5 py-2.5 text-[11px] font-semibold tracking-tight transition-colors min-[400px]:text-[12px] sm:px-2 sm:text-[13px] sm:tracking-normal ${
                 // desktop: a aba Vendas sai (as vendas ficam em Veículos → Vendidos)
                 t.key === "vendas" ? "lg:hidden" : t.key === "compradores" ? "max-lg:hidden" : ""
               } ${
